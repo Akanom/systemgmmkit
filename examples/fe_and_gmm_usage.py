@@ -1,27 +1,35 @@
-"""Example: run FE as the main model and System GMM as robustness."""
+"""Generic fixed-effects and dynamic-panel GMM usage example."""
 
-from pathlib import Path
+from __future__ import annotations
 
 import pandas as pd
 
-from systemgmmkit import model_card_markdown, run_fixed_effects, validate_panel
-from systemgmmkit.presets import aid_growth_fe_techshare_spec, aid_growth_techshare_spec
-
-DATA = Path("analysis_merged_data_copy.csv")
+from systemgmmkit import build_panel_model_suite, build_pydynpd_command, run_fixed_effects
 
 
 def main() -> None:
-    df = pd.read_csv(DATA)
+    df = pd.read_csv("panel_data.csv")
 
-    fe_spec = aid_growth_fe_techshare_spec(include_controls=True, include_three_way=True)
-    fe_report = validate_panel(df, entity="country_id", time="period4", variables=fe_spec.variables)
-    print(fe_report.to_dict())
+    suite = build_panel_model_suite(
+        name="investment_model",
+        dependent="investment",
+        regressors=["q", "cashflow"],
+        controls=["size", "leverage"],
+        endogenous=["q"],
+        predetermined=["cashflow"],
+        exogenous=["size", "leverage"],
+        system=True,
+    )
 
-    fe_result = run_fixed_effects(fe_spec, df, entity="country_id", time="period4")
+    fe_result = run_fixed_effects(
+        suite.fixed_effects,
+        df,
+        entity="firm_id",
+        time="year",
+    )
     print(fe_result.to_markdown())
 
-    gmm_spec = aid_growth_techshare_spec(include_controls=True, include_three_way=True)
-    print(model_card_markdown(gmm_spec, n_entities=fe_report.n_entities, n_time_dummies=13))
+    print(build_pydynpd_command(suite.dynamic_gmm))
 
 
 if __name__ == "__main__":

@@ -7,14 +7,15 @@ from pathlib import Path
 
 import pandas as pd
 
-from .presets import aid_growth_ta_decomposition_spec, aid_growth_techshare_spec
+from .presets import build_dynamic_panel_gmm_spec
 from .reporting import model_card_markdown
 from .validation import validate_panel
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="systemgmmkit", description="Dynamic-panel System GMM workflow helper"
+        prog="systemgmmkit",
+        description="Generic panel-data workflow helper for FE and Difference/System GMM models.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -25,13 +26,20 @@ def _build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--vars", nargs="*", default=[])
     validate.add_argument("--json", action="store_true")
 
-    preset = sub.add_parser("preset", help="Print a preset model card")
-    preset.add_argument("name", choices=["techshare", "ta-decomp"])
-    preset.add_argument("--no-controls", action="store_true")
-    preset.add_argument("--no-three-way", action="store_true")
-    preset.add_argument(
+    spec = sub.add_parser("spec", help="Print a generic dynamic-panel GMM model card")
+    spec.add_argument("--dependent", required=True)
+    spec.add_argument("--regressors", nargs="+", required=True)
+    spec.add_argument("--controls", nargs="*", default=[])
+    spec.add_argument("--interactions", nargs="*", default=[])
+    spec.add_argument("--endogenous", nargs="*", default=[])
+    spec.add_argument("--predetermined", nargs="*", default=[])
+    spec.add_argument("--exogenous", nargs="*", default=[])
+    spec.add_argument(
         "--difference", action="store_true", help="Use Difference GMM instead of System GMM"
     )
+    spec.add_argument("--no-collapse", action="store_true")
+    spec.add_argument("--no-time-dummies", action="store_true")
+    spec.add_argument("--name", default="dynamic_panel_gmm")
 
     return parser
 
@@ -43,24 +51,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate":
         df = pd.read_csv(args.csv)
         report = validate_panel(df, entity=args.entity, time=args.time, variables=args.vars)
-        if args.json:
-            print(json.dumps(report.to_dict(), indent=2))
-        else:
-            print(json.dumps(report.to_dict(), indent=2))
+        print(json.dumps(report.to_dict(), indent=2))
         return 0
 
-    if args.command == "preset":
-        kwargs = {
-            "include_controls": not args.no_controls,
-            "include_three_way": not args.no_three_way,
-            "system": not args.difference,
-        }
-        spec = (
-            aid_growth_techshare_spec(**kwargs)
-            if args.name == "techshare"
-            else aid_growth_ta_decomposition_spec(**kwargs)
+    if args.command == "spec":
+        model_spec = build_dynamic_panel_gmm_spec(
+            name=args.name,
+            dependent=args.dependent,
+            regressors=args.regressors,
+            controls=args.controls,
+            interactions=args.interactions,
+            endogenous=args.endogenous,
+            predetermined=args.predetermined,
+            exogenous=args.exogenous,
+            system=not args.difference,
+            collapse=not args.no_collapse,
+            time_dummies=not args.no_time_dummies,
         )
-        print(model_card_markdown(spec))
+        print(model_card_markdown(model_spec))
         return 0
 
     parser.print_help(sys.stderr)

@@ -2,21 +2,22 @@
 
 ## 0.3.0
 
-- Generalized package core beyond aid-growth models.
-- Added generic builders for fixed effects, Difference GMM, System GMM, and FE+GMM suites.
-- Moved aid-growth functions into `systemgmmkit.domain_presets` as optional domain examples.
-- Updated README and tests for general panel-data use.
+- Generalized package scope to domain-neutral panel-data workflows.
+- Added generic builders for fixed effects, Difference GMM, System GMM, and FE plus GMM model suites.
+- Removed domain-specific examples and presets from the package core.
+- Added a generic CLI for panel validation and dynamic-panel GMM model-card generation.
+- Updated tests to use neutral panel-data variables and model examples.
 
 ## 0.2.0
 
-- Added fixed-effects estimator module.
-- Added one-way and two-way fixed effects support.
+- Added native fixed-effects estimation.
+- Added one-way and two-way fixed-effects support.
 - Added clustered, robust, and unadjusted covariance options.
-- Added FE and System GMM model suite presets.
-- Added production GitHub workflow templates.
+- Added FE plus dynamic GMM suite support.
+- Added production repository scaffolding.
 
 ## 0.1.0
 
-- Initial System GMM specification layer.
-- Added `pydynpd` command builder.
-- Added panel validation, diagnostics assessment, reporting, and aid-growth presets.
+- Added dynamic-panel specification objects.
+- Added pydynpd command construction.
+- Added panel validation, diagnostic assessment, and model-card reporting.

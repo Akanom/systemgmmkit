@@ -7,7 +7,7 @@ from systemgmmkit import (
 )
 
 
-def test_generic_system_gmm_command_is_not_aid_specific() -> None:
+def test_generic_system_gmm_command_is_domain_neutral() -> None:
     spec = build_system_gmm_spec(
         dependent="y",
         regressors=["x1", "x2"],
