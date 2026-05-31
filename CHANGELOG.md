@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- Added native one-way Random Effects estimation.
+- Added native Panel IV / 2SLS estimation with optional entity and time effects.
+- Added regression-table export to Markdown, CSV, and LaTeX.
+- Added Stata parity do-file template generation for fixed effects and dynamic-panel GMM workflows.
+- Added an experimental native one-step Difference/System GMM engine for validation and development workflows.
+- Kept pydynpd as the recommended production backend for Difference/System GMM until native parity tests are documented.
+
 ## 0.3.0
 
 - Generalized package scope to domain-neutral panel-data workflows.

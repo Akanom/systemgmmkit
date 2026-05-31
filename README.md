@@ -2,77 +2,159 @@
 
 `systemgmmkit` is a generic Python workflow package for panel-data econometrics.
 
-It supports reusable model specification, panel validation, fixed-effects estimation, Difference GMM and System GMM command construction, diagnostics interpretation, and reproducible model reporting.
+It supports reusable model specification, panel validation, fixed-effects estimation, Random Effects estimation, Panel IV/2SLS estimation, Difference GMM and System GMM command construction, diagnostics interpretation, reproducible model reporting, and basic regression-table export.
 
 The package is designed for applied panel-data projects in economics, finance, management, operations, productivity analysis, political economy, industrial organization, firm-level research, country panels, regional panels, household panels, and other longitudinal-data settings.
 
 ## Core capabilities
 
 - Validate balanced and unbalanced panel datasets before estimation.
-- Estimate static panel models using the native backend.
-- Build pooled OLS-style models.
-- Build one-way fixed-effects models.
-- Build two-way fixed-effects models.
-- Build Arellano-Bond Difference GMM specifications.
-- Build Blundell-Bond System GMM specifications.
-- Configure collapsed instruments and restricted lag windows.
-- Classify regressors as endogenous, predetermined, or exogenous.
+- Estimate static panel models using the native backend:
+  - pooled OLS-style models;
+  - one-way fixed effects;
+  - two-way fixed effects;
+  - one-way Random Effects;
+  - Panel IV / 2SLS with optional fixed effects.
+- Build dynamic-panel GMM specifications:
+  - Arellano-Bond Difference GMM;
+  - Blundell-Bond System GMM;
+  - collapsed instruments;
+  - restricted lag windows;
+  - one-step, two-step, and iterated configuration where supported by the backend.
+- Run dynamic-panel GMM through the optional `pydynpd` backend when installed.
+- Run an experimental native one-step dynamic-panel GMM estimator for small validation workflows.
 - Generate model-card style reporting for reproducibility.
-- Run dynamic-panel GMM through the optional pydynpd backend when installed.
+- Export regression summaries to Markdown, CSV, or LaTeX.
+- Generate Stata parity-check do-file templates for `xtreg, fe` and `xtabond2` replication work.
 
 ## Stata-alignment policy
 
 The package should be treated as Stata-aligned, not automatically Stata-identical.
 
-Results can align with Stata xtreg, fe and xtabond2 only when the same sample, transformation, lag windows, instrument matrix, collapsed-instrument setting, time dummies, covariance assumptions, and finite-sample corrections are used.
+Results can align with Stata `xtreg, fe` and `xtabond2` only when the same sample, transformation, lag windows, instrument matrix, collapsed-instrument setting, time dummies, covariance assumptions, and finite-sample corrections are used.
 
-Exact Stata parity should be verified using dedicated replication tests.
+Exact Stata parity should be verified using dedicated replication tests. Native dynamic-panel GMM remains experimental until parity tests are documented.
 
 ## Installation
 
 Development installation:
 
+```bash
 python -m pip install -e ".[dev,all]"
+```
 
 Runtime installation:
 
+```bash
 python -m pip install -e ".[all]"
+```
 
-## Generic fixed-effects workflow
+## Generic fixed-effects model
 
-Use build_fixed_effects_spec to define a static panel model, then run_fixed_effects to estimate it with entity effects, time effects, or both.
+```python
+from systemgmmkit import build_fixed_effects_spec, run_fixed_effects
 
-## Generic dynamic-panel GMM workflow
+spec = build_fixed_effects_spec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    controls=["control1", "control2"],
+    interactions=["x1_x2"],
+    entity_effects=True,
+    time_effects=True,
+    covariance="clustered",
+    cluster="entity",
+    name="two_way_fe",
+)
 
-Use build_system_gmm_spec for System GMM and build_difference_gmm_spec for Difference GMM. Use build_pydynpd_command to generate a backend command for pydynpd.
+result = run_fixed_effects(spec, df, entity="entity_id", time="year")
+print(result.to_markdown())
+```
 
-## FE plus dynamic GMM suite
+## Generic Random Effects
 
-Use build_panel_model_suite to pair a fixed-effects model with a dynamic-panel GMM robustness specification.
+```python
+from systemgmmkit import RandomEffectsSpec, run_random_effects
 
-## CLI examples
+spec = RandomEffectsSpec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    covariance="robust",
+)
 
-Validate a panel dataset:
+result = run_random_effects(spec, df, entity="entity_id", time="year")
+print(result.to_markdown())
+```
 
-systemgmmkit validate data.csv --entity firm_id --time year --vars y x1 x2
+## Generic Panel IV / 2SLS
 
-Print a generic System GMM model card:
+```python
+from systemgmmkit import PanelIVSpec, run_panel_2sls
 
-systemgmmkit spec --dependent y --regressors x1 x2 --endogenous x1 --predetermined x2 --exogenous control1 control2
+spec = PanelIVSpec(
+    dependent="y",
+    exog=["control1", "control2"],
+    endogenous=["x1"],
+    instruments=["z1", "z2"],
+    entity_effects=True,
+    time_effects=True,
+    covariance="robust",
+)
 
-Print a Difference GMM model card:
+result = run_panel_2sls(spec, df, entity="entity_id", time="year")
+print(result.to_markdown())
+```
 
-systemgmmkit spec --dependent y --regressors x1 x2 --endogenous x1 --difference
+## Generic System GMM
+
+```python
+from systemgmmkit import build_pydynpd_command, build_system_gmm_spec
+
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    controls=["control1", "control2"],
+    interactions=["x1_x2"],
+    endogenous=["x1"],
+    predetermined=["x2"],
+    exogenous=["control1", "control2", "x1_x2"],
+    lag_limits={"y": (2, 3), "x1": (2, 2), "x2": (2, 2)},
+    collapse=True,
+    time_dummies=True,
+    steps="twostep",
+    name="generic_system_gmm",
+)
+
+print(build_pydynpd_command(spec))
+```
+
+## Generic Difference GMM
+
+```python
+from systemgmmkit import build_difference_gmm_spec
+
+spec = build_difference_gmm_spec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    endogenous=["x1"],
+    predetermined=["x2"],
+    exogenous=[],
+    collapse=True,
+    name="generic_difference_gmm",
+)
+```
+
+## Regression-table export
+
+```python
+from systemgmmkit import export_regression_table
+
+export_regression_table([fe_result, re_result, iv_result], "results.md", fmt="markdown")
+export_regression_table([fe_result, re_result, iv_result], "results.csv", fmt="csv")
+export_regression_table([fe_result, re_result, iv_result], "results.tex", fmt="latex")
+```
 
 ## Current production status
 
-Version 0.3.0 is a generic panel-data workflow package. Native fixed-effects estimation is included. Difference GMM and System GMM estimation delegate to pydynpd when installed.
+Version `0.4.0` adds native Random Effects, Panel IV/2SLS, table export, parity-test scaffolding, and an experimental native one-step dynamic-panel GMM engine.
 
-Future milestones:
-
-- Random Effects wrapper.
-- Panel IV and 2SLS wrapper.
-- Native System GMM engine.
-- Windmeijer-corrected native robust standard errors.
-- Stata parity tests against xtreg, fe and xtabond2.
-- More export formats for regression tables.
+Native System GMM and Windmeijer-corrected robust standard errors are not yet certified as Stata-equivalent. Treat them as experimental until parity tests against `xtabond2` pass.
