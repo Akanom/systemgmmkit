@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Added a structured `PydynpdGMMResult` adapter for pydynpd backend runs.
+- Added package-level NumPy compatibility shim for older pydynpd releases.
+- Grouped IV-style variables into a single pydynpd `iv(...)` block.
+- Added pydynpd backend tests using a mocked backend.
+
 ## 0.4.0
 
 - Added native one-way Random Effects estimation.

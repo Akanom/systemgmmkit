@@ -26,8 +26,7 @@ def test_generic_system_gmm_command_is_domain_neutral() -> None:
     assert "gmm(y, 2:3)" in command
     assert "gmm(x1, 2:2)" in command
     assert "gmm(x2, 2:2)" in command
-    assert "iv(c1)" in command
-    assert "iv(x1_x2)" in command
+    assert "iv(c1 x1_x2)" in command
     assert "collapse" in command
     assert "nolevel" not in command
 

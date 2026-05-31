@@ -17,7 +17,7 @@ from .presets import (
     build_panel_model_suite,
     build_system_gmm_spec,
 )
-from .pydynpd_backend import build_pydynpd_command, run_pydynpd
+from .pydynpd_backend import PydynpdGMMResult, build_pydynpd_command, run_pydynpd
 from .random_effects import RandomEffectsResult, RandomEffectsSpec, run_random_effects
 from .reporting import model_card_markdown
 from .spec import DynamicPanelSpec, GMMStyle, IVStyle
@@ -39,6 +39,7 @@ __all__ = [
     "PanelModelSuite",
     "PanelModelSuiteResult",
     "PanelValidationReport",
+    "PydynpdGMMResult",
     "RandomEffectsResult",
     "RandomEffectsSpec",
     "assess_diagnostics",
@@ -65,4 +66,4 @@ __all__ = [
     "write_stata_parity_do_file",
 ]
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"

@@ -153,8 +153,12 @@ export_regression_table([fe_result, re_result, iv_result], "results.csv", fmt="c
 export_regression_table([fe_result, re_result, iv_result], "results.tex", fmt="latex")
 ```
 
+## pydynpd backend adapter
+
+`run_pydynpd()` returns a structured `PydynpdGMMResult` object. The adapter applies narrow compatibility shims for older pydynpd/NumPy combinations, captures printed backend output, groups IV-style instruments into a single `iv(...)` command block, and extracts coefficients, standard errors, p-values, observation counts, instrument counts, and common GMM diagnostics where available.
+
 ## Current production status
 
-Version `0.4.0` adds native Random Effects, Panel IV/2SLS, table export, parity-test scaffolding, and an experimental native one-step dynamic-panel GMM engine.
+Version `0.4.1` adds native Random Effects, Panel IV/2SLS, table export, parity-test scaffolding, and an experimental native one-step dynamic-panel GMM engine.
 
 Native System GMM and Windmeijer-corrected robust standard errors are not yet certified as Stata-equivalent. Treat them as experimental until parity tests against `xtabond2` pass.
