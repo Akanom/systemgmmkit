@@ -1,4 +1,4 @@
-"""Research helpers for Difference/System GMM dynamic panel workflows."""
+"""Generic panel-data workflow helpers for FE and Difference/System GMM."""
 
 from .diagnostics import DiagnosticCheck, DiagnosticReport, assess_diagnostics
 from .fixed_effects import (
@@ -6,6 +6,13 @@ from .fixed_effects import (
     FixedEffectsSpec,
     run_fixed_effects,
     run_fixed_effects_native,
+)
+from .presets import (
+    build_difference_gmm_spec,
+    build_dynamic_panel_gmm_spec,
+    build_fixed_effects_spec,
+    build_panel_model_suite,
+    build_system_gmm_spec,
 )
 from .pydynpd_backend import build_pydynpd_command, run_pydynpd
 from .reporting import model_card_markdown
@@ -25,7 +32,12 @@ __all__ = [
     "PanelModelSuiteResult",
     "PanelValidationReport",
     "assess_diagnostics",
+    "build_difference_gmm_spec",
+    "build_dynamic_panel_gmm_spec",
+    "build_fixed_effects_spec",
+    "build_panel_model_suite",
     "build_pydynpd_command",
+    "build_system_gmm_spec",
     "model_card_markdown",
     "run_fixed_effects",
     "run_fixed_effects_native",
@@ -34,4 +46,4 @@ __all__ = [
     "validate_panel",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

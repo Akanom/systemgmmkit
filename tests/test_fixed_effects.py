@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from systemgmmkit import FixedEffectsSpec, run_fixed_effects_native
-from systemgmmkit.presets import aid_growth_fe_techshare_spec, aid_growth_techshare_suite
+from systemgmmkit.domain_presets import aid_growth_fe_techshare_spec, aid_growth_techshare_suite
 
 
 def test_fixed_effects_native_recovers_simple_slope_with_entity_and_time_effects():

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systemgmmkit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Research-grade helpers for fixed effects and Difference/System GMM dynamic panel workflows in Python."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -12,7 +12,7 @@ license = {text = "MIT"}
 authors = [
   {name = "Oluwajuwon Mayomi Akanbi"}
 ]
-keywords = ["econometrics", "fixed-effects", "system-gmm", "difference-gmm", "dynamic-panel", "arellano-bond", "blundell-bond", "stata", "xtabond2"]
+keywords = ["econometrics", "panel-data", "fixed-effects", "pooled-ols", "system-gmm", "difference-gmm", "dynamic-panel", "arellano-bond", "blundell-bond", "stata", "xtabond2"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",

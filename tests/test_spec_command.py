@@ -1,5 +1,5 @@
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle, build_pydynpd_command
-from systemgmmkit.presets import aid_growth_techshare_spec
+from systemgmmkit.domain_presets import aid_growth_techshare_spec
 
 
 def test_build_command_contains_core_blocks():
