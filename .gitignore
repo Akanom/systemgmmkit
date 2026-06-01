@@ -9,3 +9,18 @@ build/
 .mypy_cache/
 .venv/
 .env
+
+# Local patch/recovery artifacts
+_archive/
+*.bak
+*.py.bak
+_patch_*.py
+_fix_*.py
+_inspect_*.py
+_check_*.py
+_compare_*.py
+_debug_*.py
+
+# Local harness/debug outputs
+outputs/
+strict_matrix_debug/
