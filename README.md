@@ -1,142 +1,393 @@
 # systemgmmkit
 
-`systemgmmkit` is a small research workflow package for fixed-effects and dynamic panel Difference/System GMM work in Python.
+`systemgmmkit` is a generic Python workflow package for panel-data econometrics.
 
-It does **not** try to replace mature econometric engines. Instead, it gives you a clean layer around System GMM workflows:
+It supports reusable model specification, panel validation, static panel estimation, dynamic-panel GMM estimation, diagnostics interpretation, reproducible model reporting, and regression-table export.
 
-- validate panel data before estimation;
-- estimate static one-/two-way fixed-effects models using a native LSDV backend or optional `linearmodels`;
-- classify dynamic-panel variables as endogenous, predetermined, or exogenous;
-- build `pydynpd` command strings from structured Python objects;
-- reduce instrument-proliferation risk through lag-depth and collapse defaults;
-- generate thesis-ready diagnostic summaries;
-- provide reusable specifications for aid-growth FE and System GMM models.
+The package is designed for applied panel-data projects in economics, finance, management, operations, productivity analysis, political economy, industrial organization, firm-level research, country panels, regional panels, household panels, and other longitudinal-data settings.
 
-## Stata equivalence policy
+---
 
-The package should be treated as **Stata-aligned**, not automatically Stata-identical. Results can be synonymous with Stata `xtreg, fe` and `xtabond2` only when the same sample, transformations, instrument matrix, lag windows, collapsed instruments, time dummies, finite-sample corrections, and covariance assumptions are used. Minor numerical differences can still occur because Python and Stata use different backend implementations and matrix tolerances.
+## Core capabilities
 
-## Why this package exists
+`systemgmmkit` currently supports:
 
-Python already has packages that implement System GMM, especially `pydynpd`. The practical gap is not only estimation. The gap is **reproducible specification management**: keeping lag structures, instrument classifications, controls, interactions, diagnostics, and reporting consistent across models.
+* Validation of balanced and unbalanced panel datasets before estimation.
+* Static panel estimation using native Python backends:
 
-This package targets that gap.
+  * pooled OLS-style models;
+  * one-way fixed effects;
+  * two-way fixed effects;
+  * one-way Random Effects;
+  * Panel IV / 2SLS with optional fixed effects.
+* Dynamic-panel GMM model construction and estimation:
 
-## Install locally
+  * Arellano-Bond Difference GMM;
+  * Blundell-Bond System GMM;
+  * collapsed instruments;
+  * restricted lag windows;
+  * one-step and two-step configurations where supported by the backend.
+* Native Difference GMM and native System GMM estimation.
+* Optional `pydynpd` backend integration for dynamic-panel GMM.
+* Strict coefficient-parity validation between the native GMM backend and `pydynpd` on the current validation harness.
+* Model-card style reporting for reproducibility.
+* Regression-table export to Markdown, CSV, and LaTeX.
+* Stata parity-check do-file templates for `xtreg, fe` and `xtabond2` replication workflows.
+
+---
+
+## Current validation status
+
+The native Difference GMM and native System GMM estimators pass strict coefficient parity against `pydynpd` on the current validation harness.
+
+The current validation harness includes:
+
+* Difference GMM baseline with controls;
+* System GMM baseline with controls;
+* System GMM three-way interaction model with controls;
+* System GMM three-way interaction model without controls;
+* System GMM decomposition model with controls.
+
+For these tested specifications, the native backend matches `pydynpd` on:
+
+* effective observation count;
+* number of instruments;
+* coefficient signs;
+* strict coefficient parity;
+* tested baseline, interaction, no-control, and decomposition structures.
+
+This is a strong validation milestone for the native Python GMM implementation. However, it should not yet be interpreted as universal equivalence across all possible panel structures, transformations, lag windows, missing-data patterns, or external statistical packages.
+
+---
+
+## Stata-alignment policy
+
+`systemgmmkit` should be treated as Stata-aligned, not automatically Stata-identical.
+
+Results can align with Stata `xtreg, fe` and `xtabond2` only when the same sample, panel structure, transformation, lag windows, instrument matrix, collapsed-instrument setting, time dummies, covariance assumptions, finite-sample corrections, and estimation options are used.
+
+The native Difference GMM and native System GMM estimators now pass strict coefficient parity against `pydynpd` on the current validation harness. This validates the native dynamic-panel GMM implementation against the package’s Python reference backend for the tested specifications.
+
+Exact Stata parity still requires dedicated replication tests against `xtabond2`. Passing `pydynpd` parity should not be presented as universal Stata equivalence.
+
+---
+
+## Installation
+
+Development installation:
 
 ```bash
-cd systemgmmkit
+python -m pip install -e ".[dev,all]"
+```
+
+Runtime installation:
+
+```bash
 python -m pip install -e ".[all]"
 ```
 
-## Minimal System GMM usage
+If you only need the core package without optional backends, use:
 
-```python
-import pandas as pd
-from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle, build_pydynpd_command
-
-spec = DynamicPanelSpec(
-    dependent="growth_rate",
-    regressors=[
-        "L1.growth_rate",
-        "lPA",
-        "s_techshare",
-        "frag_index_orth",
-        "polity2",
-        "econ_dev_index",
-        "human_dev_index",
-        "lpop",
-    ],
-    gmm=[
-        GMMStyle("growth_rate", min_lag=2, max_lag=3),
-        GMMStyle("lPA", min_lag=2, max_lag=2),
-        GMMStyle("s_techshare", min_lag=2, max_lag=2),
-        GMMStyle("frag_index_orth", min_lag=2, max_lag=2),
-        GMMStyle("polity2", min_lag=2, max_lag=2),
-    ],
-    iv=[IVStyle("econ_dev_index"), IVStyle("human_dev_index"), IVStyle("lpop")],
-    time_dummies=True,
-    system=True,
-    collapse=True,
-    transformation="fod",
-    steps="twostep",
-)
-
-command = build_pydynpd_command(spec)
-print(command)
+```bash
+python -m pip install -e .
 ```
 
+---
 
-## Fixed-effects usage
+## Generic fixed-effects model
 
 ```python
-import pandas as pd
-from systemgmmkit import FixedEffectsSpec, run_fixed_effects
+from systemgmmkit import build_fixed_effects_spec, run_fixed_effects
 
-df = pd.read_csv("analysis_merged_data_copy.csv")
-
-fe_spec = FixedEffectsSpec(
-    dependent="growth_rate",
-    regressors=["lPA", "s_techshare", "frag_index_orth", "polity2"],
+spec = build_fixed_effects_spec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    controls=["control1", "control2"],
+    interactions=["x1_x2"],
     entity_effects=True,
     time_effects=True,
     covariance="clustered",
     cluster="entity",
+    name="two_way_fe",
 )
 
-result = run_fixed_effects(fe_spec, df, entity="country_id", time="period4")
+result = run_fixed_effects(
+    spec,
+    df,
+    entity="entity_id",
+    time="year",
+)
+
 print(result.to_markdown())
 ```
 
-## Run via pydynpd backend
+---
+
+## Generic Random Effects
 
 ```python
-from systemgmmkit import run_pydynpd
+from systemgmmkit import RandomEffectsSpec, run_random_effects
 
-result = run_pydynpd(spec, df, panel_ids=["country_id", "period4"])
-```
-
-`pydynpd` must be installed:
-
-```bash
-python -m pip install systemgmmkit[pydynpd]
-```
-
-## Thesis aid-growth presets
-
-```python
-from systemgmmkit.presets import (
-    aid_growth_fe_techshare_spec,
-    aid_growth_ta_decomposition_spec,
-    aid_growth_techshare_spec,
-    aid_growth_techshare_suite,
+spec = RandomEffectsSpec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    covariance="robust",
 )
 
-fe_spec = aid_growth_fe_techshare_spec(include_controls=True, include_three_way=True)
-gmm_spec = aid_growth_techshare_spec(include_controls=True, include_three_way=True)
-decomp_spec = aid_growth_ta_decomposition_spec(include_controls=True, include_three_way=True)
-suite = aid_growth_techshare_suite(include_controls=True, include_three_way=True)
+result = run_random_effects(
+    spec,
+    df,
+    entity="entity_id",
+    time="year",
+)
+
+print(result.to_markdown())
 ```
 
-## Important status
+---
 
-This is version `0.2.0`: a package scaffold, fixed-effects estimator, and System GMM specification/reporting layer. The estimation backend delegates to `pydynpd` when installed. Full native System GMM estimation, Windmeijer correction, and xtabond2 parity tests are future milestones, not yet claimed.
+## Generic Panel IV / 2SLS
 
-## GitHub production workflow
+```python
+from systemgmmkit import PanelIVSpec, run_panel_2sls
 
-Use this repository as a normal Python package, not as a one-off notebook export.
+spec = PanelIVSpec(
+    dependent="y",
+    exog=["control1", "control2"],
+    endogenous=["x1"],
+    instruments=["z1", "z2"],
+    entity_effects=True,
+    time_effects=True,
+    covariance="robust",
+)
 
-```bash
-git checkout -b feature/<feature-name>
-python -m pip install -e ".[dev,all]"
-ruff check .
-pytest
-python -m build
-git add .
-git commit -m "feat: add <feature-name>"
-git push -u origin feature/<feature-name>
+result = run_panel_2sls(
+    spec,
+    df,
+    entity="entity_id",
+    time="year",
+)
+
+print(result.to_markdown())
 ```
 
-Open a pull request. Merge only after CI passes.
+---
 
-See [`docs/PRODUCTION.md`](docs/PRODUCTION.md) for the release workflow.
+## Generic Difference GMM
+
+```python
+from systemgmmkit import build_difference_gmm_spec
+
+spec = build_difference_gmm_spec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    endogenous=["x1"],
+    predetermined=["x2"],
+    exogenous=[],
+    lag_limits={
+        "y": (2, 3),
+        "x1": (2, 2),
+        "x2": (2, 2),
+    },
+    collapse=True,
+    steps="twostep",
+    name="generic_difference_gmm",
+)
+```
+
+Difference GMM follows the Arellano-Bond dynamic-panel structure and uses lagged levels as instruments for transformed equations.
+
+---
+
+## Generic System GMM
+
+```python
+from systemgmmkit import build_pydynpd_command, build_system_gmm_spec
+
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=["x1", "x2"],
+    controls=["control1", "control2"],
+    interactions=["x1_x2"],
+    endogenous=["x1"],
+    predetermined=["x2"],
+    exogenous=["control1", "control2", "x1_x2"],
+    lag_limits={
+        "y": (2, 3),
+        "x1": (2, 2),
+        "x2": (2, 2),
+    },
+    collapse=True,
+    time_dummies=True,
+    steps="twostep",
+    name="generic_system_gmm",
+)
+
+print(build_pydynpd_command(spec))
+```
+
+System GMM follows the Blundell-Bond dynamic-panel structure and combines transformed-equation moments with level-equation moments.
+
+---
+
+## Native dynamic-panel GMM
+
+`systemgmmkit` includes a native dynamic-panel GMM backend for Difference GMM and System GMM.
+
+The native backend has been validated against `pydynpd` on the current validation harness and passes strict coefficient parity for the tested specifications.
+
+Supported native GMM features include:
+
+* Difference GMM;
+* System GMM;
+* collapsed instruments;
+* restricted lag windows;
+* one-step and two-step estimation paths;
+* pydynpd-compatible System GMM instrument ordering and weighting logic;
+* effective observation count reporting;
+* instrument-count reporting;
+* structured result objects.
+
+The native backend is intended to provide a transparent Python implementation that can be inspected, tested, and extended without relying only on an external backend.
+
+---
+
+## pydynpd backend adapter
+
+`run_pydynpd()` returns a structured `PydynpdGMMResult` object.
+
+The adapter:
+
+* builds `pydynpd`-compatible command strings;
+* groups IV-style instruments into a single `iv(...)` command block;
+* captures printed backend output;
+* extracts coefficients, standard errors, p-values, observation counts, instrument counts, and common GMM diagnostics where available;
+* applies narrow compatibility shims for older `pydynpd` / NumPy combinations;
+* serves as the Python reference backend for native GMM parity validation.
+
+The compatibility shims are intentionally narrow. They are not intended to alter the econometric meaning of `pydynpd` results; they only handle backend compatibility issues such as scalar extraction behavior under newer NumPy versions.
+
+---
+
+## Regression-table export
+
+```python
+from systemgmmkit import export_regression_table
+
+export_regression_table(
+    [fe_result, re_result, iv_result],
+    "results.md",
+    fmt="markdown",
+)
+
+export_regression_table(
+    [fe_result, re_result, iv_result],
+    "results.csv",
+    fmt="csv",
+)
+
+export_regression_table(
+    [fe_result, re_result, iv_result],
+    "results.tex",
+    fmt="latex",
+)
+```
+
+---
+
+## Reproducibility and reporting
+
+`systemgmmkit` emphasizes reproducible panel-data workflows.
+
+The package supports:
+
+* structured model specifications;
+* model-card style summaries;
+* diagnostic interpretation;
+* exportable regression tables;
+* parity-check scaffolding;
+* Stata replication-template generation;
+* backend comparison workflows.
+
+For dynamic-panel GMM, users should record at minimum:
+
+* dependent variable;
+* regressors;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* lag windows;
+* transformation;
+* collapsed-instrument setting;
+* time-dummy treatment;
+* one-step or two-step configuration;
+* covariance assumptions;
+* backend used;
+* software versions.
+
+---
+
+## Current production status
+
+Version `0.4.1` adds native Random Effects, Panel IV/2SLS, table export, parity-test scaffolding, and native dynamic-panel GMM estimation.
+
+Native Difference GMM and native System GMM now pass strict coefficient parity against `pydynpd` on the current validation harness, including the tested baseline, interaction, no-control, and decomposition specifications.
+
+Native System GMM should still be validated across a broader multi-dataset test suite before being described as generally certified across all panel structures.
+
+Windmeijer-corrected robust standard errors and exact Stata `xtabond2` equivalence remain under validation.
+
+---
+
+## Recommended validation roadmap
+
+Before claiming broader production certification across panel designs, the package should be tested on:
+
+* balanced panels;
+* unbalanced panels;
+* short-`T` panels;
+* longer-`T` panels;
+* high-`N`, low-`T` panels;
+* panels with missing observations;
+* different lag windows;
+* models with no controls;
+* models with many controls;
+* interaction-heavy specifications;
+* decomposition specifications;
+* alternative instrument classifications;
+* Stata `xtabond2` replication benchmarks.
+
+This roadmap protects the package from overclaiming and supports academically defensible validation.
+
+---
+
+## Development principles
+
+`systemgmmkit` is built around the following principles:
+
+* generic design, not domain-specific hard-coding;
+* transparent econometric specification;
+* explicit backend behavior;
+* reproducible reporting;
+* strict parity testing where feasible;
+* conservative claims about external-software equivalence;
+* clear distinction between Python-backend parity and Stata parity;
+* practical usability for applied empirical researchers.
+
+---
+
+## License
+
+Add the project license here.
+
+---
+
+## Citation
+
+If you use `systemgmmkit` in academic or applied research, cite the package version, backend used, and model specification details.
+
+Recommended reporting format:
+
+```text
+Estimation was performed using systemgmmkit version X.Y.Z. Dynamic-panel GMM results used the [native / pydynpd] backend with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
+```
