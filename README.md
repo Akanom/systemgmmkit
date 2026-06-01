@@ -12,27 +12,25 @@ The package is designed for applied panel-data projects in economics, finance, m
 
 `systemgmmkit` currently supports:
 
-* Validation of balanced and unbalanced panel datasets before estimation.
-* Static panel estimation using native Python backends:
-
-  * pooled OLS-style models;
-  * one-way fixed effects;
-  * two-way fixed effects;
-  * one-way Random Effects;
-  * Panel IV / 2SLS with optional fixed effects.
-* Dynamic-panel GMM model construction and estimation:
-
-  * Arellano-Bond Difference GMM;
-  * Blundell-Bond System GMM;
-  * collapsed instruments;
-  * restricted lag windows;
-  * one-step and two-step configurations where supported by the backend.
-* Native Difference GMM and native System GMM estimation.
-* Optional `pydynpd` backend integration for dynamic-panel GMM.
-* Strict coefficient-parity validation between the native GMM backend and `pydynpd` on the current validation harness.
-* Model-card style reporting for reproducibility.
-* Regression-table export to Markdown, CSV, and LaTeX.
-* Stata parity-check do-file templates for `xtreg, fe` and `xtabond2` replication workflows.
+- Validation of balanced and unbalanced panel datasets before estimation.
+- Static panel estimation using native Python backends:
+  - pooled OLS-style models;
+  - one-way fixed effects;
+  - two-way fixed effects;
+  - one-way Random Effects;
+  - Panel IV / 2SLS with optional fixed effects.
+- Dynamic-panel GMM model construction and estimation:
+  - Arellano-Bond Difference GMM;
+  - Blundell-Bond System GMM;
+  - collapsed instruments;
+  - restricted lag windows;
+  - one-step and two-step configurations where supported by the backend.
+- Native Difference GMM and native System GMM estimation.
+- Optional `pydynpd` backend integration for dynamic-panel GMM.
+- Strict coefficient-parity validation between the native GMM backend and `pydynpd` on the current validation harness.
+- Model-card style reporting for reproducibility.
+- Regression-table export to Markdown, CSV, and LaTeX.
+- Stata parity-check do-file templates for `xtreg, fe` and `xtabond2` replication workflows.
 
 ---
 
@@ -42,19 +40,19 @@ The native Difference GMM and native System GMM estimators pass strict coefficie
 
 The current validation harness includes:
 
-* Difference GMM baseline with controls;
-* System GMM baseline with controls;
-* System GMM three-way interaction model with controls;
-* System GMM three-way interaction model without controls;
-* System GMM decomposition model with controls.
+- Difference GMM baseline with controls;
+- System GMM baseline with controls;
+- System GMM three-way interaction model with controls;
+- System GMM three-way interaction model without controls;
+- System GMM decomposition model with controls.
 
 For these tested specifications, the native backend matches `pydynpd` on:
 
-* effective observation count;
-* number of instruments;
-* coefficient signs;
-* strict coefficient parity;
-* tested baseline, interaction, no-control, and decomposition structures.
+- effective observation count;
+- number of instruments;
+- coefficient signs;
+- strict coefficient parity;
+- tested baseline, interaction, no-control, and decomposition structures.
 
 This is a strong validation milestone for the native Python GMM implementation. However, it should not yet be interpreted as universal equivalence across all possible panel structures, transformations, lag windows, missing-data patterns, or external statistical packages.
 
@@ -86,7 +84,7 @@ Runtime installation:
 python -m pip install -e ".[all]"
 ```
 
-If you only need the core package without optional backends, use:
+Core local installation without optional extras:
 
 ```bash
 python -m pip install -e .
@@ -210,9 +208,9 @@ Dynamic-panel GMM models require explicit assumptions about each regressor’s r
 
 `systemgmmkit` separates variables into three main econometric groups:
 
-* `endogenous`: variables that may be correlated with current and past shocks;
-* `predetermined`: variables that may be affected by past shocks but are assumed not to be correlated with current shocks;
-* `exogenous`: variables treated as standard IV-style instruments.
+- `endogenous`: variables that may be correlated with current and past shocks;
+- `predetermined`: variables that may be affected by past shocks but are assumed not to be correlated with current shocks;
+- `exogenous`: variables treated as standard IV-style instruments.
 
 Variable-specific GMM lag windows are controlled through `lag_limits`.
 
@@ -265,12 +263,12 @@ spec = build_system_gmm_spec(
 
 In this example:
 
-* `growth_rate` uses lags 2 to 3 as GMM-style instruments for the lagged dependent variable;
-* `lPA` uses lag 2 only;
-* `s_techshare` uses lag 2 only;
-* `frag_index_orth` uses lags 2 to 3;
-* `polity2` uses lags 1 to 2;
-* `econ_dev_index`, `human_dev_index`, and `lpop` are treated as standard exogenous IV-style instruments.
+- `growth_rate` uses lags 2 to 3 as GMM-style instruments for the lagged dependent variable;
+- `lPA` uses lag 2 only;
+- `s_techshare` uses lag 2 only;
+- `frag_index_orth` uses lags 2 to 3;
+- `polity2` uses lags 1 to 2;
+- `econ_dev_index`, `human_dev_index`, and `lpop` are treated as standard exogenous IV-style instruments.
 
 ---
 
@@ -297,9 +295,9 @@ spec = build_system_gmm_spec(
 
 Here:
 
-* `x1` is treated as endogenous and instrumented using lags 2 to 4;
-* `x2` is treated as predetermined and instrumented using lags 1 to 3;
-* `control1` is treated as exogenous and enters as an IV-style instrument.
+- `x1` is treated as endogenous and instrumented using lags 2 to 4;
+- `x2` is treated as predetermined and instrumented using lags 1 to 3;
+- `control1` is treated as exogenous and enters as an IV-style instrument.
 
 ---
 
@@ -350,7 +348,7 @@ spec = build_system_gmm_spec(
     regressors=[
         "lagged_growth",
         "aid",
-        "trade_openess",
+        "trade_openness",
         "population",
     ],
     endogenous=[
@@ -358,7 +356,7 @@ spec = build_system_gmm_spec(
     ],
     predetermined=[],
     exogenous=[
-        "trade_openess",
+        "trade_openness",
         "population",
     ],
     lag_limits={
@@ -370,7 +368,7 @@ spec = build_system_gmm_spec(
 )
 ```
 
-Here, `trade_openess` and `population` enter as standard exogenous IV-style instruments.
+Here, `trade_openness` and `population` enter as standard exogenous IV-style instruments.
 
 ---
 
@@ -517,28 +515,28 @@ Users should choose variable classifications and lag windows based on the resear
 
 Recommended practice:
 
-* use restricted lag windows to reduce instrument proliferation;
-* use collapsed instruments in most applied System GMM workflows;
-* avoid treating too many variables as endogenous unless theoretically justified;
-* document why each variable is treated as endogenous, predetermined, or exogenous;
-* compare instrument counts against the number of groups;
-* check Hansen/Sargan and AR diagnostics where available;
-* validate important specifications against a reference backend or external software where possible.
+- use restricted lag windows to reduce instrument proliferation;
+- use collapsed instruments in most applied System GMM workflows;
+- avoid treating too many variables as endogenous unless theoretically justified;
+- document why each variable is treated as endogenous, predetermined, or exogenous;
+- compare instrument counts against the number of groups;
+- check Hansen/Sargan and AR diagnostics where available;
+- validate important specifications against a reference backend or external software where possible.
 
 ---
 
 ### Summary table
 
-| User intention                                          | Recommended approach                                                                                                |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Endogenous regressor with GMM lags                      | Put variable in `endogenous` and set `lag_limits[var]`                                                              |
-| Predetermined regressor with GMM lags                   | Put variable in `predetermined` and set `lag_limits[var]`                                                           |
-| Strictly exogenous control                              | Put variable in `exogenous`; no GMM lag window required                                                             |
-| Lagged exogenous regressor                              | Create `L1_` / `L2_` columns before estimation and include them in `exogenous`                                      |
-| Exogenous variable to be instrumented by its own lags   | Reclassify as `predetermined` or `endogenous` and set `lag_limits[var]`                                             |
-| Interaction term with potentially endogenous components | Treat conservatively as `predetermined` or `endogenous`                                                             |
-| Short panel with many instruments                       | Use `collapse=True` and narrow lag windows                                                                          |
-| Stata / pydynpd replication                             | Match sample, lag windows, transformation, collapse setting, IV treatment, time dummies, and covariance assumptions |
+| User intention | Recommended approach |
+|---|---|
+| Endogenous regressor with GMM lags | Put variable in `endogenous` and set `lag_limits[var]` |
+| Predetermined regressor with GMM lags | Put variable in `predetermined` and set `lag_limits[var]` |
+| Strictly exogenous control | Put variable in `exogenous`; no GMM lag window required |
+| Lagged exogenous regressor | Create `L1_` / `L2_` columns before estimation and include them in `exogenous` |
+| Exogenous variable to be instrumented by its own lags | Reclassify as `predetermined` or `endogenous` and set `lag_limits[var]` |
+| Interaction term with potentially endogenous components | Treat conservatively as `predetermined` or `endogenous` |
+| Short panel with many instruments | Use `collapse=True` and narrow lag windows |
+| Stata / pydynpd replication | Match sample, lag windows, transformation, collapse setting, IV treatment, time dummies, and covariance assumptions |
 
 ---
 
@@ -584,15 +582,15 @@ The native backend has been validated against `pydynpd` on the current validatio
 
 Supported native GMM features include:
 
-* Difference GMM;
-* System GMM;
-* collapsed instruments;
-* restricted lag windows;
-* one-step and two-step estimation paths;
-* pydynpd-compatible System GMM instrument ordering and weighting logic;
-* effective observation count reporting;
-* instrument-count reporting;
-* structured result objects.
+- Difference GMM;
+- System GMM;
+- collapsed instruments;
+- restricted lag windows;
+- one-step and two-step estimation paths;
+- pydynpd-compatible System GMM instrument ordering and weighting logic;
+- effective observation count reporting;
+- instrument-count reporting;
+- structured result objects.
 
 The native backend is intended to provide a transparent Python implementation that can be inspected, tested, and extended without relying only on an external backend.
 
@@ -604,12 +602,12 @@ The native backend is intended to provide a transparent Python implementation th
 
 The adapter:
 
-* builds `pydynpd`-compatible command strings;
-* groups IV-style instruments into a single `iv(...)` command block;
-* captures printed backend output;
-* extracts coefficients, standard errors, p-values, observation counts, instrument counts, and common GMM diagnostics where available;
-* applies narrow compatibility shims for older `pydynpd` / NumPy combinations;
-* serves as the Python reference backend for native GMM parity validation.
+- builds `pydynpd`-compatible command strings;
+- groups IV-style instruments into a single `iv(...)` command block;
+- captures printed backend output;
+- extracts coefficients, standard errors, p-values, observation counts, instrument counts, and common GMM diagnostics where available;
+- applies narrow compatibility shims for older `pydynpd` / NumPy combinations;
+- serves as the Python reference backend for native GMM parity validation.
 
 The compatibility shims are intentionally narrow. They are not intended to alter the econometric meaning of `pydynpd` results; they only handle backend compatibility issues such as scalar extraction behavior under newer NumPy versions.
 
@@ -647,35 +645,35 @@ export_regression_table(
 
 The package supports:
 
-* structured model specifications;
-* model-card style summaries;
-* diagnostic interpretation;
-* exportable regression tables;
-* parity-check scaffolding;
-* Stata replication-template generation;
-* backend comparison workflows.
+- structured model specifications;
+- model-card style summaries;
+- diagnostic interpretation;
+- exportable regression tables;
+- parity-check scaffolding;
+- Stata replication-template generation;
+- backend comparison workflows.
 
 For dynamic-panel GMM, users should record at minimum:
 
-* dependent variable;
-* regressors;
-* endogenous variables;
-* predetermined variables;
-* exogenous variables;
-* lag windows;
-* transformation;
-* collapsed-instrument setting;
-* time-dummy treatment;
-* one-step or two-step configuration;
-* covariance assumptions;
-* backend used;
-* software versions.
+- dependent variable;
+- regressors;
+- endogenous variables;
+- predetermined variables;
+- exogenous variables;
+- lag windows;
+- transformation;
+- collapsed-instrument setting;
+- time-dummy treatment;
+- one-step or two-step configuration;
+- covariance assumptions;
+- backend used;
+- software versions.
 
 ---
 
 ## Current production status
 
-Version `0.4.1` adds native Random Effects, Panel IV/2SLS, table export, parity-test scaffolding, and native dynamic-panel GMM estimation.
+The current development branch adds native Random Effects, Panel IV/2SLS, table export, parity-test scaffolding, and native dynamic-panel GMM estimation.
 
 Native Difference GMM and native System GMM now pass strict coefficient parity against `pydynpd` on the current validation harness, including the tested baseline, interaction, no-control, and decomposition specifications.
 
@@ -689,19 +687,19 @@ Windmeijer-corrected robust standard errors and exact Stata `xtabond2` equivalen
 
 Before claiming broader production certification across panel designs, the package should be tested on:
 
-* balanced panels;
-* unbalanced panels;
-* short-`T` panels;
-* longer-`T` panels;
-* high-`N`, low-`T` panels;
-* panels with missing observations;
-* different lag windows;
-* models with no controls;
-* models with many controls;
-* interaction-heavy specifications;
-* decomposition specifications;
-* alternative instrument classifications;
-* Stata `xtabond2` replication benchmarks.
+- balanced panels;
+- unbalanced panels;
+- short-`T` panels;
+- longer-`T` panels;
+- high-`N`, low-`T` panels;
+- panels with missing observations;
+- different lag windows;
+- models with no controls;
+- models with many controls;
+- interaction-heavy specifications;
+- decomposition specifications;
+- alternative instrument classifications;
+- Stata `xtabond2` replication benchmarks.
 
 This roadmap protects the package from overclaiming and supports academically defensible validation.
 
@@ -711,29 +709,29 @@ This roadmap protects the package from overclaiming and supports academically de
 
 `systemgmmkit` is built around the following principles:
 
-* generic design, not domain-specific hard-coding;
-* transparent econometric specification;
-* explicit backend behavior;
-* reproducible reporting;
-* strict parity testing where feasible;
-* conservative claims about external-software equivalence;
-* clear distinction between Python-backend parity and Stata parity;
-* practical usability for applied empirical researchers.
+- generic design, not domain-specific hard-coding;
+- transparent econometric specification;
+- explicit backend behavior;
+- reproducible reporting;
+- strict parity testing where feasible;
+- conservative claims about external-software equivalence;
+- clear distinction between Python-backend parity and Stata parity;
+- practical usability for applied empirical researchers.
 
 ---
 
 ## License
 
-Add the project license here.
+This project is licensed under the terms specified in the [LICENSE](LICENSE) file.
 
 ---
 
 ## Citation
 
-If you use `systemgmmkit` in academic or applied research, cite the package version, backend used, and model specification details.
+If you use `systemgmmkit` in academic or applied research, cite the package version or Git commit, backend used, and model specification details.
 
 Recommended reporting format:
 
 ```text
-Estimation was performed using systemgmmkit version X.Y.Z. Dynamic-panel GMM results used the [native / pydynpd] backend with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
+Estimation was performed using systemgmmkit version X.Y.Z, commit <commit-hash>. Dynamic-panel GMM results used the [native / pydynpd] backend with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
 ```
