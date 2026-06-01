@@ -358,8 +358,6 @@ def _build_native_matrices(
     )
 
 
-
-
 def _native_style_variable(style: object) -> str:
     """Extract a variable name from a GMM/IV style object."""
     value = getattr(style, "variable", None)

@@ -183,9 +183,9 @@ def _apply_numpy_compatibility_shims() -> None:
         z_moments = np.asarray(zs, dtype=float)
         weight_inv = np.asarray(W2_inv, dtype=float)
 
-        hansen_test = np.linalg.multi_dot(
-            [z_moments.transpose(), weight_inv, z_moments]
-        ) * (1.0 / int(N))
+        hansen_test = np.linalg.multi_dot([z_moments.transpose(), weight_inv, z_moments]) * (
+            1.0 / int(N)
+        )
 
         df = int(num_instru - num_indep)
         crit = float(stats.chi2.ppf(q=0.95, df=df))
@@ -222,7 +222,7 @@ def _apply_numpy_compatibility_shims() -> None:
 
         for j in range(1, int(m) + 1):
             for i in range(N):
-                r_i = diff_r[(r_height * i):(r_height * i + r_height), 0:1]
+                r_i = diff_r[(r_height * i) : (r_height * i + r_height), 0:1]
                 r_t_i = r_i.transpose()
 
                 lag_res = np.ndarray((r_height, 1), dtype=np.float64)
@@ -230,12 +230,12 @@ def _apply_numpy_compatibility_shims() -> None:
                 lag_res[np.isnan(lag_res)] = 0
                 lag_res_t = lag_res.transpose()
 
-                x = diff_x[(x_height * i):(x_height * i + x_height), :]
+                x = diff_x[(x_height * i) : (x_height * i + x_height), :]
                 d0_temp = lag_res_t @ r_i
                 d1_temp = d0_temp @ r_t_i @ lag_res
                 EX_temp = lag_res_t @ x
 
-                zs = zs_list[(z_height * i):(z_height * i + z_height), :]
+                zs = zs_list[(z_height * i) : (z_height * i + z_height), :]
                 temp3_temp = zs @ d0_temp.transpose()
 
                 if i == 0:
@@ -281,6 +281,7 @@ def _apply_numpy_compatibility_shims() -> None:
             regression.tests.hansen_overid = hansen_overid_scalar_compat
         if hasattr(regression.tests, "AR_test"):
             regression.tests.AR_test = ar_test_scalar_compat
+
 
 def _to_float_or_none(value: Any) -> float | None:
     if value is None:
@@ -467,7 +468,6 @@ def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
     }
 
 
-
 def _debug_summarize_pydynpd_value(value: Any, *, depth: int = 0, max_depth: int = 4) -> Any:
     """Return a JSON-safe structural summary of a pydynpd object/value."""
     if depth > max_depth:
@@ -524,11 +524,7 @@ def _debug_summarize_pydynpd_value(value: Any, *, depth: int = 0, max_depth: int
 
     attrs = getattr(value, "__dict__", None)
     if isinstance(attrs, dict):
-        public_attrs = {
-            str(k): v
-            for k, v in attrs.items()
-            if not str(k).startswith("__")
-        }
+        public_attrs = {str(k): v for k, v in attrs.items() if not str(k).startswith("__")}
         return {
             "type": f"{type(value).__module__}.{type(value).__name__}",
             "attrs": {
