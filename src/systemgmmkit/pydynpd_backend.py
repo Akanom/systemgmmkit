@@ -3,10 +3,13 @@ from __future__ import annotations
 import contextlib
 import importlib
 import io
+import json
+import os
 import re
 import traceback
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -464,6 +467,156 @@ def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
     }
 
 
+
+def _debug_summarize_pydynpd_value(value: Any, *, depth: int = 0, max_depth: int = 4) -> Any:
+    """Return a JSON-safe structural summary of a pydynpd object/value."""
+    if depth > max_depth:
+        return {"type": type(value).__name__, "repr": repr(value)[:200]}
+
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+
+    if isinstance(value, np.ndarray):
+        flat = value.reshape(-1) if value.size else value
+        sample = flat[:5].tolist() if value.size else []
+        return {
+            "type": "ndarray",
+            "shape": list(value.shape),
+            "dtype": str(value.dtype),
+            "sample": sample,
+        }
+
+    if isinstance(value, pd.Series):
+        return {
+            "type": "Series",
+            "shape": [int(value.shape[0])],
+            "name": value.name,
+            "dtype": str(value.dtype),
+            "head": value.head(5).tolist(),
+        }
+
+    if isinstance(value, pd.DataFrame):
+        return {
+            "type": "DataFrame",
+            "shape": list(value.shape),
+            "columns": [str(c) for c in value.columns[:20]],
+        }
+
+    if isinstance(value, dict):
+        return {
+            "type": "dict",
+            "len": len(value),
+            "items": {
+                str(k): _debug_summarize_pydynpd_value(v, depth=depth + 1, max_depth=max_depth)
+                for k, v in list(value.items())[:20]
+            },
+        }
+
+    if isinstance(value, (list, tuple)):
+        return {
+            "type": type(value).__name__,
+            "len": len(value),
+            "items": [
+                _debug_summarize_pydynpd_value(v, depth=depth + 1, max_depth=max_depth)
+                for v in list(value)[:10]
+            ],
+        }
+
+    attrs = getattr(value, "__dict__", None)
+    if isinstance(attrs, dict):
+        public_attrs = {
+            str(k): v
+            for k, v in attrs.items()
+            if not str(k).startswith("__")
+        }
+        return {
+            "type": f"{type(value).__module__}.{type(value).__name__}",
+            "attrs": {
+                k: _debug_summarize_pydynpd_value(v, depth=depth + 1, max_depth=max_depth)
+                for k, v in list(public_attrs.items())[:80]
+            },
+        }
+
+    return {"type": type(value).__name__, "repr": repr(value)[:300]}
+
+
+def _write_pydynpd_debug_dump(
+    raw: Any,
+    *,
+    spec: DynamicPanelSpec,
+    command: str,
+    panel_ids: Sequence[str],
+) -> None:
+    """Write optional pydynpd raw-object structure for strict-parity diagnosis."""
+    dump_dir_raw = os.getenv("SYSTEMGMMKIT_PYDYNPD_DEBUG_DIR")
+    if not dump_dir_raw:
+        return
+
+    dump_dir = Path(dump_dir_raw)
+    dump_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in spec.name)
+    out = dump_dir / f"{safe_name}.json"
+
+    payload = {
+        "spec": spec.name,
+        "system": bool(spec.system),
+        "command": command,
+        "panel_ids": list(panel_ids),
+        "raw_summary": _debug_summarize_pydynpd_value(raw),
+    }
+
+    out.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+
+    # Also write selected numeric arrays for strict-parity matrix diagnostics.
+    # This is intentionally inactive unless SYSTEMGMMKIT_PYDYNPD_DEBUG_DIR is set.
+    arrays: dict[str, Any] = {}
+
+    try:
+        if hasattr(raw, "_zs_list"):
+            arrays["raw__zs_list"] = raw._zs_list
+        if raw.models:
+            model = raw.models[0]
+
+            if hasattr(model, "z_list"):
+                arrays["model_z_list"] = model.z_list
+            if hasattr(model, "_z_t_list"):
+                arrays["model__z_t_list"] = model._z_t_list
+
+            final_xy = getattr(model, "final_xy_tables", None)
+            if isinstance(final_xy, dict):
+                if "Cy" in final_xy:
+                    arrays["model_Cy"] = final_xy["Cy"]
+                if "Cx" in final_xy:
+                    arrays["model_Cx"] = final_xy["Cx"]
+
+            for idx, step in enumerate(getattr(model, "step_results", []) or []):
+                for attr in (
+                    "W",
+                    "W_inv",
+                    "_XZ_W",
+                    "M",
+                    "_M_XZ_W",
+                    "beta",
+                    "residual",
+                    "_residual_t",
+                    "SS",
+                    "zs",
+                    "ZuuZ",
+                    "W_next",
+                    "vcov",
+                    "std_err",
+                ):
+                    if hasattr(step, attr):
+                        arrays[f"step{idx}_{attr}"] = getattr(step, attr)
+
+        if arrays:
+            np.savez_compressed(dump_dir / f"{safe_name}.npz", **arrays)
+    except Exception as exc:
+        error_path = dump_dir / f"{safe_name}.npz_error.txt"
+        error_path.write_text(repr(exc), encoding="utf-8")
+
+
 def _adapt_pydynpd_result(raw: Any, *, command: str, raw_output: str) -> PydynpdGMMResult:
     params, std_errors, pvalues = _extract_coefficients(raw)
     meta = _extract_metadata(raw, raw_output)
@@ -516,6 +669,7 @@ def run_pydynpd(
     try:
         with contextlib.redirect_stdout(buffer):
             raw = regression.abond(command, data.copy(), list(panel_ids))
+        _write_pydynpd_debug_dump(raw, spec=spec, command=command, panel_ids=panel_ids)
         return _adapt_pydynpd_result(raw, command=command, raw_output=buffer.getvalue())
     except Exception as exc:
         output = buffer.getvalue()
