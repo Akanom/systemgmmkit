@@ -4,6 +4,7 @@ import contextlib
 import importlib
 import io
 import re
+import traceback
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -121,10 +122,162 @@ def build_pydynpd_command(spec: DynamicPanelSpec) -> str:
 
 
 def _apply_numpy_compatibility_shims() -> None:
-    """Apply narrow compatibility shims needed by older pydynpd releases."""
+    """Apply narrow compatibility shims needed by older pydynpd releases.
+
+    Older pydynpd releases call ``float(...)`` / ``math.sqrt(...)`` on 1x1
+    NumPy arrays in specification tests. Newer NumPy versions reject those
+    conversions. These shims preserve pydynpd's formulas and only fix scalar
+    extraction.
+    """
     if not hasattr(np, "in1d"):
         np.in1d = np.isin  # type: ignore[attr-defined]
 
+    try:
+        specification_tests = importlib.import_module("pydynpd.specification_tests")
+    except ModuleNotFoundError:
+        return
+
+    # Unit tests may monkeypatch importlib.import_module and return fake modules.
+    required = (
+        "hansen_overid",
+        "hansen_test_info",
+        "AR_test",
+        "AR_test_info",
+        "AR_get_diff_XR",
+        "lag",
+    )
+    if not all(hasattr(specification_tests, attr) for attr in required):
+        return
+
+    if getattr(specification_tests, "_systemgmmkit_scalar_shims", False):
+        return
+
+    try:
+        from scipy import stats
+    except Exception:
+        return
+
+    hansen_test_info = specification_tests.hansen_test_info
+    ar_test_info = specification_tests.AR_test_info
+    ar_get_diff_xr = specification_tests.AR_get_diff_XR
+    lag = specification_tests.lag
+
+    def _scalarize(value: Any) -> float:
+        arr = np.asarray(value)
+        if arr.size != 1:
+            raise TypeError(f"Expected scalar-compatible value, got shape {arr.shape}.")
+        return float(arr.reshape(-1)[0])
+
+    def hansen_overid_scalar_compat(
+        W2_inv: Any,
+        N: Any,
+        zs: Any,
+        num_instru: Any,
+        num_indep: Any,
+    ) -> Any:
+        # Preserve pydynpd's original formula:
+        # hansen_test = zs.T @ W2_inv @ zs * (1 / N)
+        z_moments = np.asarray(zs, dtype=float)
+        weight_inv = np.asarray(W2_inv, dtype=float)
+
+        hansen_test = np.linalg.multi_dot(
+            [z_moments.transpose(), weight_inv, z_moments]
+        ) * (1.0 / int(N))
+
+        df = int(num_instru - num_indep)
+        crit = float(stats.chi2.ppf(q=0.95, df=df))
+        p_value = 1.0 - stats.chi2.cdf(hansen_test, df)
+
+        return hansen_test_info(
+            _scalarize(hansen_test),
+            df,
+            _scalarize(p_value),
+            crit,
+        )
+
+    def ar_test_scalar_compat(model: Any, zs_list: Any, step: Any, m: Any) -> Any:
+        # Preserve pydynpd's original AR_test formula while fixing scalar conversion.
+        N = int(model.N)
+        z_list = model.z_list
+        z_height = int(z_list.shape[0] / N)
+
+        current_step = model.step_results[int(step) - 1]
+
+        ori_residual = current_step.residual
+        r0_height = int(ori_residual.shape[0] / N)
+
+        M_XZ_W = current_step._M_XZ_W
+        vcov = current_step.vcov
+
+        diff_x, diff_r = ar_get_diff_xr(model, current_step.beta, ori_residual, r0_height)
+        r_height = int(diff_r.shape[0] / N)
+        x_height = int(diff_x.shape[0] / N)
+
+        ar_list = []
+        temp = np.zeros((r_height * N, 1), np.float64)
+        lag(diff_r, temp, N, 1, 0)
+
+        for j in range(1, int(m) + 1):
+            for i in range(N):
+                r_i = diff_r[(r_height * i):(r_height * i + r_height), 0:1]
+                r_t_i = r_i.transpose()
+
+                lag_res = np.ndarray((r_height, 1), dtype=np.float64)
+                lag(r_i, lag_res, 1, j, 0)
+                lag_res[np.isnan(lag_res)] = 0
+                lag_res_t = lag_res.transpose()
+
+                x = diff_x[(x_height * i):(x_height * i + x_height), :]
+                d0_temp = lag_res_t @ r_i
+                d1_temp = d0_temp @ r_t_i @ lag_res
+                EX_temp = lag_res_t @ x
+
+                zs = zs_list[(z_height * i):(z_height * i + z_height), :]
+                temp3_temp = zs @ d0_temp.transpose()
+
+                if i == 0:
+                    d0 = d0_temp
+                    d1 = d1_temp
+                    EX = EX_temp
+                    temp3 = temp3_temp
+                else:
+                    d0 += d0_temp
+                    d1 += d1_temp
+                    EX += EX_temp
+                    temp3 += temp3_temp
+
+            d2 = (-2) * np.linalg.multi_dot([EX, M_XZ_W, temp3])
+            d3 = np.linalg.multi_dot([EX, vcov, EX.transpose()])
+
+            denominator = _scalarize(d1 + d2 + d3)
+            if denominator <= 0:
+                raise Exception("AR test failed")
+
+            ar_temp = _scalarize(d0) / float(np.sqrt(denominator))
+            p_value = float(stats.norm.sf(abs(ar_temp)) * 2)
+
+            ar_list.append(ar_test_info(j, ar_temp, p_value))
+
+        return ar_list
+
+    specification_tests.hansen_overid = hansen_overid_scalar_compat
+    specification_tests.AR_test = ar_test_scalar_compat
+    specification_tests._systemgmmkit_scalar_shims = True
+    specification_tests._systemgmmkit_hansen_scalar_shim = True
+    specification_tests._systemgmmkit_ar_scalar_shim = True
+
+    # pydynpd.regression imports specification_tests as `tests`; patch that alias
+    # too if it is already loaded or importable.
+    try:
+        regression = importlib.import_module("pydynpd.regression")
+    except ModuleNotFoundError:
+        return
+
+    if hasattr(regression, "tests"):
+        if hasattr(regression.tests, "hansen_overid"):
+            regression.tests.hansen_overid = hansen_overid_scalar_compat
+        if hasattr(regression.tests, "AR_test"):
+            regression.tests.AR_test = ar_test_scalar_compat
 
 def _to_float_or_none(value: Any) -> float | None:
     if value is None:
@@ -375,7 +528,9 @@ def run_pydynpd(
                 raw_output=output,
                 error=f"{type(exc).__name__}: {exc}",
             )
+        tb = traceback.format_exc()
         raise RuntimeError(
             "pydynpd estimation failed inside systemgmmkit. "
-            f"Command: {command!r}. Original error: {type(exc).__name__}: {exc}"
+            f"Command: {command!r}. Original error: {type(exc).__name__}: {exc}\n"
+            f"Traceback:\n{tb}"
         ) from exc
