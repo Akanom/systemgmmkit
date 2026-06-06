@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 import pandas as pd
 
+from .pydynpd_output_parser import enrich_result_with_parsed_standard_errors
+
 
 DynamicGMMBackend = Literal["auto", "validated", "native", "pydynpd"]
 
@@ -164,6 +166,7 @@ def run_dynamic_panel_gmm(
     if backend in {"auto", "validated"}:
         if is_system:
             result = _call_pydynpd_backend(spec, data, entity=entity, time=time)
+            result = enrich_result_with_parsed_standard_errors(result)
             _set_result_attr(result, "backend", "pydynpd-via-systemgmmkit")
             _set_result_attr(result, "systemgmmkit_backend_policy", backend)
             _append_result_note(
@@ -183,6 +186,7 @@ def run_dynamic_panel_gmm(
 
     if backend == "pydynpd":
         result = _call_pydynpd_backend(spec, data, entity=entity, time=time)
+        result = enrich_result_with_parsed_standard_errors(result)
         _set_result_attr(result, "backend", "pydynpd-via-systemgmmkit")
         _set_result_attr(result, "systemgmmkit_backend_policy", backend)
         return result

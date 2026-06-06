@@ -47,3 +47,6 @@ src/systemgmmkit/*.before_*
 src/systemgmmkit/*.py.before_*
 xtabond2_strict_parity/
 *.pyc
+# Python cache files
+**/__pycache__/
+*.pyo
