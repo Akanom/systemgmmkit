@@ -64,6 +64,17 @@ __all__ = [
     "stata_xtreg_fe_command",
     "validate_panel",
     "write_stata_parity_do_file",
-]
+
+    "DynamicPanelBackendError",
+    "run_dynamic_panel_gmm",
+    "run_system_gmm",
+    "run_difference_gmm",]
 
 __version__ = "0.4.1"
+
+from .dynamic_panel import (
+    DynamicPanelBackendError,
+    run_difference_gmm,
+    run_dynamic_panel_gmm,
+    run_system_gmm,
+)
