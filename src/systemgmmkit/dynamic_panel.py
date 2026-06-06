@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import inspect
 import warnings
+from contextlib import suppress
 from typing import Any, Literal
 
 import pandas as pd
 
 from .pydynpd_output_parser import enrich_result_with_parsed_standard_errors
-
 
 DynamicGMMBackend = Literal["auto", "validated", "native", "pydynpd"]
 
@@ -22,31 +22,26 @@ def _is_system_gmm(spec: Any) -> bool:
 
 def _append_result_note(result: Any, note: str) -> Any:
     """Best-effort note attachment without assuming a mutable result class."""
-    try:
+    with suppress(Exception):
         notes = getattr(result, "notes", None)
 
         if notes is None:
-            setattr(result, "notes", [note])
+            result.notes = [note]
         elif isinstance(notes, list):
             if note not in notes:
                 notes.append(note)
-        elif isinstance(notes, tuple):
-            if note not in notes:
-                setattr(result, "notes", [*notes, note])
-        else:
-            setattr(result, "notes", [str(notes), note])
-    except Exception:
-        pass
+        elif isinstance(notes, tuple) and note not in notes:
+            result.notes = [*notes, note]
+        elif not isinstance(notes, (list, tuple)):
+            result.notes = [str(notes), note]
 
     return result
 
 
 def _set_result_attr(result: Any, name: str, value: Any) -> Any:
     """Best-effort result metadata attachment."""
-    try:
+    with suppress(Exception):
         setattr(result, name, value)
-    except Exception:
-        pass
 
     return result
 

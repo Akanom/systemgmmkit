@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
+from contextlib import suppress
 from typing import Any
 
 import pandas as pd
-
 
 _NUMERIC_RE = re.compile(
     r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$"
@@ -29,6 +29,15 @@ def _to_float(value: str) -> float | None:
         return float(value)
     except Exception:
         return None
+
+
+def _series_is_missing(value: Any) -> bool:
+    try:
+        series = pd.Series(value)
+    except Exception:
+        return True
+
+    return len(series) == 0 or series.isna().all()
 
 
 def parse_pydynpd_output_table(text: str) -> tuple[pd.Series, pd.Series, pd.Series]:
@@ -61,8 +70,6 @@ def parse_pydynpd_output_table(text: str) -> tuple[pd.Series, pd.Series, pd.Seri
         if not line or "|" not in line:
             continue
 
-        # Split table rows like:
-        # |  L1.growth_rate | 0.3293583 | 0.0511580 | 6.4380580 | 0.0000000 | *** |
         cells = [cell.strip() for cell in line.strip("|").split("|")]
 
         if len(cells) < 5:
@@ -102,12 +109,10 @@ def enrich_result_with_parsed_standard_errors(result: Any) -> Any:
 
     existing = getattr(result, "std_errors", None)
 
-    try:
+    with suppress(Exception):
         existing_series = pd.Series(existing)
         if len(existing_series) > 0 and existing_series.notna().any():
             return result
-    except Exception:
-        pass
 
     raw_output = getattr(result, "raw_output", None)
 
@@ -121,50 +126,42 @@ def enrich_result_with_parsed_standard_errors(result: Any) -> Any:
 
     current_params = getattr(result, "params", None)
 
-    if current_params is not None:
-        current_params = pd.Series(current_params)
-        target_index = list(current_params.index)
+    with suppress(Exception):
+        if current_params is not None:
+            current_params_series = pd.Series(current_params)
+            target_index = list(current_params_series.index)
 
-        parsed_se = parsed_se.reindex(target_index)
-        parsed_pvalues = parsed_pvalues.reindex(target_index)
-        parsed_params = parsed_params.reindex(target_index)
+            parsed_se = parsed_se.reindex(target_index)
+            parsed_pvalues = parsed_pvalues.reindex(target_index)
+            parsed_params = parsed_params.reindex(target_index)
 
     if parsed_se.notna().sum() == 0:
         return result
 
     try:
-        setattr(result, "std_errors", parsed_se)
+        result.std_errors = parsed_se
     except Exception:
         return result
 
-    # Keep existing params/pvalues unless missing or empty.
-    try:
-        current_pvalues = pd.Series(getattr(result, "pvalues", None))
-        if len(current_pvalues) == 0 or current_pvalues.isna().all():
-            setattr(result, "pvalues", parsed_pvalues)
-    except Exception:
-        setattr(result, "pvalues", parsed_pvalues)
+    if _series_is_missing(getattr(result, "pvalues", None)):
+        with suppress(Exception):
+            result.pvalues = parsed_pvalues
 
-    try:
-        current_params = pd.Series(getattr(result, "params", None))
-        if len(current_params) == 0 or current_params.isna().all():
-            setattr(result, "params", parsed_params)
-    except Exception:
-        setattr(result, "params", parsed_params)
+    if _series_is_missing(getattr(result, "params", None)):
+        with suppress(Exception):
+            result.params = parsed_params
 
-    notes = getattr(result, "notes", None)
     note = "Parsed direct pydynpd standard errors from raw backend output."
 
-    try:
+    with suppress(Exception):
+        notes = getattr(result, "notes", None)
+
         if notes is None:
-            setattr(result, "notes", [note])
+            result.notes = [note]
         elif isinstance(notes, list):
             if note not in notes:
                 notes.append(note)
-        elif isinstance(notes, tuple):
-            if note not in notes:
-                setattr(result, "notes", [*notes, note])
-    except Exception:
-        pass
+        elif isinstance(notes, tuple) and note not in notes:
+            result.notes = [*notes, note]
 
     return result
