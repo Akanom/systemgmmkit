@@ -743,3 +743,41 @@ Recommended reporting format:
 ```text
 Estimation was performed using systemgmmkit version X.Y.Z, commit <commit-hash>. Dynamic-panel GMM results used the [native / pydynpd] backend with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
 ```
+
+---
+
+## Dynamic GMM backend policy
+
+`systemgmmkit` is the user-facing package for dynamic-panel GMM workflows.
+
+Users should call the public API:
+
+```python
+from systemgmmkit import run_system_gmm, run_difference_gmm
+```
+
+The package then routes estimation through the appropriate backend.
+
+| User option | Difference GMM behavior | System GMM behavior |
+|---|---|---|
+| `backend="auto"` | Uses the validated native `systemgmmkit` Difference GMM path. | Routes through the validated backend adapter via `systemgmmkit`. |
+| `backend="validated"` | Uses the validated native `systemgmmkit` Difference GMM path. | Routes through the validated backend adapter via `systemgmmkit`. |
+| `backend="native"` | Uses the native `systemgmmkit` engine. | Uses the native `systemgmmkit` engine, currently experimental. |
+| `backend="pydynpd"` | Explicitly routes through the backend adapter. | Explicitly routes through the backend adapter. |
+
+This design keeps `systemgmmkit` as the stable public interface while allowing backend routing internally.
+
+### Current native backend status
+
+Native Difference GMM has passed strict parity on the current validation harness.
+
+Native System GMM is not yet coefficient-certified against `xtabond2` across broader specifications. It runs, preserves expected observation and instrument counts, and passes construction checks, but it remains experimental until coefficient-level parity is certified across multiple datasets, lag structures, and model designs.
+
+For empirical System GMM work requiring the strongest validation, use:
+
+```python
+run_system_gmm(spec, data, entity="id", time="time", backend="auto")
+```
+
+This keeps the user workflow inside `systemgmmkit` while routing internally to the validated backend path.
+

@@ -39,3 +39,11 @@ _debug_*.py
 # Local debug outputs
 outputs/
 strict_matrix_debug/
+# Local diagnostic backups
+README.md.before_*
+*.before_*
+*.py.before_*
+src/systemgmmkit/*.before_*
+src/systemgmmkit/*.py.before_*
+xtabond2_strict_parity/
+*.pyc
