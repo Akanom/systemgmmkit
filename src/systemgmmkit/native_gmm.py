@@ -113,7 +113,7 @@ def _build_native_matrices(
     # positions and create dummy columns for time_values[2:].
     time_dummy_values = time_values[2:] if getattr(spec, "time_dummies", False) else []
     time_dummy_names = [f"{time}_{value}" for value in time_dummy_values]
-    time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names, strict=False))
+    time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names))
 
     y_rows: list[float] = []
     x_rows: list[list[float]] = []
