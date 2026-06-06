@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [main, master, develop]
 
 jobs:
   test:
@@ -38,3 +38,4 @@ jobs:
 
       - name: Build package
         run: python -m build
+

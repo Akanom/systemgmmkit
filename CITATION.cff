@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "systemgmmkit: Panel-Data Econometrics and Dynamic-Panel GMM Workflows in Python"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: Akanbi
+    given-names: Oluwajuwon Mayomi
+repository-code: "https://github.com/Akanom/systemgmmkit"
+license: MIT
+version: "0.4.1"
+date-released: "2026-06-06"
+keywords:
+  - panel data
+  - econometrics
+  - fixed effects
+  - random effects
+  - panel IV
+  - 2SLS
+  - difference GMM
+  - system GMM
+  - Arellano-Bond
+  - Blundell-Bond
+  - xtabond2
+  - Python
