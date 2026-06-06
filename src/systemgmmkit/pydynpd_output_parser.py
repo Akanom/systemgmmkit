@@ -140,7 +140,6 @@ def enrich_result_with_parsed_standard_errors(result: Any) -> Any:
     # Keep existing params/pvalues unless missing or empty.
     try:
         current_pvalues = pd.Series(getattr(result, "pvalues", None))
-        if_pvalues = pd.Series(getattr(result, "pvalues", None))
         if len(current_pvalues) == 0 or current_pvalues.isna().all():
             setattr(result, "pvalues", parsed_pvalues)
     except Exception:
