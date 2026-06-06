@@ -14,12 +14,12 @@ This folder contains minimal runnable examples for the public `systemgmmkit` API
 
 From the repository root:
 
-``bash
+```bash
 python -m pip install -e ".[dev,all]"
 python examples/01_fixed_effects_quickstart.py
 python examples/02_difference_gmm_quickstart.py
 python examples/03_system_gmm_backend_auto.py
-``
+```
 
 ## Validation note
 
