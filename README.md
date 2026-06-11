@@ -156,7 +156,7 @@ Install from PyPI:
 python -m pip install systemgmmkit
 ```
 
-Install with optional reporting and backend extras:
+Install with optional backend and reporting extras:
 
 ```bash
 python -m pip install "systemgmmkit[all]"
@@ -771,5 +771,6 @@ Recommended reporting format:
 ```text
 Estimation was performed using systemgmmkit version X.Y.Z, commit <commit-hash>. Dynamic-panel GMM results used the [native / validated backend] route with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
 ```
+
 
 
