@@ -144,16 +144,22 @@ Exact Stata parity requires dedicated replication tests against `xtabond2`.
 
 ## Installation
 
-Development installation:
+Install from PyPI:
+
+```bash
+python -m pip install systemgmmkit
+```
+
+Install with optional reporting and backend extras:
+
+```bash
+python -m pip install "systemgmmkit[all]"
+```
+
+Development installation from a local clone:
 
 ```bash
 python -m pip install -e ".[dev,all]"
-```
-
-Runtime installation:
-
-```bash
-python -m pip install -e ".[all]"
 ```
 
 Core local installation without optional extras:
@@ -759,3 +765,4 @@ Recommended reporting format:
 ```text
 Estimation was performed using systemgmmkit version X.Y.Z, commit <commit-hash>. Dynamic-panel GMM results used the [native / validated backend] route with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
 ```
+
