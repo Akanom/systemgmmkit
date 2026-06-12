@@ -1,2 +1,2 @@
-spec,native_nobs,native_n_instruments,native_backend,native_instrument_names,native_hansen_p,native_ar1_p,native_ar2_p,spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen_p,stata_sargan_p,stata_ar1_p,stata_ar2_p
-system_gmm_baseline_controls,1248,8,native-experimental-gmm,D:y:L2;D:y:L3;D:x:L2;D:x:L3;IV:w;L:diff:y:L1;L:diff:x:L1;L:constant,,,,system_gmm_baseline_controls,1248,96,8,0.15998019,0.08791548,0.079850145,0.86768544
+spec,native_nobs,native_n_instruments,native_backend,native_instrument_names,native_hansen_p,native_ar1_p,native_ar2_p,native_has_constant_param,spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen_p,stata_sargan_p,stata_ar1_p,stata_ar2_p
+system_gmm_baseline_controls,1248,8,native-experimental-gmm,D:y:L2;D:y:L3;D:x:L2;D:x:L3;IV:w;L:diff:y:L1;L:diff:x:L1;L:constant,,,,True,system_gmm_baseline_controls,1248,96,8,0.15998019,0.08791548,0.079850145,0.86768544

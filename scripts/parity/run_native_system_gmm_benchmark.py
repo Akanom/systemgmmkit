@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -43,6 +44,10 @@ def main() -> None:
             "native_coef": list(res.params.values),
         }
     )
+
+    if os.getenv("SYSTEMGMMKIT_DROP_NATIVE_CON_FOR_PARITY") == "1":
+        params = params[params["param"] != "_con"].copy()
+
     params.to_csv(OUT / "native_system_gmm_params.csv", index=False)
 
     diagnostics = pd.DataFrame(
@@ -56,6 +61,7 @@ def main() -> None:
                 "native_hansen_p": getattr(res, "hansen_p", None),
                 "native_ar1_p": getattr(res, "ar1_p", None),
                 "native_ar2_p": getattr(res, "ar2_p", None),
+                "native_has_constant_param": "_con" in list(res.params.index),
             }
         ]
     )
