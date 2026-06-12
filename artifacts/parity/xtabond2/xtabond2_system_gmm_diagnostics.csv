@@ -1,2 +1,2 @@
-spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen_p,stata_sargan_p,stata_ar1_p,stata_ar2_p
-system_gmm_baseline_controls,1248,96,8,.15998019,.08791548,.079850145,.86768544
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen_p,stata_sargan_p,stata_ar1,stata_ar1_p,stata_ar2,stata_ar2_p
+system_gmm_baseline_controls,1152,96,4,.23580374,.24695386,-3.9428484,.000080519516,1.169345,.24226467
