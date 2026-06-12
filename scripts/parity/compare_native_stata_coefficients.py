@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 ART = ROOT / "artifacts" / "parity" / "xtabond2"

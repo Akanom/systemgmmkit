@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 ROOT = Path(__file__).resolve().parents[2]
 ART = ROOT / "artifacts" / "parity" / "xtabond2"
 
@@ -110,9 +109,7 @@ def main() -> None:
                             right = lookup(y_map, entity, time - right_offset)
 
                             if left is None or right is None:
-                                if policy == "zero_missing":
-                                    z[i] = 0.0
-                                elif policy == "skip_missing":
+                                if policy == "zero_missing" or policy == "skip_missing":
                                     z[i] = 0.0
                                 continue
 

@@ -8,7 +8,6 @@ import pandas as pd
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
 
-
 OUT = Path("artifacts/parity/xtabond2")
 DATA = OUT / "system_gmm_benchmark.csv"
 

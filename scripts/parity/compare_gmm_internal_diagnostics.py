@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 OUT = Path("artifacts/parity/xtabond2")
 
 

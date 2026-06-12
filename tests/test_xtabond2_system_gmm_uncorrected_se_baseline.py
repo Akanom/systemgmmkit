@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts" / "parity" / "xtabond2"
 
@@ -42,6 +41,7 @@ def test_native_system_gmm_uncorrected_clustered_se_baseline_vs_xtabond2() -> No
     env = os.environ.copy()
     env["SYSTEMGMMKIT_EXPORT_GMM_DEBUG"] = "1"
     env["SYSTEMGMMKIT_GMM_DEBUG_DIR"] = "artifacts/parity/xtabond2"
+    env["SYSTEMGMMKIT_NATIVE_WINDMEIJER"] = "0"
 
     subprocess.run(
         [sys.executable, "scripts/parity/run_native_system_gmm_benchmark.py"],

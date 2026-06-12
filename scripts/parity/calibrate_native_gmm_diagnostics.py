@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 from scipy import stats
 
-
 OUT = Path("artifacts/parity/xtabond2")
 
 diag = pd.read_csv(OUT / "xtabond2_native_system_gmm_diagnostics_comparison.csv")

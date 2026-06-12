@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 
 import numpy as np
@@ -1659,13 +1660,11 @@ def run_native_dynamic_panel_gmm(
             index=False,
         )
 
-        try:
+        with contextlib.suppress(Exception):
             pd.DataFrame(row_meta).to_csv(
                 debug_dir / "native_row_meta.csv",
                 index=False,
             )
-        except Exception:
-            pass
 
     return NativeGMMResult(
         spec=spec,

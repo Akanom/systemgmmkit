@@ -82,9 +82,3 @@ def model_card_markdown(
 
     return "\n".join(lines)
 
-from .reporting.parity import (
-    REQUIRED_PARITY_COLUMNS,
-    ParityReport,
-    ParityResult,
-    classify_parity_result,
-)

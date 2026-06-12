@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-
 STATIC_PANEL_CONFORMANCE_TARGETS = {
     "pooled_ols": {
         "reference": ["statsmodels.OLS", "Stata reg"],

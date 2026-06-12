@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import argparse
-import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
-
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ART = ROOT / "artifacts" / "parity" / "xtabond2"
@@ -302,10 +300,7 @@ def write_outputs(
 
     pass_rel_tol = bool(max_rel_diff <= max_rel_tol)
 
-    if max_abs_tol is None:
-        pass_abs_tol = True
-    else:
-        pass_abs_tol = bool(max_abs_diff <= max_abs_tol)
+    pass_abs_tol = True if max_abs_tol is None else bool(max_abs_diff <= max_abs_tol)
 
     passed = bool(pass_rel_tol and pass_abs_tol)
 

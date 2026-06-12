@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-
 REQUIRED_PARITY_REPORT_COLUMNS = [
     "spec",
     "native_nobs",

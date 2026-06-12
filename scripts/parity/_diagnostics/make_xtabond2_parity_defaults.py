@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
-
+from pathlib import Path
 
 PATH = Path("src/systemgmmkit/native_gmm.py")
 text = PATH.read_text(encoding="utf-8")

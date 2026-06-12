@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 OUT = Path("artifacts/parity/xtabond2")
 DATA = OUT / "system_gmm_benchmark.csv"
 DOFILE = OUT / "system_gmm_xtabond2_parity.do"

@@ -118,13 +118,4 @@ def assess_diagnostics(
 
     return DiagnosticReport(checks=checks, recommendation=recommendation)
 
-from .diagnostics.panel import (
-    DiagnosticResult,
-    hausman_fe_re,
-    breusch_pagan_lm,
-    wooldridge_serial_correlation,
-    pesaran_cd,
-    modified_wald_groupwise_heteroskedasticity,
-)
 
-from .diagnostics.gmm import GmmDiagnostics

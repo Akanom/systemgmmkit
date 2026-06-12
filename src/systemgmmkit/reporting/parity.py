@@ -6,7 +6,6 @@ from typing import Any
 
 import pandas as pd
 
-
 REQUIRED_PARITY_COLUMNS = [
     "spec",
     "native_nobs",

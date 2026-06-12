@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
-
+from pathlib import Path
 
 README = Path("README.md")
 text = README.read_text(encoding="utf-8")

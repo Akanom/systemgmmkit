@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 path = Path("src/systemgmmkit/native_gmm.py")
 text = path.read_text(encoding="utf-8")

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pytest
 
-
 DIAGNOSTIC_CONFORMANCE_TARGETS = {
     "hausman_fe_re": "HIGH",
     "breusch_pagan_lm_re_vs_pooled": "HIGH",

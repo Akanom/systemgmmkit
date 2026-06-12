@@ -68,9 +68,16 @@ __all__ = [
     "DynamicPanelBackendError",
     "run_dynamic_panel_gmm",
     "run_system_gmm",
-    "run_difference_gmm",]
+    "run_difference_gmm",    "FirstDifferenceResult",
+    "ParityReport",
+    "ParityResult",
+    "classify_parity_result",
+    "first_difference",
+]
 
 __version__ = "0.4.1"
+
+import contextlib
 
 from .dynamic_panel import (
     DynamicPanelBackendError,
@@ -79,14 +86,10 @@ from .dynamic_panel import (
     run_system_gmm,
 )
 
-try:
+with contextlib.suppress(Exception):
     from .estimators.first_difference import FirstDifferenceResult, first_difference
-except Exception:
-    pass
 
-try:
+with contextlib.suppress(Exception):
     from .reporting import ParityReport, ParityResult, classify_parity_result
-except Exception:
-    pass
 
 from .estimators.first_difference import FirstDifferenceResult, first_difference

@@ -5,7 +5,6 @@ import pandas as pd
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
 
-
 df = pd.read_csv("artifacts/parity/xtabond2/system_gmm_benchmark.csv")
 
 spec = DynamicPanelSpec(

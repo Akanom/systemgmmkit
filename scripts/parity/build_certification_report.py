@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
-
 REPORT_PATH = Path("artifacts/parity/panel_econometrics_certification_report.md")
 
 
