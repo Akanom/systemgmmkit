@@ -2,6 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .gmm import GmmDiagnostics
+from .panel import (
+    DiagnosticResult,
+    breusch_pagan_lm,
+    hausman_fe_re,
+    modified_wald_groupwise_heteroskedasticity,
+    pesaran_cd,
+    wooldridge_serial_correlation,
+)
+
 
 @dataclass(frozen=True)
 class DiagnosticCheck:
@@ -43,8 +53,6 @@ def assess_diagnostics(
     n_instruments: int | None = None,
     n_entities: int | None = None,
 ) -> DiagnosticReport:
-    """Create a conservative interpretation of System GMM diagnostics."""
-
     checks: list[DiagnosticCheck] = []
 
     checks.append(
@@ -90,9 +98,11 @@ def assess_diagnostics(
 
     instrument_pass: bool | None = None
     instrument_value: float | None = None
+
     if n_instruments is not None and n_entities is not None and n_entities > 0:
         instrument_value = n_instruments / n_entities
         instrument_pass = n_instruments <= n_entities
+
     checks.append(
         DiagnosticCheck(
             "Instrument/entity ratio",
@@ -103,28 +113,28 @@ def assess_diagnostics(
     )
 
     failures = [c.name for c in checks if c.passed is False]
+
     if not failures:
         recommendation = "Diagnostics are broadly defensible. Interpret coefficients with normal dynamic-panel caution."
     elif "AR(2) p-value" in failures:
-        recommendation = (
-            "Do not rely on this specification until serial-correlation failure is resolved."
-        )
+        recommendation = "Do not rely on this specification until serial-correlation failure is resolved."
     elif "Instrument/entity ratio" in failures or "Hansen p-value" in failures:
         recommendation = "Reduce instrument count: collapse instruments, shorten lag windows, or move weakly endogenous blocks to IV-style treatment."
     else:
-        recommendation = (
-            "Use as sensitivity evidence only; explain diagnostic weaknesses transparently."
-        )
+        recommendation = "Use as sensitivity evidence only; explain diagnostic weaknesses transparently."
 
     return DiagnosticReport(checks=checks, recommendation=recommendation)
 
-from .diagnostics.panel import (
-    DiagnosticResult,
-    hausman_fe_re,
-    breusch_pagan_lm,
-    wooldridge_serial_correlation,
-    pesaran_cd,
-    modified_wald_groupwise_heteroskedasticity,
-)
 
-from .diagnostics.gmm import GmmDiagnostics
+__all__ = [
+    "DiagnosticCheck",
+    "DiagnosticReport",
+    "DiagnosticResult",
+    "GmmDiagnostics",
+    "assess_diagnostics",
+    "breusch_pagan_lm",
+    "hausman_fe_re",
+    "modified_wald_groupwise_heteroskedasticity",
+    "pesaran_cd",
+    "wooldridge_serial_correlation",
+]

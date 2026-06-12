@@ -1,9 +1,16 @@
 from __future__ import annotations
 
-from .diagnostics import DiagnosticReport
-from .pydynpd_backend import build_pydynpd_command
-from .spec import DynamicPanelSpec
-from .validation import PanelValidationReport, estimate_instrument_pressure
+from ..diagnostics import DiagnosticReport
+from ..pydynpd_backend import build_pydynpd_command
+from ..spec import DynamicPanelSpec
+from ..validation import PanelValidationReport, estimate_instrument_pressure
+
+from .parity import (
+    REQUIRED_PARITY_COLUMNS,
+    ParityReport,
+    ParityResult,
+    classify_parity_result,
+)
 
 
 def model_card_markdown(
@@ -14,8 +21,6 @@ def model_card_markdown(
     n_entities: int | None = None,
     n_time_dummies: int = 0,
 ) -> str:
-    """Generate a reproducible model card for thesis/reporting appendices."""
-
     lines: list[str] = []
     lines.append(f"# Model card: {spec.name}")
     lines.append("")
@@ -29,16 +34,19 @@ def model_card_markdown(
     lines.append(f"- Time dummies: `{spec.time_dummies}`")
     lines.append("")
     lines.append("## Instrument classification")
+
     if spec.gmm:
         lines.append("### GMM-style")
         for g in spec.gmm:
             eq = f", eq={g.eq}" if g.eq else ""
             lines.append(f"- `{g.variable}`: lags {g.min_lag}:{g.max_lag}{eq}")
+
     if spec.iv:
         lines.append("### IV-style / assumed exogenous")
         for iv in spec.iv:
             eq = f", eq={iv.eq}" if iv.eq else ""
             lines.append(f"- `{iv.variable}`{eq}")
+
     lines.append("")
     lines.append("## pydynpd command")
     lines.append("```text")
@@ -55,6 +63,7 @@ def model_card_markdown(
         )
         lines.append(f"- Balanced: `{panel_report.balanced}`")
         lines.append(f"- Duplicate entity-time rows: `{panel_report.duplicate_rows}`")
+
         if panel_report.warnings:
             lines.append("- Warnings:")
             for w in panel_report.warnings:
@@ -69,6 +78,7 @@ def model_card_markdown(
             system=spec.system,
             collapse=spec.collapse,
         )
+
         lines.append("")
         lines.append("## Instrument-pressure heuristic")
         lines.append(f"- Approximate instruments: `{pressure['approx_instruments']}`")
@@ -82,9 +92,11 @@ def model_card_markdown(
 
     return "\n".join(lines)
 
-from .reporting.parity import (
-    REQUIRED_PARITY_COLUMNS,
-    ParityReport,
-    ParityResult,
-    classify_parity_result,
-)
+
+__all__ = [
+    "REQUIRED_PARITY_COLUMNS",
+    "ParityReport",
+    "ParityResult",
+    "classify_parity_result",
+    "model_card_markdown",
+]

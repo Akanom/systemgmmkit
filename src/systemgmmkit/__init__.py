@@ -78,3 +78,15 @@ from .dynamic_panel import (
     run_dynamic_panel_gmm,
     run_system_gmm,
 )
+
+try:
+    from .estimators.first_difference import FirstDifferenceResult, first_difference
+except Exception:
+    pass
+
+try:
+    from .reporting import ParityReport, ParityResult, classify_parity_result
+except Exception:
+    pass
+
+from .estimators.first_difference import FirstDifferenceResult, first_difference
