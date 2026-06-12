@@ -30,6 +30,7 @@ class NativeGMMResult:
     covariance_type: str
     backend: str
     notes: list[str]
+    instrument_names: list[str] | None = None
 
     def summary_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -1196,4 +1197,6 @@ def run_native_dynamic_panel_gmm(
             "Not yet certified as xtabond2-equivalent.",
             "Use pydynpd for production System GMM until parity tests pass.",
         ],
+        instrument_names=list(instrument_names),
     )
+
