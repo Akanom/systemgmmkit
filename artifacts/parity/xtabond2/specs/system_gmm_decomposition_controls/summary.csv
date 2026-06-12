@@ -1,0 +1,2 @@
+spec,status,n_params_native,n_params_stata,max_abs_coef_diff,mean_abs_coef_diff,max_rel_se_diff,mean_rel_se_diff
+system_gmm_decomposition_controls,COMPARISON_GENERATED,6,6,5.672483627261471e-08,1.6238912802409484e-08,1.7823181494752802e-07,1.5294515059586921e-07

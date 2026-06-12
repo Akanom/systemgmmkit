@@ -1,0 +1,2 @@
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen_p,stata_sargan_p,stata_ar1_p,stata_ar2_p
+system_gmm_decomposition_controls,1248,96,12,.0063964091,.000012790501,.064423621,.15229951
