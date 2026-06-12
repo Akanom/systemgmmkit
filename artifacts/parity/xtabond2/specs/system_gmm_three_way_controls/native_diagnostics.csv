@@ -1,0 +1,2 @@
+spec,native_nobs,native_n_instruments,native_backend,native_covariance_type,native_instrument_names,native_hansen_p,native_ar1_p,native_ar2_p,native_j_stat,native_has_constant_param
+system_gmm_three_way_controls,1248,16,native-gmm,robust-clustered-two-step-windmeijer,D:y:L2;D:y:L3;D:x:L2;D:x:L3;D:x_frag_polity:L2;D:x_frag_polity:L3;IV:w;IV:frag;IV:polity;IV:x_frag;IV:x_polity;IV:frag_polity;L:diff:y:L1;L:diff:x:L1;L:diff:x_frag_polity:L1;L:constant,0.021436332137925285,2.5861703776591025e-60,0.986254686915316,14.852396677473228,True

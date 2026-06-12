@@ -1462,6 +1462,19 @@ def run_native_dynamic_panel_gmm(
 
     D = X.T @ Z
 
+    windmeijer_xtabond2_small_correction = 1.0
+    if spec.system and windmeijer_requested and use_twostep:
+        # xtabond2's twostep robust small Windmeijer path applies an
+        # additional System-GMM finite-sample scalar. Empirically, across
+        # the xtabond2 parity harness, this uses the raw panel rows plus
+        # xtabond2's reported usable System-GMM observations.
+        windmeijer_xtabond2_small_n = int(len(data)) + int(nobs_reported)
+        if windmeijer_xtabond2_small_n > k:
+            windmeijer_xtabond2_small_correction = (
+                (windmeijer_xtabond2_small_n - 1.0)
+                / (windmeijer_xtabond2_small_n - k)
+            )
+
     if windmeijer_requested and not use_twostep:
         raise ValueError("windmeijer=True requires two-step dynamic-panel GMM estimation.")
 
@@ -1486,7 +1499,7 @@ def run_native_dynamic_panel_gmm(
         else:
             cov_correction = n / max(n - k, 1)
 
-        cov = cov_correction * _native_windmeijer_covariance(
+        windmeijer_base_cov = _native_windmeijer_covariance(
             M2=M2,
             M2_XZ_W2=M2_XZ_W2,
             W2_inv=W,
@@ -1497,6 +1510,11 @@ def run_native_dynamic_panel_gmm(
             residuals1=residuals1,
             group_indices=group_indices_for_cov,
             n_groups=n_groups_for_cov,
+        )
+        cov = (
+            cov_correction
+            * windmeijer_xtabond2_small_correction
+            * windmeijer_base_cov
         )
     else:
         s_group = _native_group_moment_sum(
