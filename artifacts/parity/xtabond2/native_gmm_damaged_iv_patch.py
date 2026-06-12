@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+import os
+from pathlib import Path
+
 from .fixed_effects import _normal_pvalues_from_t, _require_columns
 from .spec import DynamicPanelSpec
 
@@ -629,63 +632,65 @@ def _native_make_pydynpd_compat_z(
     for label in ordered_labels:
         if label.startswith("IV:"):
             var = label.split(":", 1)[1]
+
             if var not in x_cols:
-                raise KeyError(f"Cannot build pydynpd IV column {label!r}; {var!r} not in X names.")
-            _iv_col = np.asarray(X[:, x_cols[var]], dtype=float)
-
-            # SYSTEMGMMKIT_SYSTEM_IV_Z_MODE diagnostic
-            # Default "stacked_x" preserves current behavior:
-            #   IV:* is the transformed/stacked X column.
-            #
-            # Alternative modes help identify whether System-GMM parity gaps
-            # come from equation-specific IV placement:
-            #   level_only -> keep IV values only on level-equation rows
-            #   diff_only  -> keep IV values only on differenced-equation rows
-            #   zero       -> remove IV values while preserving column count
-            if spec.system:
-                import os as _native_iv_z_mode_os
-
-                _iv_mode = (
-                    _native_iv_z_mode_os.getenv(
-                        "SYSTEMGMMKIT_SYSTEM_IV_Z_MODE",
-                        "stacked_x",
-                    )
-                    .strip()
-                    .lower()
+                raise KeyError(
+                    f"Cannot build pydynpd IV column {label!r}; {var!r} not in X names."
                 )
 
-                if "_con" in x_cols:
-                    _level_mask = np.isclose(
-                        np.asarray(X[:, x_cols["_con"]], dtype=float),
-                        1.0,
-                    )
+            _iv_col = np.asarray(X[:, x_cols[var]], dtype=float)
 
-                    if _iv_mode == "level_only":
-                        _iv_col = np.where(_level_mask, _iv_col, 0.0)
-                    elif _iv_mode == "diff_only":
-                        _iv_col = np.where(~_level_mask, _iv_col, 0.0)
-                    elif _iv_mode == "zero":
-                        _iv_col = np.zeros_like(_iv_col)
-                    elif _iv_mode in {"stacked_x", "default", ""}:
-                        pass
+            if spec.system:
+                # In System GMM, `_con` is level-equation only:
+                #   diff rows  -> _con = 0
+                #   level rows -> _con = 1
+                #
+                # Use this marker to respect xtabond2-style IV equation scope:
+                #   iv(w, eq(level)) -> w appears only on level-equation rows.
+                if "_con" in x_cols:
+                    _con_col = np.asarray(X[:, x_cols["_con"]], dtype=float)
+                    _level_rows = np.isclose(_con_col, 1.0)
+                    _diff_rows = ~_level_rows
+                else:
+                    _level_rows = np.zeros_like(_iv_col, dtype=bool)
+                    _diff_rows = np.ones_like(_iv_col, dtype=bool)
+
+                matching_iv_blocks = [
+                    block
+                    for block in spec.iv
+                    if _native_style_variable(block) == var
+                ]
+
+                iv_equation = None
+                if matching_iv_blocks:
+                    iv_equation = getattr(matching_iv_blocks[0], "equation", None)
+
+                if iv_equation is None:
+                    col = _iv_col
+
+                else:
+                    eq = str(iv_equation).strip().lower()
+
+                    if eq in {"level", "levels", "l"}:
+                        col = np.where(_level_rows, _iv_col, 0.0)
+
+                    elif eq in {"diff", "difference", "d"}:
+                        col = np.where(_diff_rows, _iv_col, 0.0)
+
+                    elif eq in {"both", "all", "system"}:
+                        col = _iv_col
+
                     else:
                         raise ValueError(
-                            "Unsupported SYSTEMGMMKIT_SYSTEM_IV_Z_MODE="
-                            f"{_iv_mode!r}. Use stacked_x, level_only, diff_only, or zero."
+                            f"Unsupported IV equation scope {iv_equation!r} for {label!r}. "
+                            "Use level, diff, both/all, or None."
                         )
 
-            cols.append(_iv_col)
-            labels.append(label)
+            else:
+                col = _iv_col
+
+            cols.append(col)
             continue
-
-        if label not in native_cols:
-            raise KeyError(
-                f"Cannot build pydynpd instrument {label!r}; available native instruments are "
-                f"{instrument_names!r}."
-            )
-
-        cols.append(np.asarray(Z[:, native_cols[label]], dtype=float))
-        labels.append(label)
 
     if not cols:
         raise ValueError("No instruments were built for pydynpd-compatible Z.")
@@ -1302,7 +1307,6 @@ def run_native_dynamic_panel_gmm(
         coef_names=names,
         system=spec.system,
     )
-
     _u_col = residual_vec.reshape(-1, 1)
     _ztu = Z.T @ _u_col
     _j_stat = float((_ztu.T @ W @ _ztu).squeeze())
@@ -1310,14 +1314,17 @@ def run_native_dynamic_panel_gmm(
     _w_norm = float(np.linalg.norm(W))
 
     # Optional parity/debug export for xtabond2 internals.
-    # Enable with:
+    #
+    # Enable from PowerShell with:
     #   $env:SYSTEMGMMKIT_EXPORT_GMM_DEBUG = "1"
     #   $env:SYSTEMGMMKIT_GMM_DEBUG_DIR = "artifacts/parity/xtabond2"
-    if __import__("os").environ.get("SYSTEMGMMKIT_EXPORT_GMM_DEBUG") == "1":
-        from pathlib import Path as _GmmDebugPath
-
-        debug_dir = _GmmDebugPath(
-            __import__("os").environ.get(
+    #
+    # This exports the exact native objects used in the Hansen/J calculation:
+    #   Ze = Z'u
+    #   W  = native weighting matrix used in J = (Z'u)' W (Z'u)
+    if os.environ.get("SYSTEMGMMKIT_EXPORT_GMM_DEBUG") == "1":
+        debug_dir = Path(
+            os.environ.get(
                 "SYSTEMGMMKIT_GMM_DEBUG_DIR",
                 "artifacts/parity/xtabond2",
             )
@@ -1432,7 +1439,5 @@ def run_native_dynamic_panel_gmm(
         ztu_norm=_ztu_norm,
         w_norm=_w_norm,
     )
-
-
 
 

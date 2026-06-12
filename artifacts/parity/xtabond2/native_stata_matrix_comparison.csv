@@ -1,7 +1,0 @@
-object,native_nobs,native_n_instruments,native_n_params,native_params,native_instruments,native_z_shape,native_w_shape,native_j_stat,native_ztu_norm,native_w_norm,native_hansen_p,native_ar1_p,native_ar2_p,status,shape,frobenius_norm,min,max
-native_result,1248.0,8.0,4.0,L1.y;x;w;_con,D:y:L2;D:y:L3;D:x:L2;D:x:L3;IV:w;L:diff:y:L1;L:diff:x:L1;L:constant,"(2400, 8)","(8, 8)",147.83846658036637,87.2231693236367,0.7835812218923436,5.913957508132905e-31,1.645923021644292e-58,0.9805154194495335,,,,,
-stata_A1,,,,,,,,,,,,,,loaded,"(8, 8)",0.011610467201700291,-0.0006738999093036,0.0055128894606397
-stata_A2,,,,,,,,,,,,,,loaded,"(8, 8)",0.010632316836412626,-0.0012632520502041,0.0051043735091794
-stata_b,,,,,,,,,,,,,,loaded,"(1, 4)",1.9849740839068999,-0.4025232692599282,1.841295542935252
-stata_V,,,,,,,,,,,,,,loaded,"(4, 4)",0.38681963294933386,-0.0128988096786525,0.384167966930426
-stata_Ze,,,,,,,,,,,,,,loaded,"(8, 1)",117.3414047434229,-75.43409332789572,68.58108616567515
