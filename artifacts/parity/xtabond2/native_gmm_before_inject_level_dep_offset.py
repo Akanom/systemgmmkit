@@ -372,42 +372,6 @@ def _build_native_matrices(
                     if _level_diff_mode in {"lag1", "default", ""}:
                         left = _safe_get(s, pos - 1)
                         right = _safe_get(s, pos - 2)
-                        # xtabond2 parity diagnostic:
-                        # For gmm(L.y, lag(2 3)), the System-GMM level-equation
-                        # instrument for the lagged dependent variable must use:
-                        #   y[t-2] - y[t-3]
-                        # not:
-                        #   y[t-1] - y[t-2]
-                        import os as _native_level_dep_offset_os
-
-                        _level_dep_offset_enabled = (
-                            _native_level_dep_offset_os.getenv(
-                                "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
-                                "0",
-                            )
-                            .strip()
-                            .lower()
-                            in {"1", "true", "yes", "on"}
-                        )
-
-                        _dep_name = getattr(spec, "dependent", None)
-                        _regressors = set(
-                            str(v) for v in (getattr(spec, "regressors", None) or [])
-                        )
-
-                        _is_lagged_dep_block = (
-                            _dep_name is not None
-                            and str(block.variable) == str(_dep_name)
-                            and (
-                                f"L1.{_dep_name}" in _regressors
-                                or f"L.{_dep_name}" in _regressors
-                            )
-                        )
-
-                        if _level_dep_offset_enabled and _is_lagged_dep_block:
-                            left = _safe_get(s, pos - 2)
-                            right = _safe_get(s, pos - 3)
-
                         if left is not None and right is not None:
                             z_dict[f"L:diff:{block.variable}:L1"] = left - right
 
