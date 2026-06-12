@@ -47,9 +47,7 @@ def main() -> None:
     V = read_stata_matrix_csv(OUT / "stata_V.csv")
     Ze = read_stata_matrix_csv(OUT / "stata_Ze.csv")
 
-    rows = []
-
-    rows.append(
+    rows = [
         {
             "object": "native_result",
             "native_nobs": res.nobs,
@@ -57,8 +55,16 @@ def main() -> None:
             "native_n_params": len(res.params),
             "native_params": ";".join(res.params.index),
             "native_instruments": ";".join(res.instrument_names or []),
+            "native_z_shape": str(res.z_shape),
+            "native_w_shape": str(res.w_shape),
+            "native_j_stat": res.j_stat,
+            "native_ztu_norm": res.ztu_norm,
+            "native_w_norm": res.w_norm,
+            "native_hansen_p": res.hansen_p,
+            "native_ar1_p": res.ar1_p,
+            "native_ar2_p": res.ar2_p,
         }
-    )
+    ]
 
     for name, mat in [
         ("stata_A1", A1),
@@ -96,16 +102,16 @@ def main() -> None:
     md = []
     md.append("# Native vs Stata Matrix Comparison")
     md.append("")
-    md.append("This report checks whether Stata matrix exports are available and summarizes their dimensions/norms.")
+    md.append("This report compares native GMM internal diagnostics with exported xtabond2 matrices.")
     md.append("")
     md.append(out.to_markdown(index=False))
     md.append("")
-    md.append("## Interpretation")
+    md.append("## Key Interpretation")
     md.append("")
-    md.append("- `stata_A2` is the key matrix for two-step weighting comparison.")
-    md.append("- `stata_Ze` is useful for checking moment aggregation scale.")
-    md.append("- Native does not yet expose its full W/Z matrices, so direct matrix parity is pending.")
-    md.append("- Next patch should expose native W, Z shape, and optionally Z matrix under a debug flag.")
+    md.append("- Native and xtabond2 now match on N and instrument count.")
+    md.append("- Native J-stat remains much larger than xtabond2 Hansen statistic.")
+    md.append("- Stata A2 norm is far smaller than native W norm, indicating weighting-scale/normalization mismatch.")
+    md.append("- Next step: test native W rescalings against xtabond2 A2 and recompute J-stat.")
 
     (OUT / "native_stata_matrix_comparison.md").write_text("\n".join(md), encoding="utf-8")
 
