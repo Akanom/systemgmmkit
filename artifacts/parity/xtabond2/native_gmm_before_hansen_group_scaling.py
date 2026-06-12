@@ -1381,33 +1381,7 @@ def run_native_dynamic_panel_gmm(
 
     _u_col = residual_vec.reshape(-1, 1)
     _ztu = Z.T @ _u_col
-    _j_stat_raw = float((_ztu.T @ W @ _ztu).squeeze())
-
-    # xtabond2-compatible Hansen scaling:
-    #
-    # xtabond2's e(A2) equals the native two-step weighting matrix divided by
-    # the number of panel groups. Therefore Hansen J must use W / n_groups.
-    # This leaves the coefficient estimates unchanged because scalar rescaling
-    # of W does not change the GMM argmin.
-    import os as _native_hansen_scale_os
-
-    _hansen_group_scale_mode = (
-        _native_hansen_scale_os.getenv(
-            "SYSTEMGMMKIT_HANSEN_GROUP_SCALE",
-            "1",
-        )
-        .strip()
-        .lower()
-    )
-
-    # Use the input panel groups here because the result object has not
-    # been constructed yet at this point in the function.
-    _n_groups_for_hansen = max(int(data[entity].nunique()), 1)
-
-    if _hansen_group_scale_mode in {"1", "true", "yes", "on"}:
-        _j_stat = _j_stat_raw / _n_groups_for_hansen
-    else:
-        _j_stat = _j_stat_raw
+    _j_stat = float((_ztu.T @ W @ _ztu).squeeze())
     _ztu_norm = float(np.linalg.norm(_ztu))
     _w_norm = float(np.linalg.norm(W))
 

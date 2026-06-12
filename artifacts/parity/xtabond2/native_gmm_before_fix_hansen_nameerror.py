@@ -1400,9 +1400,7 @@ def run_native_dynamic_panel_gmm(
         .lower()
     )
 
-    # Use the input panel groups here because the result object has not
-    # been constructed yet at this point in the function.
-    _n_groups_for_hansen = max(int(data[entity].nunique()), 1)
+    _n_groups_for_hansen = max(int(getattr(result, "n_groups", 0) or 0), 1)
 
     if _hansen_group_scale_mode in {"1", "true", "yes", "on"}:
         _j_stat = _j_stat_raw / _n_groups_for_hansen
