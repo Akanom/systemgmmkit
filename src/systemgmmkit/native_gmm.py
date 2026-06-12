@@ -36,6 +36,11 @@ class NativeGMMResult:
     sargan_p: float | None = None
     ar1_p: float | None = None
     ar2_p: float | None = None
+    z_shape: tuple[int, int] | None = None
+    w_shape: tuple[int, int] | None = None
+    j_stat: float | None = None
+    ztu_norm: float | None = None
+    w_norm: float | None = None
 
     def summary_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -1298,6 +1303,12 @@ def run_native_dynamic_panel_gmm(
         system=spec.system,
     )
 
+    _u_col = residual_vec.reshape(-1, 1)
+    _ztu = Z.T @ _u_col
+    _j_stat = float((_ztu.T @ W @ _ztu).squeeze())
+    _ztu_norm = float(np.linalg.norm(_ztu))
+    _w_norm = float(np.linalg.norm(W))
+
     return NativeGMMResult(
         spec=spec,
         nobs=int(nobs_reported),
@@ -1319,6 +1330,11 @@ def run_native_dynamic_panel_gmm(
         sargan_p=sargan_p,
         ar1_p=ar1_p,
         ar2_p=ar2_p,
+        z_shape=tuple(Z.shape),
+        w_shape=tuple(W.shape),
+        j_stat=_j_stat,
+        ztu_norm=_ztu_norm,
+        w_norm=_w_norm,
     )
 
 

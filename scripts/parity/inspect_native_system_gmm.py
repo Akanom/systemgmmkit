@@ -2,20 +2,26 @@ from __future__ import annotations
 
 import pandas as pd
 
-from systemgmmkit import build_system_gmm_spec
+from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
 
 
 df = pd.read_csv("artifacts/parity/xtabond2/system_gmm_benchmark.csv")
 
-spec = build_system_gmm_spec(
+spec = DynamicPanelSpec(
     dependent="y",
-    regressors=["x", "w"],
-    endogenous=["x"],
-    exogenous=["w"],
-    dependent_lag_limits=(2, 3),
-    collapse=True,
+    regressors=["L1.y", "x", "w"],
+    gmm=[
+        GMMStyle(variable="y", min_lag=2, max_lag=3),
+        GMMStyle(variable="x", min_lag=2, max_lag=3),
+    ],
+    iv=[IVStyle(variable="w")],
     time_dummies=False,
+    system=True,
+    collapse=True,
+    transformation="fod",
+    steps="twostep",
+    name="system_gmm_baseline_controls",
 )
 
 res = run_native_dynamic_panel_gmm(spec, df, entity="id", time="t")
@@ -23,9 +29,13 @@ res = run_native_dynamic_panel_gmm(spec, df, entity="id", time="t")
 print("nobs:", res.nobs)
 print("n_instruments:", res.n_instruments)
 print("params:", list(res.params.index))
-
-for attr in ["instrument_names", "instruments", "Z", "z_names", "diagnostics", "metadata", "row_meta"]:
-    print("\nATTR", attr, "=", hasattr(res, attr))
-    if hasattr(res, attr):
-        value = getattr(res, attr)
-        print(value if isinstance(value, (str, int, float, list, tuple, dict)) else type(value))
+print("instrument_names:", res.instrument_names)
+print("hansen_p:", res.hansen_p)
+print("sargan_p:", res.sargan_p)
+print("ar1_p:", res.ar1_p)
+print("ar2_p:", res.ar2_p)
+print("z_shape:", res.z_shape)
+print("w_shape:", res.w_shape)
+print("j_stat:", res.j_stat)
+print("ztu_norm:", res.ztu_norm)
+print("w_norm:", res.w_norm)
