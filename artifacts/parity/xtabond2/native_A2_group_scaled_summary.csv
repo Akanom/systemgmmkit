@@ -1,0 +1,2 @@
+n_groups,native_a2_norm_reordered,native_a2_norm_reordered_div_groups,stata_a2_norm,a2_scaled_max_abs_diff,a2_scaled_mean_abs_diff,a2_scaled_rmse,j_from_stata_a2,j_from_native_scaled_a2,j_from_native_unscaled_a2,xtabond2_hansen,abs_diff_j_stata_a2_vs_xtabond2,abs_diff_j_native_scaled_a2_vs_xtabond2
+96,1.020702558751772,0.01063231832033096,0.010632316836412626,6.93614438454504e-10,1.1429796666644038e-10,1.9064343666382593e-10,6.577371156436254,6.577372174093681,631.4277287129928,6.577371156435732,5.213607323639735e-13,1.017657949020645e-06
