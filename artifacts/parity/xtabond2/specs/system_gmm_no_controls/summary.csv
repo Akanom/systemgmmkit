@@ -1,2 +1,2 @@
-spec,status,message
-system_gmm_no_controls,STATA_ARTIFACTS_PENDING,Run the generated Stata do-file before strict comparison.
+spec,status,n_params_native,n_params_stata,max_abs_coef_diff,mean_abs_coef_diff,max_rel_se_diff,mean_rel_se_diff
+system_gmm_no_controls,COMPARISON_GENERATED,3,3,1.5128238173289787e-07,5.537261781503785e-08,0.0003855918405828481,0.00038553871342321807

@@ -18,7 +18,6 @@ if _rc {
 xtabond2 y L.y x, ///
     gmm(L.y x, lag(2 3) collapse) ///
     twostep robust small ///
-    noleveleq
 
 matrix b = e(b)
 matrix V = e(V)
@@ -43,14 +42,14 @@ restore
 
 preserve
 clear
-svmat double b, names(col)
+svmat double b, names(b)
 gen row_id = _n
 export delimited using "artifacts/parity/xtabond2/specs/system_gmm_no_controls/stata_b.csv", replace
 restore
 
 preserve
 clear
-svmat double V, names(col)
+svmat double V, names(v)
 gen row_id = _n
 export delimited using "artifacts/parity/xtabond2/specs/system_gmm_no_controls/stata_V.csv", replace
 restore

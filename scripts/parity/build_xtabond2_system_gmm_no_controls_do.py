@@ -56,7 +56,6 @@ if _rc {{
 xtabond2 y L.y x, ///
     gmm(L.y x, lag(2 3) collapse) ///
     twostep robust small ///
-    noleveleq
 
 matrix b = e(b)
 matrix V = e(V)
@@ -81,14 +80,14 @@ restore
 
 preserve
 clear
-svmat double b, names(col)
+svmat double b, names(b)
 gen row_id = _n
 export delimited using "{(OUT / "stata_b.csv").as_posix()}", replace
 restore
 
 preserve
 clear
-svmat double V, names(col)
+svmat double V, names(v)
 gen row_id = _n
 export delimited using "{(OUT / "stata_V.csv").as_posix()}", replace
 restore
@@ -106,3 +105,5 @@ export delimited using "{(OUT / "stata_params.csv").as_posix()}", replace
 
 if __name__ == "__main__":
     main()
+
+
