@@ -41,7 +41,10 @@ def main() -> None:
     params = pd.DataFrame(
         {
             "param": list(res.params.index),
-            "native_coef": list(res.params.values),
+            "native_coef": res.params.to_numpy(dtype=float),
+            "native_std_err": res.std_errors.reindex(res.params.index).to_numpy(dtype=float),
+            "native_z": res.zstats.reindex(res.params.index).to_numpy(dtype=float),
+            "native_p_value": res.pvalues.reindex(res.params.index).to_numpy(dtype=float),
         }
     )
 
@@ -57,10 +60,12 @@ def main() -> None:
                 "native_nobs": getattr(res, "nobs", None),
                 "native_n_instruments": getattr(res, "n_instruments", None),
                 "native_backend": getattr(res, "backend", None),
+                "native_covariance_type": getattr(res, "covariance_type", None),
                 "native_instrument_names": ";".join(getattr(res, "instrument_names", []) or []),
                 "native_hansen_p": getattr(res, "hansen_p", None),
                 "native_ar1_p": getattr(res, "ar1_p", None),
                 "native_ar2_p": getattr(res, "ar2_p", None),
+                "native_j_stat": getattr(res, "j_stat", None),
                 "native_has_constant_param": "_con" in list(res.params.index),
             }
         ]

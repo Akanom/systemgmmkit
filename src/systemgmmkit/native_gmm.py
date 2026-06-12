@@ -12,12 +12,14 @@ from .spec import DynamicPanelSpec
 
 @dataclass(frozen=True)
 class NativeGMMResult:
-    """Experimental native dynamic-panel GMM result.
+    """Native dynamic-panel GMM result.
 
-    This engine is intentionally marked experimental. It provides a transparent
-    one-step implementation useful for development and parity scaffolding, but
-    pydynpd remains the recommended production backend until documented parity
-    tests against xtabond2 are passed.
+    The native Difference GMM path has strict benchmark parity. The native
+    System GMM path has baseline xtabond2 parity for the current collapsed
+    two-step benchmark covering coefficients, raw moments, group-scaled A2,
+    and Hansen J.
+
+    Windmeijer-corrected two-step standard errors are not yet certified.
     """
 
     spec: DynamicPanelSpec
@@ -1151,11 +1153,16 @@ def run_native_dynamic_panel_gmm(
     time: str,
     windmeijer: bool = False,
 ) -> NativeGMMResult:
-    """Run an experimental native one-step Difference/System GMM estimator.
+    """Run the native Difference/System GMM estimator.
+
+    Native System GMM has baseline xtabond2 parity for the current collapsed
+    two-step benchmark covering coefficients, raw moments, group-scaled A2,
+    and Hansen J.
 
     Windmeijer correction is deliberately not implemented yet because an
-    incorrect correction would be worse than no correction. Use pydynpd for
-    production two-step Windmeijer-style inference until native parity is done.
+    incorrect correction would be worse than no correction. Use a validated
+    backend for Windmeijer-style two-step inference until native SE parity is
+    implemented and tested.
     """
 
     if windmeijer:
@@ -1353,9 +1360,39 @@ def run_native_dynamic_panel_gmm(
     residual_vec = np.asarray(residuals, dtype=float).reshape(-1)
 
     bread = np.linalg.pinv(xzwzx)
-    meat_inner = Z.T @ ((residual_vec**2)[:, None] * Z)
-    meat = X.T @ Z @ W @ meat_inner @ W @ Z.T @ X
-    cov = (n / max(n - k, 1)) * bread @ meat @ bread
+
+    # Dynamic-panel GMM robust covariance must be based on entity-level moment
+    # sums, not row-wise White meat. For entity i, the score contribution is
+    # g_i = Z_i' u_i. The robust S matrix is sum_i g_i g_i'.
+    #
+    # This is still not Windmeijer-corrected. Windmeijer is an additional
+    # finite-sample correction for two-step GMM standard errors.
+    row_entities_for_cov = data.loc[row_index, entity].to_numpy()
+    unique_entities_for_cov = pd.unique(row_entities_for_cov)
+    n_groups_for_cov = int(len(unique_entities_for_cov))
+
+    s_group = np.zeros((Z.shape[1], Z.shape[1]), dtype=float)
+
+    u_col_for_cov = residual_vec.reshape(-1, 1)
+
+    for ent_value in unique_entities_for_cov:
+        mask = row_entities_for_cov == ent_value
+        Zi = Z[mask, :]
+        ui = u_col_for_cov[mask, :]
+        gi = Zi.T @ ui
+        s_group += gi @ gi.T
+
+    D = X.T @ Z
+    meat = D @ W @ s_group @ W @ D.T
+
+    if n_groups_for_cov > 1:
+        cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+            (n - 1.0) / max(n - k, 1)
+        )
+    else:
+        cov_correction = n / max(n - k, 1)
+
+    cov = cov_correction * bread @ meat @ bread
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
     with np.errstate(divide="ignore", invalid="ignore"):
         zstats = beta_vec / se
@@ -1516,12 +1553,16 @@ def run_native_dynamic_panel_gmm(
         zstats=pd.Series(zstats, index=names, name="z"),
         pvalues=pd.Series(pvalues, index=names, name="p_value"),
         residuals=pd.Series(residual_vec, index=row_index, name="residual"),
-        covariance_type="experimental-robust-one-step",
-        backend="native-experimental-gmm",
+        covariance_type=(
+            "robust-clustered-two-step-uncorrected"
+            if use_twostep
+            else "robust-clustered-one-step"
+        ),
+        backend="native-gmm",
         notes=[
-            "Experimental native dynamic-panel GMM engine.",
-            "Not yet certified as xtabond2-equivalent.",
-            "Use pydynpd for production System GMM until parity tests pass.",
+            "Native dynamic-panel GMM engine.",
+            "Native System GMM baseline parity with xtabond2 is verified for coefficients, raw moments, group-scaled A2, and Hansen J on the current collapsed two-step benchmark.",
+            "Windmeijer-corrected two-step standard errors are not yet certified.",
         ],
         instrument_names=list(instrument_names),
         hansen_p=hansen_p,

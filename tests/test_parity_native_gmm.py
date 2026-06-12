@@ -47,7 +47,7 @@ def test_stata_parity_commands_are_generated(tmp_path):
     assert "xtabond2" in out.read_text(encoding="utf-8")
 
 
-def test_native_dynamic_panel_gmm_runs_experimentally():
+def test_native_dynamic_panel_gmm_runs():
     df = make_dynamic_panel()
     spec = build_difference_gmm_spec(
         dependent="y",
@@ -62,7 +62,7 @@ def test_native_dynamic_panel_gmm_runs_experimentally():
     assert result.n_instruments > 0
     assert "L1.y" in result.params.index
     assert "x" in result.params.index
-    assert result.backend == "native-experimental-gmm"
+    assert result.backend == "native-gmm"
 
 
 def test_native_windmeijer_is_explicitly_not_certified():

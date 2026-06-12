@@ -59,7 +59,7 @@ def _assert_basic_gmm_result(res):
     assert hasattr(res, "params")
     assert "L1.y" in res.params.index
     assert "x" in res.params.index
-    assert res.backend == "native-experimental-gmm"
+    assert res.backend == "native-gmm"
 
 
 def test_difference_gmm_balanced_collapsed_lag_2_3():
