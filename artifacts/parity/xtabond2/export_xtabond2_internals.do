@@ -1,4 +1,4 @@
-cd "C:\Users\omoko\OneDrive\Python packages\systemgmmkit"
+* Run this do-file from the repository root.
 
 import delimited using "artifacts/parity/xtabond2/system_gmm_benchmark.csv", clear
 xtset id t

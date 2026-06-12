@@ -1,2 +1,2 @@
 native_params_file,covariance_type_values,n_params,max_abs_diff,mean_abs_diff,max_rel_diff,mean_rel_diff,max_rel_tol,max_abs_tol,pass_rel_tol,pass_abs_tol,passed
-C:\Users\omoko\OneDrive\Python packages\systemgmmkit\artifacts\parity\xtabond2\specs\system_gmm_baseline_controls\windmeijer\native_params.csv,robust-clustered-two-step-windmeijer,4,0.00035864438284172184,0.00011649590974425507,0.0005786333468554027,0.00057858435445736,0.001,,True,True,True
+artifacts\parity\xtabond2\specs\system_gmm_baseline_controls\windmeijer\native_params.csv,robust-clustered-two-step-windmeijer,4,2.861372391249617e-07,9.630225123596903e-08,5.731421140090385e-07,5.106718145337508e-07,0.001,,True,True,True

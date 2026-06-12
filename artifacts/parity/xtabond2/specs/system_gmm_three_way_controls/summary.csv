@@ -1,0 +1,2 @@
+spec,status,n_params_native,n_params_stata,max_abs_coef_diff,mean_abs_coef_diff,max_rel_se_diff,mean_rel_se_diff
+system_gmm_three_way_controls,COMPARISON_GENERATED,10,10,5.0513966898257934e-08,1.29721588158771e-08,2.711406085852212e-06,2.632516011807739e-06
