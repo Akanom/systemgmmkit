@@ -213,7 +213,7 @@ def _build_native_matrices(
                 _lag_offset_mode = (
                     _native_diff_gmm_lag_os.getenv(
                         "SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET",
-                        "1",
+                        "0",
                     )
                     .strip()
                     .lower()
@@ -383,7 +383,7 @@ def _build_native_matrices(
                         _level_dep_offset_enabled = (
                             _native_level_dep_offset_os.getenv(
                                 "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
-                                "1",
+                                "0",
                             )
                             .strip()
                             .lower()
@@ -724,7 +724,7 @@ def _native_make_pydynpd_compat_z(
                 _iv_mode = (
                     _native_iv_z_mode_os.getenv(
                         "SYSTEMGMMKIT_SYSTEM_IV_Z_MODE",
-                        "level_only",
+                        "stacked_x",
                     )
                     .strip()
                     .lower()
