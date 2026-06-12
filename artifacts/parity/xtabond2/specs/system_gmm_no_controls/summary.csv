@@ -1,0 +1,2 @@
+spec,status,message
+system_gmm_no_controls,STATA_ARTIFACTS_PENDING,Run the generated Stata do-file before strict comparison.
