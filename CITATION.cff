@@ -7,8 +7,8 @@ authors:
     given-names: Oluwajuwon Mayomi
 repository-code: "https://github.com/Akanom/systemgmmkit"
 license: MIT
-version: "0.4.1"
-date-released: "2026-06-06"
+version: "0.5.0"
+date-released: "2026-06-12"
 keywords:
   - panel data
   - econometrics

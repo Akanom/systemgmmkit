@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- Added native Windmeijer-corrected two-step covariance support for native dynamic-panel GMM.
+- Certified native System GMM Windmeijer standard errors against Stata `xtabond2` `e(V)` on the current collapsed two-step benchmark.
+- Preserved the uncorrected two-step clustered covariance benchmark path through an explicit environment toggle.
+- Cleaned tracked parity/debug artifacts so Ruff and CI validate only intended package, test, and benchmark files.
+- Updated README validation wording to document Windmeijer parity certification while keeping Stata-equivalence claims benchmark-specific.
+
 ## 0.4.1
 
 - Added a structured `PydynpdGMMResult` adapter for pydynpd backend runs.
