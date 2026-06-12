@@ -1,0 +1,2 @@
+spec,nobs,n_instruments,n_params,overid_df,residual_norm,residual_ss,params,instrument_names,hansen_p,sargan_p,ar1_p,ar2_p
+system_gmm_baseline_controls,1248,8,4,4,98.19707636416624,9642.665806469895,L1.y;x;w;_con,D:y:L2;D:y:L3;D:x:L2;D:x:L3;IV:w;L:diff:y:L1;L:diff:x:L1;L:constant,5.913957508132905e-31,5.913957508132905e-31,1.645923021644292e-58,0.9805154194495335
