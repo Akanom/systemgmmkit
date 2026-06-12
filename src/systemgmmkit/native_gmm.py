@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from .fixed_effects import _normal_pvalues_from_t, _require_columns
 from .spec import DynamicPanelSpec
@@ -967,6 +968,100 @@ def _native_gmm_beta(
     return np.linalg.pinv(M_inv) @ (XZ_W @ Z2.T @ y2)
 
 
+
+def _native_overid_diagnostics(
+    *,
+    residuals: np.ndarray,
+    Z: np.ndarray,
+    W: np.ndarray,
+    n_params: int,
+) -> tuple[float | None, float | None]:
+    """Experimental Hansen/Sargan-style overidentification diagnostics.
+
+    This is a native diagnostic approximation. It is intentionally exposed as
+    experimental until strict xtabond2 parity is certified.
+    """
+    n_instr = int(Z.shape[1])
+    df = n_instr - int(n_params)
+
+    if df <= 0:
+        return None, None
+
+    u = np.asarray(residuals, dtype=float).reshape(-1, 1)
+
+    try:
+        j_stat = float((u.T @ Z @ W @ Z.T @ u).squeeze())
+    except Exception:
+        return None, None
+
+    if not np.isfinite(j_stat) or j_stat < 0:
+        return None, None
+
+    pvalue = float(stats.chi2.sf(j_stat, df))
+    return pvalue, pvalue
+
+
+def _native_ab_serial_correlation_pvalues(
+    *,
+    data: pd.DataFrame,
+    entity: str,
+    time: str,
+    row_index: np.ndarray,
+    residuals: np.ndarray,
+    X: np.ndarray,
+    coef_names: list[str],
+    system: bool,
+) -> tuple[float | None, float | None]:
+    """Experimental Arellano-Bond AR(1)/AR(2)-style residual tests.
+
+    Uses residuals from differenced-equation rows. For System GMM, level rows
+    are excluded using the level-only `_con` marker.
+    """
+    try:
+        resid = np.asarray(residuals, dtype=float).reshape(-1)
+        idx = np.asarray(row_index)
+
+        if system and "_con" in coef_names:
+            con_col = coef_names.index("_con")
+            diff_mask = ~np.isclose(np.asarray(X[:, con_col], dtype=float), 1.0)
+        else:
+            diff_mask = np.ones_like(resid, dtype=bool)
+
+        idx = idx[diff_mask]
+        resid = resid[diff_mask]
+
+        panel_keys = data.loc[idx, [entity, time]].copy()
+        panel_keys["_resid"] = resid
+        panel_keys = panel_keys.sort_values([entity, time])
+
+        def _lag_test(lag: int) -> float | None:
+            d = panel_keys.copy()
+            d["_lag"] = d.groupby(entity)["_resid"].shift(lag)
+            d = d.dropna(subset=["_resid", "_lag"])
+
+            if len(d) < 5:
+                return None
+
+            a = d["_resid"].to_numpy(dtype=float)
+            b = d["_lag"].to_numpy(dtype=float)
+
+            denom = float(np.sqrt(np.sum(a * a) * np.sum(b * b)))
+            if denom <= 0:
+                return None
+
+            corr = float(np.sum(a * b) / denom)
+            z = corr * np.sqrt(len(d))
+
+            if not np.isfinite(z):
+                return None
+
+            return float(2.0 * stats.norm.sf(abs(z)))
+
+        return _lag_test(1), _lag_test(2)
+
+    except Exception:
+        return None, None
+
 def run_native_dynamic_panel_gmm(
     spec: DynamicPanelSpec,
     data: pd.DataFrame,
@@ -1185,6 +1280,24 @@ def run_native_dynamic_panel_gmm(
         zstats = beta_vec / se
     pvalues = _normal_pvalues_from_t(zstats)
 
+    hansen_p, sargan_p = _native_overid_diagnostics(
+        residuals=residual_vec,
+        Z=Z,
+        W=W,
+        n_params=len(names),
+    )
+
+    ar1_p, ar2_p = _native_ab_serial_correlation_pvalues(
+        data=data,
+        entity=entity,
+        time=time,
+        row_index=np.asarray(row_index),
+        residuals=residual_vec,
+        X=X,
+        coef_names=names,
+        system=spec.system,
+    )
+
     return NativeGMMResult(
         spec=spec,
         nobs=int(nobs_reported),
@@ -1202,9 +1315,12 @@ def run_native_dynamic_panel_gmm(
             "Use pydynpd for production System GMM until parity tests pass.",
         ],
         instrument_names=list(instrument_names),
-        hansen_p=None,
-        sargan_p=None,
-        ar1_p=None,
-        ar2_p=None,
+        hansen_p=hansen_p,
+        sargan_p=sargan_p,
+        ar1_p=ar1_p,
+        ar2_p=ar2_p,
     )
+
+
+
 
