@@ -11,13 +11,18 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts" / "parity" / "xtabond2"
+UNCORRECTED_ART = (
+    ART / "specs" / "system_gmm_baseline_controls" / "uncorrected"
+)
 
 EXPECTED_PARAMS = ["L1.y", "x", "w", "_con"]
 
 
 def _read_matrix(path: Path) -> np.ndarray:
     df = pd.read_csv(path)
-    drop_cols = [c for c in df.columns if c.lower() in {"index", "row", "row_id"}]
+    drop_cols = [
+        c for c in df.columns if c.lower() in {"index", "row", "row_id"}
+    ]
     if drop_cols:
         df = df.drop(columns=drop_cols)
     return df.to_numpy(dtype=float)
@@ -50,8 +55,8 @@ def test_native_system_gmm_uncorrected_clustered_se_baseline_vs_xtabond2() -> No
         check=True,
     )
 
-    params_path = ART / "native_system_gmm_params.csv"
-    diagnostics_path = ART / "native_system_gmm_diagnostics.csv"
+    params_path = UNCORRECTED_ART / "native_params.csv"
+    diagnostics_path = UNCORRECTED_ART / "native_diagnostics.csv"
 
     params = pd.read_csv(params_path)
     diagnostics = pd.read_csv(diagnostics_path)

@@ -65,21 +65,37 @@ def read_numeric_matrix(path: Path) -> np.ndarray:
     return matrix
 
 
-def find_native_params_file(artifact_dir: Path, explicit_path: Path | None = None) -> Path:
-    if explicit_path is not None:
-        if not explicit_path.exists():
-            raise FileNotFoundError(f"Explicit native params file not found: {explicit_path}")
-        return explicit_path
+def find_native_params_file(artifact_dir: Path, explicit_native_params=None) -> Path:
+    """Find the native parameter artifact for Windmeijer SE comparison.
 
-    for name in DEFAULT_NATIVE_PARAM_CANDIDATES:
-        candidate = artifact_dir / name
+    Prefer the isolated baseline Windmeijer artifact. The older shared
+    native_system_gmm_params.csv path is retained only as a fallback for
+    backwards compatibility.
+    """
+    if explicit_native_params:
+        explicit_path = Path(explicit_native_params)
+        if explicit_path.exists():
+            return explicit_path
+        _fail(f"Explicit native params file does not exist: {explicit_path}")
+
+    candidates = [
+        artifact_dir
+        / "specs"
+        / "system_gmm_baseline_controls"
+        / "windmeijer"
+        / "native_params.csv",
+        artifact_dir / "native_system_gmm_windmeijer_params.csv",
+        artifact_dir / "native_system_gmm_params.csv",
+        artifact_dir / "native_system_gmm_results.csv",
+    ]
+
+    for candidate in candidates:
         if candidate.exists():
             return candidate
 
     native_csvs = sorted(artifact_dir.glob("native*.csv"))
-
     if native_csvs:
-        listed = "\n  - ".join(str(p) for p in native_csvs)
+        listed = "\n  - ".join(str(path) for path in native_csvs)
         _fail(
             "Could not find a recognized native params file name, but found native CSVs:\n"
             f"  - {listed}\n\n"
@@ -88,9 +104,8 @@ def find_native_params_file(artifact_dir: Path, explicit_path: Path | None = Non
 
     _fail(
         "Could not find native params file. Expected one of:\n"
-        + "\n".join(f"  - {artifact_dir / name}" for name in DEFAULT_NATIVE_PARAM_CANDIDATES)
+        + "\n".join(f"  - {path}" for path in candidates)
     )
-
 
 def pick_column(df: pd.DataFrame, candidates: Iterable[str], purpose: str) -> str:
     lower_to_actual = {c.lower(): c for c in df.columns}

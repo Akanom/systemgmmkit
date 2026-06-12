@@ -8,13 +8,16 @@ import pandas as pd
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
 
-OUT = Path("artifacts/parity/xtabond2")
-DATA = OUT / "system_gmm_benchmark.csv"
+BASE_OUT = Path("artifacts/parity/xtabond2")
+SPEC_OUT = BASE_OUT / "specs" / "system_gmm_baseline_controls"
+DATA = BASE_OUT / "system_gmm_benchmark.csv"
+
+
+def _native_output_dir(*, windmeijer: bool) -> Path:
+    return SPEC_OUT / ("windmeijer" if windmeijer else "uncorrected")
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-
     df = pd.read_csv(DATA)
 
     spec = DynamicPanelSpec(
@@ -38,6 +41,9 @@ def main() -> None:
     use_windmeijer = os.getenv("SYSTEMGMMKIT_NATIVE_WINDMEIJER", "1").strip().lower()
     windmeijer = use_windmeijer not in {"0", "false", "no", "off"}
 
+    out = _native_output_dir(windmeijer=windmeijer)
+    out.mkdir(parents=True, exist_ok=True)
+
     res = run_native_dynamic_panel_gmm(
         spec,
         df,
@@ -60,7 +66,7 @@ def main() -> None:
     if os.getenv("SYSTEMGMMKIT_DROP_NATIVE_CON_FOR_PARITY") == "1":
         params = params[params["param"] != "_con"].copy()
 
-    params.to_csv(OUT / "native_system_gmm_params.csv", index=False)
+    params.to_csv(out / "native_params.csv", index=False)
 
     diagnostics = pd.DataFrame(
         [
@@ -70,7 +76,9 @@ def main() -> None:
                 "native_n_instruments": getattr(res, "n_instruments", None),
                 "native_backend": getattr(res, "backend", None),
                 "native_covariance_type": getattr(res, "covariance_type", None),
-                "native_instrument_names": ";".join(getattr(res, "instrument_names", []) or []),
+                "native_instrument_names": ";".join(
+                    getattr(res, "instrument_names", []) or []
+                ),
                 "native_hansen_p": getattr(res, "hansen_p", None),
                 "native_ar1_p": getattr(res, "ar1_p", None),
                 "native_ar2_p": getattr(res, "ar2_p", None),
@@ -79,9 +87,9 @@ def main() -> None:
             }
         ]
     )
-    diagnostics.to_csv(OUT / "native_system_gmm_diagnostics.csv", index=False)
+    diagnostics.to_csv(out / "native_diagnostics.csv", index=False)
 
-    print("Wrote native System GMM benchmark outputs")
+    print(f"Wrote native System GMM benchmark outputs to: {out}")
     print(f"covariance_type: {res.covariance_type}")
     print(params.to_string(index=False))
 
