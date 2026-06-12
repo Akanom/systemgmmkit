@@ -1,5 +1,6 @@
+import numpy as np
+import numpy as np
 import pandas as pd
-import pytest
 
 from systemgmmkit import (
     build_difference_gmm_spec,
@@ -65,8 +66,48 @@ def test_native_dynamic_panel_gmm_runs():
     assert result.backend == "native-gmm"
 
 
-def test_native_windmeijer_is_explicitly_not_certified():
+def test_native_windmeijer_preserves_point_estimates_and_j_stat():
     df = make_dynamic_panel()
-    spec = build_difference_gmm_spec(dependent="y", regressors=["x"], endogenous=["x"])
-    with pytest.raises(NotImplementedError):
-        run_native_dynamic_panel_gmm(spec, df, entity="id", time="t", windmeijer=True)
+    spec = build_system_gmm_spec(
+        dependent="y",
+        regressors=["x"],
+        endogenous=["x"],
+        exogenous=[],
+        dependent_lag_limits=(2, 3),
+        collapse=True,
+    )
+
+    uncorrected = run_native_dynamic_panel_gmm(
+        spec,
+        df,
+        entity="id",
+        time="t",
+        windmeijer=False,
+    )
+    corrected = run_native_dynamic_panel_gmm(
+        spec,
+        df,
+        entity="id",
+        time="t",
+        windmeijer=True,
+    )
+
+    assert uncorrected.covariance_type == "robust-clustered-two-step-uncorrected"
+    assert corrected.covariance_type == "robust-clustered-two-step-windmeijer"
+
+    pd.testing.assert_series_equal(
+        uncorrected.params,
+        corrected.params,
+        check_names=False,
+        rtol=1e-10,
+        atol=1e-10,
+    )
+
+    if uncorrected.j_stat is not None and corrected.j_stat is not None:
+        assert np.isclose(uncorrected.j_stat, corrected.j_stat, rtol=1e-10, atol=1e-10)
+
+    corrected_se = corrected.std_errors.reindex(corrected.params.index).to_numpy(dtype=float)
+    uncorrected_se = uncorrected.std_errors.reindex(corrected.params.index).to_numpy(dtype=float)
+
+    assert np.all(np.isfinite(corrected_se))
+    assert np.any(np.abs(corrected_se - uncorrected_se) > 1e-12)

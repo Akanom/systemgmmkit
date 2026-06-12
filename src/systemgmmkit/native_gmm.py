@@ -1052,6 +1052,101 @@ def _native_gmm_beta(
 
 
 
+
+def _native_group_indices_from_entities(row_entities: np.ndarray) -> list[np.ndarray]:
+    """Return row-position indices grouped by entity, preserving first-seen order."""
+    entities = pd.unique(row_entities)
+    return [np.flatnonzero(row_entities == ent) for ent in entities]
+
+
+def _native_group_moment_sum(
+    *,
+    Z: np.ndarray,
+    residuals: np.ndarray,
+    group_indices: list[np.ndarray],
+) -> np.ndarray:
+    """Return sum_i (Z_i' u_i)(Z_i' u_i)' in native row-major orientation."""
+    q = int(Z.shape[1])
+    out = np.zeros((q, q), dtype=float)
+    u = np.asarray(residuals, dtype=float).reshape(-1, 1)
+
+    for indices in group_indices:
+        Zi = Z[indices, :]
+        ui = u[indices, :]
+        gi = Zi.T @ ui
+        out += gi @ gi.T
+
+    return out
+
+
+def _native_pydynpd_step1_vcov(
+    *,
+    X: np.ndarray,
+    Z: np.ndarray,
+    W1: np.ndarray,
+    residuals1: np.ndarray,
+    group_indices: list[np.ndarray],
+    n_groups: int,
+) -> np.ndarray:
+    """pydynpd-compatible robust one-step covariance used inside Windmeijer."""
+    D_xz = X.T @ Z
+    M1 = np.linalg.pinv(D_xz @ W1 @ D_xz.T)
+    M1_XZ_W1 = M1 @ D_xz @ W1
+
+    ZuuZ1 = _native_group_moment_sum(
+        Z=Z,
+        residuals=residuals1,
+        group_indices=group_indices,
+    )
+    W_next1 = ZuuZ1 * (1.0 / int(n_groups))
+
+    cov1 = int(n_groups) * (M1_XZ_W1 @ W_next1 @ M1_XZ_W1.T)
+    return 0.5 * (cov1 + cov1.T)
+
+
+def _native_windmeijer_covariance(
+    *,
+    M2: np.ndarray,
+    M2_XZ_W2: np.ndarray,
+    W2_inv: np.ndarray,
+    zs2: np.ndarray,
+    vcov_step1: np.ndarray,
+    X: np.ndarray,
+    Z: np.ndarray,
+    residuals1: np.ndarray,
+    group_indices: list[np.ndarray],
+    n_groups: int,
+) -> np.ndarray:
+    """pydynpd-compatible Windmeijer finite-sample correction."""
+    N = int(n_groups)
+    k = int(X.shape[1])
+    q = int(Z.shape[1])
+
+    D_wind = np.empty((k, k), dtype=float)
+    u1 = np.asarray(residuals1, dtype=float).reshape(-1, 1)
+    zs2 = np.asarray(zs2, dtype=float).reshape(-1, 1)
+
+    for j in range(k):
+        zxz = np.zeros((q, q), dtype=float)
+
+        for indices in group_indices:
+            x_i = X[indices, :]
+            u_i = u1[indices, :]
+            z_i_t = Z[indices, :].T
+
+            xu = x_i[:, j : j + 1] @ u_i.T
+            zxz += z_i_t @ (xu + xu.T) @ z_i_t.T
+
+        partial_dir = (-1.0 / N) * zxz
+        Dj = -(M2_XZ_W2 @ partial_dir @ W2_inv @ zs2)
+        D_wind[:, j : j + 1] = Dj
+
+    D_M2 = D_wind @ M2
+    cov = (N * M2) + (N * D_M2) + (N * D_M2.T)
+    cov = cov + (D_wind @ vcov_step1 @ D_wind.T)
+
+    return 0.5 * (cov + cov.T)
+
 def _native_overid_diagnostics(
     *,
     residuals: np.ndarray,
@@ -1165,10 +1260,7 @@ def run_native_dynamic_panel_gmm(
     implemented and tested.
     """
 
-    if windmeijer:
-        raise NotImplementedError(
-            "Native Windmeijer correction is not certified yet. Use pydynpd for production two-step robust inference."
-        )
+    windmeijer_requested = bool(windmeijer)
 
     y, X, Z, names, row_index, nobs_effective, instrument_names, row_meta = _build_native_matrices(
         spec, data, entity=entity, time=time
@@ -1361,38 +1453,69 @@ def run_native_dynamic_panel_gmm(
 
     bread = np.linalg.pinv(xzwzx)
 
-    # Dynamic-panel GMM robust covariance must be based on entity-level moment
-    # sums, not row-wise White meat. For entity i, the score contribution is
-    # g_i = Z_i' u_i. The robust S matrix is sum_i g_i g_i'.
-    #
-    # This is still not Windmeijer-corrected. Windmeijer is an additional
-    # finite-sample correction for two-step GMM standard errors.
+    # Dynamic-panel GMM robust covariance is based on entity-level moment sums.
+    # For entity i, the score contribution is g_i = Z_i' u_i.
     row_entities_for_cov = data.loc[row_index, entity].to_numpy()
-    unique_entities_for_cov = pd.unique(row_entities_for_cov)
-    n_groups_for_cov = int(len(unique_entities_for_cov))
-
-    s_group = np.zeros((Z.shape[1], Z.shape[1]), dtype=float)
-
-    u_col_for_cov = residual_vec.reshape(-1, 1)
-
-    for ent_value in unique_entities_for_cov:
-        mask = row_entities_for_cov == ent_value
-        Zi = Z[mask, :]
-        ui = u_col_for_cov[mask, :]
-        gi = Zi.T @ ui
-        s_group += gi @ gi.T
+    group_indices_for_cov = _native_group_indices_from_entities(row_entities_for_cov)
+    n_groups_for_cov = int(len(group_indices_for_cov))
 
     D = X.T @ Z
-    meat = D @ W @ s_group @ W @ D.T
 
-    if n_groups_for_cov > 1:
-        cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
-            (n - 1.0) / max(n - k, 1)
+    if windmeijer_requested and not use_twostep:
+        raise ValueError("windmeijer=True requires two-step dynamic-panel GMM estimation.")
+
+    if windmeijer_requested and use_twostep:
+        vcov_step1 = _native_pydynpd_step1_vcov(
+            X=X,
+            Z=Z,
+            W1=W1,
+            residuals1=residuals1,
+            group_indices=group_indices_for_cov,
+            n_groups=n_groups_for_cov,
+        )
+
+        M2 = bread
+        M2_XZ_W2 = M2 @ D @ W
+        zs2 = Z.T @ residual_vec.reshape(-1, 1)
+
+        if n_groups_for_cov > 1:
+            cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+                (n - 1.0) / max(n - k, 1)
+            )
+        else:
+            cov_correction = n / max(n - k, 1)
+
+        cov = cov_correction * _native_windmeijer_covariance(
+            M2=M2,
+            M2_XZ_W2=M2_XZ_W2,
+            W2_inv=W,
+            zs2=zs2,
+            vcov_step1=vcov_step1,
+            X=X,
+            Z=Z,
+            residuals1=residuals1,
+            group_indices=group_indices_for_cov,
+            n_groups=n_groups_for_cov,
         )
     else:
-        cov_correction = n / max(n - k, 1)
+        s_group = _native_group_moment_sum(
+            Z=Z,
+            residuals=residual_vec,
+            group_indices=group_indices_for_cov,
+        )
 
-    cov = cov_correction * bread @ meat @ bread
+        meat = D @ W @ s_group @ W @ D.T
+
+        if n_groups_for_cov > 1:
+            cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+                (n - 1.0) / max(n - k, 1)
+            )
+        else:
+            cov_correction = n / max(n - k, 1)
+
+        cov = cov_correction * bread @ meat @ bread
+
+    cov = 0.5 * (cov + cov.T)
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
     with np.errstate(divide="ignore", invalid="ignore"):
         zstats = beta_vec / se
@@ -1554,15 +1677,24 @@ def run_native_dynamic_panel_gmm(
         pvalues=pd.Series(pvalues, index=names, name="p_value"),
         residuals=pd.Series(residual_vec, index=row_index, name="residual"),
         covariance_type=(
-            "robust-clustered-two-step-uncorrected"
-            if use_twostep
-            else "robust-clustered-one-step"
+            "robust-clustered-two-step-windmeijer"
+            if windmeijer_requested and use_twostep
+            else (
+                "robust-clustered-two-step-uncorrected"
+                if use_twostep
+                else "robust-clustered-one-step"
+            )
         ),
         backend="native-gmm",
         notes=[
             "Native dynamic-panel GMM engine.",
             "Native System GMM baseline parity with xtabond2 is verified for coefficients, raw moments, group-scaled A2, and Hansen J on the current collapsed two-step benchmark.",
-            "Windmeijer-corrected two-step standard errors are not yet certified.",
+            (
+                "Windmeijer-corrected two-step standard errors are enabled via windmeijer=True "
+                "using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked."
+                if windmeijer_requested and use_twostep
+                else "Windmeijer-corrected two-step standard errors are available via windmeijer=True but are not the default."
+            ),
         ],
         instrument_names=list(instrument_names),
         hansen_p=hansen_p,

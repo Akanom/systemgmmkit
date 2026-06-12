@@ -36,7 +36,13 @@ def main() -> None:
         name="system_gmm_baseline_controls",
     )
 
-    res = run_native_dynamic_panel_gmm(spec, df, entity="id", time="t")
+    res = run_native_dynamic_panel_gmm(
+        spec,
+        df,
+        entity="id",
+        time="t",
+        windmeijer=True,
+    )
 
     params = pd.DataFrame(
         {
@@ -45,6 +51,7 @@ def main() -> None:
             "native_std_err": res.std_errors.reindex(res.params.index).to_numpy(dtype=float),
             "native_z": res.zstats.reindex(res.params.index).to_numpy(dtype=float),
             "native_p_value": res.pvalues.reindex(res.params.index).to_numpy(dtype=float),
+            "covariance_type": res.covariance_type,
         }
     )
 
@@ -73,6 +80,8 @@ def main() -> None:
     diagnostics.to_csv(OUT / "native_system_gmm_diagnostics.csv", index=False)
 
     print("Wrote native System GMM benchmark outputs")
+    print(f"covariance_type: {res.covariance_type}")
+    print(params.to_string(index=False))
 
 
 if __name__ == "__main__":
