@@ -49,7 +49,7 @@ The package then routes estimation through the appropriate backend.
 * public `run_system_gmm()` and `run_difference_gmm()` convenience functions;
 * optional validated backend adapter integration for System GMM;
 * native Difference GMM estimation;
-* native System GMM estimation with verified `xtabond2` baseline parity checks, including Windmeijer-corrected two-step standard-error parity on the certified benchmark;
+* native System GMM estimation with verified `xtabond2` parity across baseline, no-controls, three-way interaction, and decomposition benchmark specifications, including Windmeijer-corrected two-step standard-error parity;
 * model-card style reporting for reproducibility;
 * regression-table export to Markdown, CSV, and LaTeX;
 * Stata parity-check scaffolding for `xtreg, fe` and `xtabond2` replication workflows.
@@ -62,14 +62,14 @@ The package then routes estimation through the appropriate backend.
 | ------------------------------- | --------------------------------------------------- | -------------- |
 | Static panel estimators         | Active development                                  | Pooled OLS, Fixed Effects, Random Effects, and Panel IV / 2SLS are available for applied workflow use and should be validated against reference packages for critical work. |
 | Native Difference GMM           | Strict parity passed on current benchmark           | Native Difference GMM matches the current validation backend and Stata oracle within numerical tolerance on the tested benchmark. |
-| Native System GMM               | `xtabond2` baseline and Windmeijer SE parity passed | Native System GMM matches `xtabond2` on the current collapsed two-step System GMM benchmark for coefficients, raw residual moments (`Z'u`), group-scaled two-step weighting matrix (`A2 / n_groups`), Hansen J, and Windmeijer-corrected two-step standard errors. |
+| Native System GMM               | `xtabond2` multi-spec Windmeijer parity passed | Native System GMM matches `xtabond2` on the current collapsed two-step System GMM benchmark for coefficients, raw residual moments (`Z'u`), group-scaled two-step weighting matrix (`A2 / n_groups`), Hansen J, and Windmeijer-corrected two-step standard errors. |
 | System GMM via `backend="auto"` | Stable public workflow route                        | `backend="auto"` remains the recommended public workflow route unless the user needs explicit native/adapter comparison. Users who need exact replication should report the selected backend and validation benchmark. |
 
 The current validation harness confirms strict parity for native Difference GMM on the benchmark specification.
 
 Native System GMM now passes a dedicated `xtabond2` baseline parity benchmark. The verified benchmark covers coefficient estimates, raw residual moments (`Z'u`), the group-scaled two-step weighting matrix (`A2 / n_groups`), the Hansen J statistic, and Windmeijer-corrected two-step standard errors.
 
-This should be interpreted as a strong benchmark-specific parity result, not as a universal claim of Stata identity across every possible dataset, lag window, missing-data pattern, instrument classification, covariance assumption, or finite-sample correction. Broader specification coverage remains on the validation roadmap.
+This should be interpreted as a strong benchmark-specific parity result, not as a universal claim of Stata identity across every possible dataset, lag window, missing-data pattern, instrument classification, covariance assumption, or finite-sample correction. Broader validation remains ongoing for AR diagnostics, unbalanced panels, missing-data structures, alternative lag windows, and alternative instrument classifications.
 
 ---
 
@@ -665,7 +665,7 @@ The native System GMM parity benchmark currently verifies:
 * Windmeijer-corrected two-step standard-error alignment against Stata `e(V)`;
 * automated pytest regression guarding for the benchmark.
 
-The remaining high-priority validation work is broader benchmark coverage across alternative datasets, lag windows, missing-data structures, instrument classifications, covariance assumptions, and diagnostic outputs.
+The remaining high-priority validation work is AR(1)/AR(2) diagnostic parity and broader benchmark coverage across unbalanced panels, missing-data structures, alternative lag windows, and alternative instrument classifications.
 
 ---
 
@@ -792,13 +792,11 @@ Recommended reporting format:
 Estimation was performed using systemgmmkit version X.Y.Z, commit <commit-hash>. Dynamic-panel GMM results used the [native / validated backend] route with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
 ```
 
+## Native System GMM parity status
 
+Native System GMM has certified benchmark-specific parity against Stata `xtabond2` for the committed baseline, no-controls, three-way interaction, and decomposition specifications.
 
+Certified quantities include coefficient estimates, parameter counts, observation counts, instrument counts, Hansen p-values, and two-step Windmeijer-corrected standard errors. AR(1)/AR(2) diagnostic parity is not yet certified.
 
-
-
-
-
-
-
+See `docs/parity/system_gmm_parity_matrix.md` for the full certification matrix and reproduction context.
 

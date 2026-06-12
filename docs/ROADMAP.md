@@ -7,49 +7,46 @@
 Completed:
 
 - Native Windmeijer-corrected two-step covariance support for native dynamic-panel GMM.
-- Native System GMM benchmark certification against Stata `xtabond2` `e(V)` on the current collapsed two-step benchmark.
-- Baseline parity documented for coefficients, raw residual moments (`Z'u`), group-scaled two-step weighting matrix (`A2 / n_groups`), Hansen J, and Windmeijer-corrected standard errors.
+- Native System GMM benchmark certification against Stata `xtabond2` `e(V)`.
 - Uncorrected clustered two-step covariance benchmark preserved through `SYSTEMGMMKIT_NATIVE_WINDMEIJER=0`.
 - Ruff, pytest, GitHub CI, release workflow, and PyPI publishing confirmed.
 
-## Next milestone: broader System GMM parity matrix
+## Completed System GMM parity certification
 
-The next validation milestone is to extend native System GMM parity coverage beyond the single certified benchmark.
+The broader System GMM parity matrix has now been expanded beyond the original baseline benchmark.
 
-The goal is not to claim universal Stata identity. The goal is to build a transparent, repeatable, benchmark-specific parity matrix across several System GMM specifications.
+Certified specifications:
 
-### Priority specifications
-
-| Specification | Purpose | Priority |
+| Specification | Purpose | Status |
 | --- | --- | --- |
-| `system_gmm_baseline_controls` | Maintain and extend the current certified benchmark. | P0 |
-| `system_gmm_no_controls` | Validate minimal System GMM construction and covariance behavior. | P0 |
-| `system_gmm_three_way_controls` | Validate interaction-heavy specifications. | P1 |
-| `system_gmm_decomposition_controls` | Validate multi-regressor decomposition-style specifications. | P1 |
-| `difference_gmm_baseline_controls` | Preserve strict Difference GMM regression guard. | P1 |
+| `system_gmm_baseline_controls` | Baseline collapsed two-step System GMM benchmark. | Certified |
+| `system_gmm_no_controls` | Minimal System GMM construction and covariance behavior. | Certified |
+| `system_gmm_three_way_controls` | Interaction-heavy System GMM design. | Certified |
+| `system_gmm_decomposition_controls` | Multi-regressor decomposition-style System GMM design. | Certified |
+| `difference_gmm_baseline_controls` | Existing Difference GMM guard. | Certified |
 
-### Validation dimensions
-
-Each specification should report:
+Certified quantities for System GMM include:
 
 - coefficient parity;
-- standard-error parity;
-- covariance type;
-- Hansen J;
-- AR(1) and AR(2);
+- Windmeijer-corrected two-step standard-error parity;
+- Hansen p-value parity;
 - number of instruments;
 - number of observations;
-- number of groups;
-- sample identity;
-- backend / Stata command assumptions.
+- covariance type;
+- committed benchmark artifacts;
+- automated pytest guards.
 
-### Release discipline
+## Remaining validation work
 
-No broader certification claim should be added to the README until a specification has:
+High-priority remaining items:
 
-- a committed Stata benchmark artifact;
-- a native benchmark artifact;
-- an automated comparison script;
-- a pytest regression guard;
-- documented tolerance thresholds;
-- passing GitHub CI.
+- Certify AR(1)/AR(2) diagnostic parity.
+- Add unbalanced-panel System GMM parity tests.
+- Add missing-data parity tests.
+- Add alternative lag-window parity tests.
+- Add alternative instrument-classification parity tests.
+- Prepare reviewer-facing software-paper evidence tables.
+
+## Release discipline
+
+No universal Stata-equivalence claim should be made. All parity statements should remain benchmark-specific and tied to committed artifacts, comparison scripts, pytest guards, and passing CI.
