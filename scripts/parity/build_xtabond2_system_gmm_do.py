@@ -69,7 +69,9 @@ gen stata_n_groups = e(N_g)
 gen stata_n_instruments = e(j)
 gen stata_hansen_p = e(hansenp)
 gen stata_sargan_p = e(sarganp)
+gen stata_ar1 = e(ar1)
 gen stata_ar1_p = e(ar1p)
+gen stata_ar2 = e(ar2)
 gen stata_ar2_p = e(ar2p)
 
 export delimited using "{(OUT / "xtabond2_system_gmm_diagnostics.csv").as_posix()}", replace
