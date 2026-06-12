@@ -31,6 +31,10 @@ class NativeGMMResult:
     backend: str
     notes: list[str]
     instrument_names: list[str] | None = None
+    hansen_p: float | None = None
+    sargan_p: float | None = None
+    ar1_p: float | None = None
+    ar2_p: float | None = None
 
     def summary_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -1198,5 +1202,9 @@ def run_native_dynamic_panel_gmm(
             "Use pydynpd for production System GMM until parity tests pass.",
         ],
         instrument_names=list(instrument_names),
+        hansen_p=None,
+        sargan_p=None,
+        ar1_p=None,
+        ar2_p=None,
     )
 
