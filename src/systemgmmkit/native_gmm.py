@@ -1569,6 +1569,12 @@ def run_native_dynamic_panel_gmm(
         _j_stat = _j_stat_raw / _n_groups_for_hansen
     else:
         _j_stat = _j_stat_raw
+    _hansen_df = int(Z.shape[1]) - int(len(names))
+    if _hansen_df > 0 and np.isfinite(_j_stat) and _j_stat >= 0:
+        hansen_p = float(stats.chi2.sf(_j_stat, _hansen_df))
+    else:
+        hansen_p = None
+
     _ztu_norm = float(np.linalg.norm(_ztu))
     _w_norm = float(np.linalg.norm(W))
 

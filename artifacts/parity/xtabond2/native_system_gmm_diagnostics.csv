@@ -1,2 +1,2 @@
 spec,native_nobs,native_n_instruments,native_backend,native_covariance_type,native_instrument_names,native_hansen_p,native_ar1_p,native_ar2_p,native_j_stat,native_has_constant_param
-system_gmm_baseline_controls,1248,8,native-gmm,robust-clustered-two-step-windmeijer,D:y:L2;D:y:L3;D:x:L2;D:x:L3;IV:w;L:diff:y:L1;L:diff:x:L1;L:constant,2.442829239148313e-135,1.1554709855822641e-55,0.8278222835065341,6.577371443370622,True
+system_gmm_baseline_controls,1248,8,native-gmm,robust-clustered-two-step-uncorrected,D:y:L2;D:y:L3;D:x:L2;D:x:L3;IV:w;L:diff:y:L1;L:diff:x:L1;L:constant,0.15998017234609666,1.1554709855822641e-55,0.8278222835065341,6.577371443370622,True
