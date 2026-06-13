@@ -1,23 +1,29 @@
-# systemgmmkit v0.5.0
+## systemgmmkit 0.5.1
 
-This release adds native Windmeijer-corrected two-step covariance support for dynamic-panel GMM and documents benchmark-specific Stata `xtabond2` parity for native System GMM.
+This release updates the public PyPI package after native System GMM parity certification.
 
-## Highlights
+### Highlights
 
-- Native System GMM now supports Windmeijer-corrected two-step standard errors.
-- The certified benchmark matches Stata `xtabond2` `e(V)` standard errors within a maximum relative difference of approximately `0.000579`.
-- Native System GMM benchmark documentation now covers coefficients, raw residual moments (`Z'u`), group-scaled two-step weighting matrix (`A2 / n_groups`), Hansen J, and Windmeijer-corrected standard errors.
-- The old uncorrected two-step clustered covariance benchmark path is preserved through `SYSTEMGMMKIT_NATIVE_WINDMEIJER=0`.
-- Repository hygiene was improved by removing tracked parity/debug Python snapshots and restoring a clean Ruff/pytest/CI gate.
+- Certifies native System GMM baseline as `PASS_STRICT_XTABOND2_SYSTEM_GMM_BASELINE`.
+- Adds verified parity against Stata `xtabond2` for:
+  - sample size;
+  - instrument count;
+  - coefficient estimates;
+  - Windmeijer-corrected two-step standard errors;
+  - Hansen p-values;
+  - signed AR(1)/AR(2) diagnostics and p-values.
+- Adds multi-spec AR diagnostic parity validation for:
+  - baseline controls;
+  - no-controls;
+  - three-way interaction;
+  - decomposition controls.
+- Updates reviewer-facing parity artifacts and README documentation.
 
-## Validation status
+### Scope note
 
-The Windmeijer parity result is benchmark-specific. It should not be presented as universal Stata identity across all possible datasets, lag windows, missing-data patterns, instrument classifications, covariance assumptions, or finite-sample settings.
+This is a benchmark-specific parity certification, not a universal claim of Stata identity across every possible `xtabond2` configuration.
 
 ## Installation
 
     python -m pip install systemgmmkit==0.5.0
-
-## Recommended extras
-
-    python -m pip install "systemgmmkit[all]==0.5.0"
+    
