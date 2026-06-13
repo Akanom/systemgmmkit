@@ -1,0 +1,2 @@
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen,stata_hansen_df,stata_hansen_p,stata_sargan,stata_sargan_df,stata_sargan_p,stata_ar1,stata_ar1_p,stata_ar2,stata_ar2_p,stata_sigma,stata_sig2
+system_gmm_fd_onestep_baseline_controls,1248,96,8,6.5773711,4,.15998019,8.1019144,4,.08791548,-1.6870008,.091603205,-.20655307,.8363589,1.0225544,1.0456176

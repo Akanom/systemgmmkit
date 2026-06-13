@@ -33,7 +33,7 @@ def test_stata_parity_commands_are_generated(tmp_path):
 
     assert "xtreg y x i.t, fe" in fe_cmd
     assert "xtabond2 y L1.y x" in gmm_cmd
-    assert "gmm(y, lag(2 3) collapse)" in gmm_cmd
+    assert "gmmstyle(y, lag(2 3) collapse)" in gmm_cmd
 
     out = write_stata_parity_do_file(
         tmp_path / "parity.do",

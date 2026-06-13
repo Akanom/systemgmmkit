@@ -6,6 +6,9 @@
 [![CI](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml)
 [![Publish](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml)
 [![Downloads](https://img.shields.io/pepy/dm/systemgmmkit)](https://pepy.tech/project/systemgmmkit)
+
+---
+
 `systemgmmkit` is a Python workflow package for panel-data econometrics.
 
 It supports reusable model specification, panel validation, static panel estimation, dynamic-panel GMM estimation, backend routing, diagnostics interpretation, reproducible reporting, and regression-table export.
