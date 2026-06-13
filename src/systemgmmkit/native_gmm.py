@@ -87,9 +87,11 @@ def _required_variables(spec: DynamicPanelSpec) -> list[str]:
         parsed = _parse_lagged_regressor(reg)
         variables.add(parsed[1] if parsed else reg)
     for block in spec.gmm:
-        variables.add(block.variable)
+        parsed = _parse_lagged_regressor(block.variable)
+        variables.add(parsed[1] if parsed else block.variable)
     for block in spec.iv:
-        variables.add(block.variable)
+        parsed = _parse_lagged_regressor(block.variable)
+        variables.add(parsed[1] if parsed else block.variable)
     return sorted(variables)
 
 
@@ -100,6 +102,174 @@ def _safe_get(series: pd.Series, pos: int) -> float | None:
     if pd.isna(value):
         return None
     return float(value)
+
+
+def _fd_at(series: pd.Series, pos: int) -> float | None:
+    """First difference at positional index pos: v_t - v_{t-1}."""
+    now = _safe_get(series, pos)
+    prev = _safe_get(series, pos - 1)
+    if now is None or prev is None:
+        return None
+    return float(now - prev)
+
+
+def _fod_at(series: pd.Series, pos: int) -> float | None:
+    """Forward orthogonal deviation at positional index pos.
+
+    v*_it = sqrt(k / (k + 1)) * (v_it - mean(v_i,t+1...T))
+
+    where k is the number of valid future observations for the entity.
+    """
+    current = _safe_get(series, pos)
+    if current is None:
+        return None
+
+    future_values: list[float] = []
+    for j in range(pos + 1, len(series)):
+        value = _safe_get(series, j)
+        if value is not None:
+            future_values.append(value)
+
+    if not future_values:
+        return None
+
+    future = np.asarray(future_values, dtype=float)
+    k = float(future.size)
+    return float(np.sqrt(k / (k + 1.0)) * (current - float(future.mean())))
+
+
+def _transform_at(series: pd.Series, pos: int, transformation: str) -> float | None:
+    """Apply the dynamic-panel transformed-equation operator."""
+    transformation_normalized = str(transformation).strip().lower()
+
+    if transformation_normalized == "fd":
+        return _fd_at(series, pos)
+
+    if transformation_normalized == "fod":
+        return _fod_at(series, pos)
+
+    raise ValueError(
+        f"Unsupported transformation={transformation!r}. Expected 'fd' or 'fod'."
+    )
+
+
+def _lagged_series(series: pd.Series, lag: int) -> pd.Series:
+    """Return a positional lagged copy while preserving the existing index."""
+    if lag < 0:
+        raise ValueError("lag must be non-negative.")
+
+    values = [_safe_get(series, pos - lag) for pos in range(len(series))]
+    return pd.Series(values, index=series.index, dtype=float)
+
+
+def _style_source_series(group: pd.DataFrame, variable: str) -> pd.Series:
+    """Return the source series for a GMM/IV-style variable.
+
+    Supports both raw variables, e.g. "x", and lagged Stata-style variables,
+    e.g. "L1.y" or "L.y".
+    """
+    parsed = _parse_lagged_regressor(variable)
+
+    if parsed:
+        lag, raw_variable = parsed
+        return _lagged_series(group[raw_variable].astype(float), lag)
+
+    return group[variable].astype(float)
+
+
+def _style_label(variable: str) -> str:
+    return str(variable).replace("L.", "L1.")
+
+
+def _level_regressor_at(group: pd.DataFrame, regressor: str, pos: int) -> float | None:
+    """Return the level-equation value for a structural regressor."""
+    parsed = _parse_lagged_regressor(regressor)
+
+    if parsed:
+        lag, variable = parsed
+        return _safe_get(group[variable].astype(float), pos - lag)
+
+    return _safe_get(group[regressor].astype(float), pos)
+
+
+def _transformed_regressor_at(
+    group: pd.DataFrame,
+    regressor: str,
+    pos: int,
+    transformation: str,
+) -> float | None:
+    """Return the transformed-equation value for a structural regressor."""
+    parsed = _parse_lagged_regressor(regressor)
+
+    if parsed:
+        lag, variable = parsed
+        base = group[variable].astype(float)
+        series = _lagged_series(base, lag)
+    else:
+        series = group[regressor].astype(float)
+
+    return _transform_at(series, pos, transformation)
+
+
+def _lagged_level_instrument_at(series: pd.Series, pos: int, lag: int) -> float | None:
+    """Collapsed Difference/FOD-equation GMM instrument: level v_{t-lag}."""
+    return _safe_get(series, pos - lag)
+
+
+def _lagged_difference_instrument_at(
+    series: pd.Series,
+    pos: int,
+    lag: int = 1,
+) -> float | None:
+    """System-GMM level-equation instrument: Δv_{t-lag}."""
+    left = _safe_get(series, pos - lag)
+    right = _safe_get(series, pos - lag - 1)
+
+    if left is None or right is None:
+        return None
+
+    return float(left - right)
+
+
+def _transformed_error_terms(
+    index: pd.Index,
+    pos: int,
+    transformation: str,
+) -> dict[object, float] | None:
+    """Return raw-error coefficients for a transformed-equation row.
+
+    This metadata is used to build the one-step weighting matrix. It must match
+    the actual transformation used for Y and X.
+    """
+    transformation_normalized = str(transformation).strip().lower()
+
+    if transformation_normalized == "fd":
+        if pos - 1 < 0:
+            return None
+        return {
+            index[pos]: 1.0,
+            index[pos - 1]: -1.0,
+        }
+
+    if transformation_normalized == "fod":
+        future_positions = list(range(pos + 1, len(index)))
+        if not future_positions:
+            return None
+
+        k = float(len(future_positions))
+        scale = float(np.sqrt(k / (k + 1.0)))
+
+        terms: dict[object, float] = {index[pos]: scale}
+        future_weight = -scale / k
+
+        for future_pos in future_positions:
+            terms[index[future_pos]] = future_weight
+
+        return terms
+
+    raise ValueError(
+        f"Unsupported transformation={transformation!r}. Expected 'fd' or 'fod'."
+    )
 
 
 def _build_native_matrices(
@@ -141,8 +311,6 @@ def _build_native_matrices(
             z_names.append(name)
         return z_names.index(name)
 
-    import os as _native_os
-
     staged: list[tuple[float, list[float], dict[str, float], object, dict[str, object]]] = []
     for entity_value, group in work.groupby(entity, sort=False):
         group = group.sort_values(time).copy()
@@ -164,28 +332,20 @@ def _build_native_matrices(
                 z_dict[f"T:{name}"] = 1.0
 
         for pos in range(2, len(group)):
-            dy = _safe_get(dep, pos)
-            dy_l1 = _safe_get(dep, pos - 1)
-            if dy is None or dy_l1 is None:
+            y_val = _transform_at(dep, pos, spec.transformation)
+            if y_val is None:
                 continue
-            y_val = dy - dy_l1
+
             x_vals: list[float] = []
             valid = True
+
             for reg in spec.regressors:
-                parsed = _parse_lagged_regressor(reg)
-                if parsed:
-                    lag, var = parsed
-                    s = group[var].astype(float)
-                    now = _safe_get(s, pos - lag)
-                    prev = _safe_get(s, pos - lag - 1)
-                else:
-                    s = group[reg].astype(float)
-                    now = _safe_get(s, pos)
-                    prev = _safe_get(s, pos - 1)
-                if now is None or prev is None:
+                val = _transformed_regressor_at(group, reg, pos, spec.transformation)
+                if val is None:
                     valid = False
                     break
-                x_vals.append(now - prev)
+                x_vals.append(val)
+
             if not valid:
                 continue
 
@@ -194,89 +354,61 @@ def _build_native_matrices(
 
             z_dict: dict[str, float] = {}
 
-            # Difference equation instruments.
-            # Allow the available part of the requested lag window.
-            # Example: lag(2, 3) should use L2 even when L3 is not yet available.
-            # This matches pydynpd-style early-period eligibility.
+            # Transformed-equation GMM instruments.
+            #
+            # Collapsed lag-l instruments use the raw source variable named in
+            # the GMM block:
+            #
+            #   row t, lag(l) -> source_{t-l}
+            #
+            # Important: if the structural regressor is L1.y but the GMM block is
+            # y, lag(2 2), the source is still raw y, not already-lagged L1.y.
             for block in spec.gmm:
-                s = group[block.variable].astype(float)
-
-                # Diagnostic parity switch:
-                #
-                # xtabond2 interprets gmm(L.y, lag(2 3)) as instruments for the
-                # lagged dependent regressor L.y, not raw y. Therefore:
-                #   L2.(L.y) = y[t-3]
-                #   L3.(L.y) = y[t-4]
-                #
-                # Native previously used y[t-2] and y[t-3].
-                # Enable this shift with:
-                #   SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET=1
-                import os as _native_diff_gmm_lag_os
-
-                _lag_offset_mode = (
-                    _native_diff_gmm_lag_os.getenv(
-                        "SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET",
-                        "1",
-                    )
-                    .strip()
-                    .lower()
-                )
-
-                _dep_name = getattr(spec, "dependent", None)
-                _regressors = set(str(v) for v in (getattr(spec, "regressors", None) or []))
-
-                _is_lagged_dep_block = (
-                    _dep_name is not None
-                    and str(block.variable) == str(_dep_name)
-                    and (
-                        f"L1.{_dep_name}" in _regressors
-                        or f"L.{_dep_name}" in _regressors
-                    )
-                )
-
-                _lag_offset = (
-                    1
-                    if _is_lagged_dep_block
-                    and _lag_offset_mode in {"1", "true", "yes", "on"}
-                    else 0
-                )
+                s = _style_source_series(group, block.variable)
+                block_label = _style_label(block.variable)
 
                 for lag in range(block.min_lag, block.max_lag + 1):
-                    val = _safe_get(s, pos - lag - _lag_offset)
+                    val = _lagged_level_instrument_at(s, pos, lag)
 
                     if val is not None:
-                        z_dict[f"D:{block.variable}:L{lag}"] = val
+                        z_dict[f"D:{block_label}:L{lag}"] = val
 
-            # IV-style / exogenous instruments must be available because they
-            # enter the current differenced equation.
+            # IV-style / exogenous instruments for the transformed equation.
+            # Respect equation scope: eq="level" instruments do not enter D/FOD rows.
             iv_valid = True
             for block in spec.iv:
-                s = group[block.variable].astype(float)
-                now = _safe_get(s, pos)
-                prev = _safe_get(s, pos - 1)
+                if getattr(block, "eq", None) == "level":
+                    continue
 
-                if now is None or prev is None:
+                s = _style_source_series(group, block.variable)
+                val = _transform_at(s, pos, spec.transformation)
+
+                if val is None:
                     iv_valid = False
                     break
 
-                z_dict[f"D:iv:{block.variable}"] = now - prev
+                z_dict[f"D:iv:{_style_label(block.variable)}"] = val
 
             _add_time_dummy_instrument(z_dict, group.index[pos])
 
             if iv_valid and z_dict:
                 current_time = group.index[pos]
-                prev_time = group.index[pos - 1]
                 original_index = group["_native_original_index"].iloc[pos]
+
+                error_terms = _transformed_error_terms(
+                    group.index,
+                    pos,
+                    spec.transformation,
+                )
+                if error_terms is None:
+                    continue
 
                 row_meta = {
                     "entity": entity_value,
                     "time": current_time,
                     "equation": "diff",
                     "original_index": original_index,
-                    "error_terms": {
-                        current_time: 1.0,
-                        prev_time: -1.0,
-                    },
+                    "error_terms": error_terms,
                 }
 
                 staged.append((y_val, x_vals, z_dict, original_index, row_meta))
@@ -288,12 +420,7 @@ def _build_native_matrices(
                 x_vals = []
                 valid = True
                 for reg in spec.regressors:
-                    parsed = _parse_lagged_regressor(reg)
-                    if parsed:
-                        lag, var = parsed
-                        val = _safe_get(group[var].astype(float), pos - lag)
-                    else:
-                        val = _safe_get(group[reg].astype(float), pos)
+                    val = _level_regressor_at(group, reg, pos)
                     if val is None:
                         valid = False
                         break
@@ -302,150 +429,37 @@ def _build_native_matrices(
                     continue
 
                 if time_dummy_names:
-                    # SYSTEMGMMKIT_LEVEL_TIME_X_MODE diagnostic.
-                    #
-                    # zero:
-                    #   Current behavior. Keep time-dummy columns in X but set
-                    #   their level-equation values to zero.
-                    #
-                    # actual:
-                    #   Use actual level-equation period dummy values. This is
-                    #   the natural xtabond2-style interpretation when i.period4
-                    #   appears in the structural equation.
-                    import os as _native_level_time_x_os
-
-                    _level_time_x_mode = (
-                        _native_level_time_x_os.getenv(
-                            "SYSTEMGMMKIT_LEVEL_TIME_X_MODE",
-                            "zero",
-                        )
-                        .strip()
-                        .lower()
-                    )
-
-                    if _level_time_x_mode in {"zero", "default", ""}:
-                        x_vals.extend([0.0] * len(time_dummy_names))
-                    elif _level_time_x_mode == "actual":
-                        x_vals.extend(_time_dummy_x_values(group.index[pos]))
-                    else:
-                        raise ValueError(
-                            "Unsupported SYSTEMGMMKIT_LEVEL_TIME_X_MODE="
-                            f"{_level_time_x_mode!r}. Use zero or actual."
-                        )
+                    x_vals.extend(_time_dummy_x_values(group.index[pos]))
 
                 z_dict = {}
 
-                # Level equation instruments.
-                # Use available lagged differences for GMM-style instruments.
+                # System-GMM level-equation instruments.
+                #
+                # Level equations use lagged differences as instruments:
+                #
+                #   row t -> Δsource_{t-1} = source_{t-1} - source_{t-2}
+                #
+                # This is deterministic estimator logic. Diagnostic environment
+                # switches must not alter production matrix construction.
                 for block in spec.gmm:
-                    # Diagnostic only:
-                    # test whether pydynpd handles interaction regressors differently
-                    # in the System GMM level-equation instrument block.
-                    skip_level_interactions = (
-                        _native_os.getenv("SYSTEMGMMKIT_SKIP_LEVEL_INTERACTION_INSTRUMENTS") == "1"
-                    )
+                    s = _style_source_series(group, block.variable)
+                    block_label = _style_label(block.variable)
+                    val = _lagged_difference_instrument_at(s, pos, lag=1)
 
-                    is_interaction_like = (
-                        "_frag" in block.variable
-                        or "_polity" in block.variable
-                        or "frag_polity" in block.variable
-                    )
+                    if val is not None:
+                        z_dict[f"L:diff:{block_label}:L1"] = val
 
-                    if skip_level_interactions and is_interaction_like:
+                # IV-style / exogenous instruments for the level equation.
+                for block in spec.iv:
+                    if getattr(block, "eq", None) == "diff":
                         continue
 
-                    s = group[block.variable].astype(float)
+                    s = _style_source_series(group, block.variable)
+                    val = _safe_get(s, pos)
 
-                    # SYSTEMGMMKIT_LEVEL_DIFF_MODE diagnostic.
-                    #
-                    # System-GMM level-equation GMM instruments are lagged
-                    # differences. This switch tests timing/sign conventions
-                    # against xtabond2 one-step.
-                    import os as _native_level_diff_os
+                    if val is not None:
+                        z_dict[f"L:iv:{_style_label(block.variable)}"] = val
 
-                    _level_diff_mode = (
-                        _native_level_diff_os.getenv(
-                            "SYSTEMGMMKIT_LEVEL_DIFF_MODE",
-                            "lag1",
-                        )
-                        .strip()
-                        .lower()
-                    )
-
-                    if _level_diff_mode in {"lag1", "default", ""}:
-                        left = _safe_get(s, pos - 1)
-                        right = _safe_get(s, pos - 2)
-                        # xtabond2 parity diagnostic:
-                        # For gmm(L.y, lag(2 3)), the System-GMM level-equation
-                        # instrument for the lagged dependent variable must use:
-                        #   y[t-2] - y[t-3]
-                        # not:
-                        #   y[t-1] - y[t-2]
-                        import os as _native_level_dep_offset_os
-
-                        _level_dep_offset_enabled = (
-                            _native_level_dep_offset_os.getenv(
-                                "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
-                                "1",
-                            )
-                            .strip()
-                            .lower()
-                            in {"1", "true", "yes", "on"}
-                        )
-
-                        _dep_name = getattr(spec, "dependent", None)
-                        _regressors = set(
-                            str(v) for v in (getattr(spec, "regressors", None) or [])
-                        )
-
-                        _is_lagged_dep_block = (
-                            _dep_name is not None
-                            and str(block.variable) == str(_dep_name)
-                            and (
-                                f"L1.{_dep_name}" in _regressors
-                                or f"L.{_dep_name}" in _regressors
-                            )
-                        )
-
-                        if _level_dep_offset_enabled and _is_lagged_dep_block:
-                            left = _safe_get(s, pos - 2)
-                            right = _safe_get(s, pos - 3)
-
-                        if left is not None and right is not None:
-                            z_dict[f"L:diff:{block.variable}:L1"] = left - right
-
-                    elif _level_diff_mode == "current":
-                        left = _safe_get(s, pos)
-                        right = _safe_get(s, pos - 1)
-                        if left is not None and right is not None:
-                            z_dict[f"L:diff:{block.variable}:L1"] = left - right
-
-                    elif _level_diff_mode == "lag2":
-                        left = _safe_get(s, pos - 2)
-                        right = _safe_get(s, pos - 3)
-                        if left is not None and right is not None:
-                            z_dict[f"L:diff:{block.variable}:L1"] = left - right
-
-                    elif _level_diff_mode == "reverse_lag1":
-                        left = _safe_get(s, pos - 2)
-                        right = _safe_get(s, pos - 1)
-                        if left is not None and right is not None:
-                            z_dict[f"L:diff:{block.variable}:L1"] = left - right
-
-                    elif _level_diff_mode == "zero":
-                        z_dict[f"L:diff:{block.variable}:L1"] = 0.0
-
-                    else:
-                        raise ValueError(
-                            "Unsupported SYSTEMGMMKIT_LEVEL_DIFF_MODE="
-                            f"{_level_diff_mode!r}. Use lag1, current, lag2, "
-                            "reverse_lag1, or zero."
-                        )
-
-                # pydynpd-style System GMM level-equation instrument.
-                #
-                # Do not add separate L:iv:* instruments for exogenous controls.
-                # The reference backend counts one level constant instead.
                 z_dict["L:constant"] = 1.0
                 # Do not add time-dummy instruments on level-equation rows.
                 # The same T:* columns remain present through differenced rows,
@@ -654,18 +668,22 @@ def _native_pydynpd_compat_instrument_order(spec: DynamicPanelSpec) -> list[str]
     labels: list[str] = []
 
     for block in spec.gmm:
-        var = _native_style_variable(block)
+        var = _style_label(_native_style_variable(block))
         for lag in range(_native_style_min_lag(block), _native_style_max_lag(block) + 1):
             labels.append(f"D:{var}:L{lag}")
 
     for iv in spec.iv:
-        var = _native_style_variable(iv)
+        var = _style_label(_native_style_variable(iv))
         labels.append(f"IV:{var}")
 
     if spec.system:
         for block in spec.gmm:
-            var = _native_style_variable(block)
+            var = _style_label(_native_style_variable(block))
             labels.append(f"L:diff:{var}:L1")
+        for iv in spec.iv:
+            if getattr(iv, "eq", None) != "diff":
+                var = _style_label(_native_style_variable(iv))
+                labels.append(f"L:iv:{var}")
         labels.append("L:constant")
 
     return labels
@@ -1322,28 +1340,9 @@ def run_native_dynamic_panel_gmm(
     else:
         nobs_reported = int(nobs_effective)
 
-    # SYSTEMGMMKIT_LEVEL_ROW_WEIGHT
-    # Diagnostic only: scale System GMM level-equation rows relative to
-    # differenced-equation rows. This tests whether remaining pydynpd parity
-    # gaps are due to equation-level weighting differences.
-    import os as _native_level_weight_os
-
-    level_row_weight = float(_native_level_weight_os.getenv("SYSTEMGMMKIT_LEVEL_ROW_WEIGHT", "1.0"))
-
-    if spec.system and "_con" in names and abs(level_row_weight - 1.0) > 1e-12:
-        level_scale = float(np.sqrt(level_row_weight))
-        con_col = names.index("_con")
-        level_rows = X[:, con_col] == 1.0
-
-        y = y.copy()
-        X = X.copy()
-
-        y[level_rows] *= level_scale
-        X[level_rows, :] *= level_scale
-
-        if _native_level_weight_os.getenv("SYSTEMGMMKIT_LEVEL_ROW_WEIGHT_SCALE_Z") == "1":
-            Z = Z.copy()
-            Z[level_rows, :] *= level_scale
+    # Production native GMM must not rescale equation blocks via environment
+    # variables. Equation weighting belongs in the explicitly constructed first-
+    # and second-step weighting matrices.
 
     # SYSTEMGMMKIT_FILE_INSTRUMENT_DEBUG
     import os
@@ -1389,14 +1388,6 @@ def run_native_dynamic_panel_gmm(
         use_twostep = False
 
     if spec.system:
-        Z, instrument_names = _native_make_pydynpd_compat_z(
-            spec=spec,
-            X=X,
-            Z=Z,
-            coef_names=names,
-            instrument_names=instrument_names,
-        )
-
         W1, n_groups, group_rows, _diff_width = _native_pydynpd_first_step_weight_inv(
             Z=Z,
             y=y,
@@ -1562,36 +1553,56 @@ def run_native_dynamic_panel_gmm(
     _ztu = Z.T @ _u_col
     _j_stat_raw = float((_ztu.T @ W @ _ztu).squeeze())
 
-    # xtabond2-compatible Hansen scaling:
+    # One-step overidentification diagnostics.
     #
-    # xtabond2's e(A2) equals the native two-step weighting matrix divided by
-    # the number of panel groups. Therefore Hansen J must use W / n_groups.
-    # This leaves the coefficient estimates unchanged because scalar rescaling
-    # of W does not change the GMM argmin.
-    import os as _native_hansen_scale_os
+    # For one-step GMM, the quadratic form based on W1 is a Sargan-style
+    # statistic, not a robust Hansen statistic. Do not report the group-scaled
+    # tiny value as Hansen/J. xtabond2's one-step Sargan is closely matched by
+    # a finite-sample group adjustment.
+    _overid_df = int(Z.shape[1]) - int(len(names))
+    _n_groups_for_diag = max(int(data[entity].nunique()), 1)
 
-    _hansen_group_scale_mode = (
-        _native_hansen_scale_os.getenv(
-            "SYSTEMGMMKIT_HANSEN_GROUP_SCALE",
-            "1",
-        )
-        .strip()
-        .lower()
+    _sargan_small_scale = (
+        max(float(_n_groups_for_diag - len(names)), 1.0)
+        / float(_n_groups_for_diag)
+    )
+    _sargan_stat = float(_j_stat_raw * _sargan_small_scale)
+
+    # Store a one-step Sargan-style J statistic only for one-step estimation.
+    # In two-step / Windmeijer mode, W is the two-step weighting matrix, so the
+    # same quadratic form is not comparable to xtabond2's one-step Sargan.
+    _steps_label = str(getattr(spec, "steps", "")).strip().lower()
+
+    # covariance_type may be assigned later in this function depending on the
+    # estimation branch, so do not reference it directly here.
+    _cov_label = str(locals().get("covariance_type", "")).strip().lower()
+    _windmeijer_flag = bool(locals().get("windmeijer", False))
+
+    _is_twostep_like = (
+        _windmeijer_flag
+        or "two" in _steps_label
+        or _steps_label in {"2", "twostep", "two-step"}
+        or "two-step" in _cov_label
+        or "twostep" in _cov_label
+        or "windmeijer" in _cov_label
     )
 
-    # Use the input panel groups here because the result object has not
-    # been constructed yet at this point in the function.
-    _n_groups_for_hansen = max(int(data[entity].nunique()), 1)
+    if _is_twostep_like:
+        _j_stat = None
+        sargan_p = None
+    else:
+        _j_stat = _sargan_stat
 
-    if _hansen_group_scale_mode in {"1", "true", "yes", "on"}:
-        _j_stat = _j_stat_raw / _n_groups_for_hansen
-    else:
-        _j_stat = _j_stat_raw
-    _hansen_df = int(Z.shape[1]) - int(len(names))
-    if _hansen_df > 0 and np.isfinite(_j_stat) and _j_stat >= 0:
-        hansen_p = float(stats.chi2.sf(_j_stat, _hansen_df))
-    else:
-        hansen_p = None
+        if _overid_df > 0 and np.isfinite(_sargan_stat) and _sargan_stat >= 0:
+            sargan_p = float(stats.chi2.sf(_sargan_stat, _overid_df))
+        else:
+            sargan_p = None
+
+    # Robust Hansen parity requires the robust moment covariance, not the
+    # one-step Sargan quadratic form. Leave it undefined here rather than
+    # reporting a misleading pseudo-Hansen p-value.
+    hansen_p = None
+
 
     _ztu_norm = float(np.linalg.norm(_ztu))
     _w_norm = float(np.linalg.norm(W))
