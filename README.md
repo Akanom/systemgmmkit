@@ -761,6 +761,18 @@ This roadmap protects the package from overclaiming and supports academically de
 
 ---
 
+## Native System GMM parity status
+
+Native System GMM has certified benchmark-specific parity against Stata `xtabond2` for the committed baseline, no-controls, three-way interaction, and decomposition specifications.
+
+Certified quantities include coefficient estimates, parameter counts, observation counts, instrument counts, Hansen p-values, two-step Windmeijer-corrected standard errors, and signed AR(1)/AR(2) diagnostics with p-values.
+
+The committed baseline specification is certified as `PASS_STRICT_XTABOND2_SYSTEM_GMM_BASELINE`. The no-controls, three-way interaction, and decomposition specifications pass the AR diagnostic parity check under the committed validation thresholds.
+
+See `artifacts/parity/xtabond2/xtabond2_native_system_gmm_parity.md`, `artifacts/parity/xtabond2/ar_diagnostics_comparison.md`, and `artifacts/parity/xtabond2/native_xtabond2_ar_diagnostics_validation.csv` for the certification evidence and reproduction context.
+
+---
+
 ## Development principles
 
 `systemgmmkit` is built around the following principles:
@@ -791,14 +803,4 @@ Recommended reporting format:
 ```text
 Estimation was performed using systemgmmkit version X.Y.Z, commit <commit-hash>. Dynamic-panel GMM results used the [native / validated backend] route with collapsed instruments, restricted lag windows, and [one-step / two-step] estimation. Specification details, panel structure, and instrument classification are reported in the model documentation.
 ```
-
-## Native System GMM parity status
-
-Native System GMM has certified benchmark-specific parity against Stata `xtabond2` for the committed baseline, no-controls, three-way interaction, and decomposition specifications.
-
-Certified quantities include coefficient estimates, parameter counts, observation counts, instrument counts, Hansen p-values, two-step Windmeijer-corrected standard errors, and signed AR(1)/AR(2) diagnostics with p-values.
-
-The committed baseline specification is certified as `PASS_STRICT_XTABOND2_SYSTEM_GMM_BASELINE`. The no-controls, three-way interaction, and decomposition specifications pass the AR diagnostic parity check under the committed validation thresholds.
-
-See `artifacts/parity/xtabond2/xtabond2_native_system_gmm_parity.md`, `artifacts/parity/xtabond2/ar_diagnostics_comparison.md`, and `artifacts/parity/xtabond2/native_xtabond2_ar_diagnostics_validation.csv` for the certification evidence and reproduction context.
 
