@@ -5,176 +5,339 @@ from pathlib import Path
 import pandas as pd
 
 OUT = Path("artifacts/parity/xtabond2")
-BASELINE_WINDMEIJER = OUT / "specs" / "system_gmm_baseline_controls" / "windmeijer"
+
+NATIVE_PARAMS = (
+    OUT / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "native_params.csv"
+)
+NATIVE_DIAGNOSTICS = (
+    OUT
+    / "specs"
+    / "system_gmm_baseline_controls"
+    / "windmeijer"
+    / "native_diagnostics.csv"
+)
+STATA_PARAMS = OUT / "xtabond2_system_gmm_params.csv"
+STATA_DIAGNOSTICS = OUT / "xtabond2_system_gmm_diagnostics.csv"
+
+COEF_OUT = OUT / "xtabond2_native_system_gmm_coef_comparison.csv"
+DIAG_OUT = OUT / "xtabond2_native_system_gmm_diagnostics_comparison.csv"
+REPORT_OUT = OUT / "xtabond2_native_system_gmm_parity.md"
 
 
-def _first_existing(paths: list[Path]) -> Path | None:
-    for path in paths:
-        if path.exists():
-            return path
-    return None
-
-
-def _require_existing(paths: list[Path], label: str) -> Path:
-    path = _first_existing(paths)
-    if path is None:
-        candidates = "\n".join(f"  - {p}" for p in paths)
-        raise FileNotFoundError(f"Missing {label}. Tried:\n{candidates}")
-    return path
-
-
-def _read_csv_if_exists(path: Path | None) -> pd.DataFrame | None:
-    if path is None or not path.exists():
-        return None
+def _read_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        raise FileNotFoundError(path)
     return pd.read_csv(path)
 
 
-def _normalise_stata_params(stata_params: pd.DataFrame) -> pd.DataFrame:
-    """Return Stata parameters with stable column names for comparison."""
-    if stata_params.empty:
-        return stata_params
+def _normalize_param(name: object) -> str:
+    value = str(name)
+    aliases = {
+        "L.y": "L1.y",
+        "_cons": "_con",
+    }
+    return aliases.get(value, value)
 
-    renamed = stata_params.copy()
 
-    rename_map = {}
-    if "parm" in renamed.columns:
-        rename_map["parm"] = "param"
-    if "estimate" in renamed.columns:
-        rename_map["estimate"] = "stata_coef"
-    if "stderr" in renamed.columns:
-        rename_map["stderr"] = "stata_std_err"
-    if "std_err" in renamed.columns:
-        rename_map["std_err"] = "stata_std_err"
+def _native_params(path: Path) -> pd.DataFrame:
+    df = _read_csv(path).copy()
+    if "param" not in df.columns:
+        raise ValueError(f"Native params missing 'param' column: {path}")
 
-    renamed = renamed.rename(columns=rename_map)
+    df["param_norm"] = df["param"].map(_normalize_param)
 
-    if "param" not in renamed.columns:
-        raise KeyError(f"Could not find Stata parameter-name column in {list(stata_params.columns)}")
+    keep = [
+        "param_norm",
+        "param",
+        "native_coef",
+        "native_std_err",
+        "native_z",
+        "native_p_value",
+        "covariance_type",
+    ]
+    return df[[c for c in keep if c in df.columns]]
 
-    if "stata_coef" not in renamed.columns:
-        possible_coef_cols = [c for c in renamed.columns if c.lower() in {"coef", "b", "estimate"}]
-        if possible_coef_cols:
-            renamed = renamed.rename(columns={possible_coef_cols[0]: "stata_coef"})
 
-    return renamed
+def _stata_params(path: Path) -> pd.DataFrame:
+    df = _read_csv(path).copy()
+
+    if "parm" in df.columns:
+        df = df.rename(columns={"parm": "param"})
+    if "estimate" in df.columns:
+        df = df.rename(columns={"estimate": "stata_coef"})
+    if "stderr" in df.columns:
+        df = df.rename(columns={"stderr": "stata_std_err"})
+
+    if "param" not in df.columns:
+        raise ValueError(f"Stata params missing parameter column: {path}")
+
+    df["param_norm"] = df["param"].map(_normalize_param)
+
+    keep = [
+        "param_norm",
+        "param",
+        "stata_coef",
+        "stata_std_err",
+        "dof",
+        "t",
+        "p",
+        "min95",
+        "max95",
+    ]
+    return df[[c for c in keep if c in df.columns]]
+
+
+def _compare_params() -> pd.DataFrame:
+    native = _native_params(NATIVE_PARAMS)
+    stata = _stata_params(STATA_PARAMS)
+
+    compare = native.merge(
+        stata,
+        on="param_norm",
+        how="outer",
+        suffixes=("_native_name", "_stata_name"),
+    )
+
+    compare["param"] = compare["param_norm"]
+    compare = compare.drop(columns=["param_norm"])
+
+    if "native_coef" in compare.columns and "stata_coef" in compare.columns:
+        compare["abs_coef_diff"] = (
+            pd.to_numeric(compare["native_coef"], errors="coerce")
+            - pd.to_numeric(compare["stata_coef"], errors="coerce")
+        ).abs()
+
+    if "native_std_err" in compare.columns and "stata_std_err" in compare.columns:
+        native_se = pd.to_numeric(compare["native_std_err"], errors="coerce")
+        stata_se = pd.to_numeric(compare["stata_std_err"], errors="coerce")
+        compare["abs_se_diff"] = (native_se - stata_se).abs()
+        compare["rel_se_diff"] = compare["abs_se_diff"] / stata_se.abs()
+
+    preferred_order = [
+        "param",
+        "param_native_name",
+        "param_stata_name",
+        "native_coef",
+        "stata_coef",
+        "abs_coef_diff",
+        "native_std_err",
+        "stata_std_err",
+        "abs_se_diff",
+        "rel_se_diff",
+        "native_z",
+        "native_p_value",
+        "dof",
+        "t",
+        "p",
+        "min95",
+        "max95",
+        "covariance_type",
+    ]
+
+    cols = [c for c in preferred_order if c in compare.columns]
+    rest = [c for c in compare.columns if c not in cols]
+    return compare[cols + rest].sort_values("param").reset_index(drop=True)
+
+
+def _compare_diagnostics() -> pd.DataFrame:
+    native = _read_csv(NATIVE_DIAGNOSTICS).add_prefix("native_file_")
+    stata = _read_csv(STATA_DIAGNOSTICS).add_prefix("stata_file_")
+    return pd.concat([native.reset_index(drop=True), stata.reset_index(drop=True)], axis=1)
+
+
+def _as_float(value: object) -> float:
+    return float(pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0])
 
 
 def main() -> None:
-    native_params_path = _require_existing(
-        [
-            BASELINE_WINDMEIJER / "native_params.csv",
-            OUT / "native_system_gmm_params.csv",
-        ],
-        "native System GMM parameter artifact",
+    OUT.mkdir(parents=True, exist_ok=True)
+
+    compare = _compare_params()
+    diag = _compare_diagnostics()
+
+    compare.to_csv(COEF_OUT, index=False)
+    diag.to_csv(DIAG_OUT, index=False)
+
+    matched_coef = compare.dropna(subset=["native_coef", "stata_coef"]).copy()
+    matched_se = compare.dropna(subset=["native_std_err", "stata_std_err"]).copy()
+
+    coef_max_abs_diff = _as_float(matched_coef["abs_coef_diff"].max())
+    se_max_abs_diff = _as_float(matched_se["abs_se_diff"].max())
+
+    coef_pass = coef_max_abs_diff <= 1e-5
+    se_pass = se_max_abs_diff <= 1e-5
+
+    diag_row = diag.iloc[0].to_dict()
+
+    same_nobs = (
+        diag_row.get("native_file_native_nobs")
+        == diag_row.get("stata_file_stata_nobs")
     )
-    native_diag_path = _require_existing(
-        [
-            BASELINE_WINDMEIJER / "native_diagnostics.csv",
-            OUT / "native_system_gmm_diagnostics.csv",
-        ],
-        "native System GMM diagnostics artifact",
+    same_instruments = (
+        diag_row.get("native_file_native_n_instruments")
+        == diag_row.get("stata_file_stata_n_instruments")
     )
 
-    stata_params_path = _first_existing(
+    hansen_diff = abs(
+        _as_float(diag_row.get("native_file_native_hansen_p"))
+        - _as_float(diag_row.get("stata_file_stata_hansen_p"))
+    )
+    ar1_diff = abs(
+        _as_float(diag_row.get("native_file_native_ar1"))
+        - _as_float(diag_row.get("stata_file_stata_ar1"))
+    )
+    ar1_p_diff = abs(
+        _as_float(diag_row.get("native_file_native_ar1_p"))
+        - _as_float(diag_row.get("stata_file_stata_ar1_p"))
+    )
+    ar2_diff = abs(
+        _as_float(diag_row.get("native_file_native_ar2"))
+        - _as_float(diag_row.get("stata_file_stata_ar2"))
+    )
+    ar2_p_diff = abs(
+        _as_float(diag_row.get("native_file_native_ar2_p"))
+        - _as_float(diag_row.get("stata_file_stata_ar2_p"))
+    )
+
+    hansen_pass = hansen_diff <= 1e-5
+    ar_pass = (
+        ar1_diff <= 0.10
+        and ar1_p_diff <= 0.03
+        and ar2_diff <= 0.10
+        and ar2_p_diff <= 0.03
+    )
+
+    strict_pass = bool(
+        coef_pass
+        and se_pass
+        and same_nobs
+        and same_instruments
+        and hansen_pass
+        and ar_pass
+    )
+
+    status = (
+        "PASS_STRICT_XTABOND2_SYSTEM_GMM_BASELINE"
+        if strict_pass
+        else "REVIEW_XTABOND2_SYSTEM_GMM_BASELINE"
+    )
+
+    certification = pd.DataFrame(
         [
-            OUT / "xtabond2_system_gmm_params.csv",
+            {
+                "check": "Sample size",
+                "native": diag_row.get("native_file_native_nobs"),
+                "stata": diag_row.get("stata_file_stata_nobs"),
+                "abs_diff": 0 if same_nobs else "mismatch",
+                "status": "PASS" if same_nobs else "REVIEW",
+            },
+            {
+                "check": "Instrument count",
+                "native": diag_row.get("native_file_native_n_instruments"),
+                "stata": diag_row.get("stata_file_stata_n_instruments"),
+                "abs_diff": 0 if same_instruments else "mismatch",
+                "status": "PASS" if same_instruments else "REVIEW",
+            },
+            {
+                "check": "Max coefficient difference",
+                "native": "",
+                "stata": "",
+                "abs_diff": coef_max_abs_diff,
+                "status": "PASS" if coef_pass else "REVIEW",
+            },
+            {
+                "check": "Max Windmeijer SE difference",
+                "native": "",
+                "stata": "",
+                "abs_diff": se_max_abs_diff,
+                "status": "PASS" if se_pass else "REVIEW",
+            },
+            {
+                "check": "Hansen p-value",
+                "native": diag_row.get("native_file_native_hansen_p"),
+                "stata": diag_row.get("stata_file_stata_hansen_p"),
+                "abs_diff": hansen_diff,
+                "status": "PASS" if hansen_pass else "REVIEW",
+            },
+            {
+                "check": "AR(1) statistic",
+                "native": diag_row.get("native_file_native_ar1"),
+                "stata": diag_row.get("stata_file_stata_ar1"),
+                "abs_diff": ar1_diff,
+                "status": "PASS" if ar1_diff <= 0.10 else "REVIEW",
+            },
+            {
+                "check": "AR(1) p-value",
+                "native": diag_row.get("native_file_native_ar1_p"),
+                "stata": diag_row.get("stata_file_stata_ar1_p"),
+                "abs_diff": ar1_p_diff,
+                "status": "PASS" if ar1_p_diff <= 0.03 else "REVIEW",
+            },
+            {
+                "check": "AR(2) statistic",
+                "native": diag_row.get("native_file_native_ar2"),
+                "stata": diag_row.get("stata_file_stata_ar2"),
+                "abs_diff": ar2_diff,
+                "status": "PASS" if ar2_diff <= 0.10 else "REVIEW",
+            },
+            {
+                "check": "AR(2) p-value",
+                "native": diag_row.get("native_file_native_ar2_p"),
+                "stata": diag_row.get("stata_file_stata_ar2_p"),
+                "abs_diff": ar2_p_diff,
+                "status": "PASS" if ar2_p_diff <= 0.03 else "REVIEW",
+            },
         ]
     )
-    stata_diag_path = _first_existing(
-        [
-            OUT / "xtabond2_system_gmm_diagnostics.csv",
-            OUT / "xtabond2_internal_diagnostics.csv",
-        ]
-    )
-
-    native_params = pd.read_csv(native_params_path)
-    stata_params = _read_csv_if_exists(stata_params_path)
-
-    if stata_params is not None and not stata_params.empty:
-        stata_params = _normalise_stata_params(stata_params)
-
-        compare = native_params.merge(
-            stata_params,
-            on="param",
-            how="outer",
-            suffixes=("_native_file", "_stata_file"),
-        )
-
-        if {"native_coef", "stata_coef"}.issubset(compare.columns):
-            compare["abs_coef_diff"] = (compare["native_coef"] - compare["stata_coef"]).abs()
-
-        if {"native_std_err", "stata_std_err"}.issubset(compare.columns):
-            compare["abs_se_diff"] = (compare["native_std_err"] - compare["stata_std_err"]).abs()
-            compare["rel_se_diff"] = compare["abs_se_diff"] / compare["stata_std_err"].abs()
-    else:
-        compare = native_params.copy()
-        compare["stata_status"] = "PENDING_RUN_STATA_DOFILE"
-        compare["stata_coef"] = pd.NA
-        compare["abs_coef_diff"] = pd.NA
-
-    compare.to_csv(OUT / "xtabond2_native_system_gmm_coef_comparison.csv", index=False)
-
-    native_diag = pd.read_csv(native_diag_path)
-    stata_diag = _read_csv_if_exists(stata_diag_path)
-
-    if stata_diag is not None and not stata_diag.empty:
-        diag = pd.concat(
-            [
-                native_diag.add_prefix("native_file_"),
-                stata_diag.add_prefix("stata_file_"),
-            ],
-            axis=1,
-        )
-    else:
-        diag = native_diag.copy()
-        diag["stata_status"] = "PENDING_RUN_STATA_DOFILE"
-
-    diag.to_csv(OUT / "xtabond2_native_system_gmm_diagnostics_comparison.csv", index=False)
 
     md = [
         "# xtabond2 vs Native System GMM Parity",
         "",
         "## Status",
         "",
+        f"`{status}`",
+        "",
+        "## Certification Summary",
+        "",
+        certification.to_markdown(index=False),
+        "",
+        "## Coefficient Comparison",
+        "",
+        compare.to_markdown(index=False),
+        "",
+        "## Diagnostics Comparison",
+        "",
+        diag.to_markdown(index=False),
+        "",
+        "## Artifact Sources",
+        "",
+        f"- Native parameters: `{NATIVE_PARAMS}`",
+        f"- Native diagnostics: `{NATIVE_DIAGNOSTICS}`",
+        f"- Stata parameters: `{STATA_PARAMS}`",
+        f"- Stata diagnostics: `{STATA_DIAGNOSTICS}`",
+        "",
+        "## Generated Files",
+        "",
+        "- `system_gmm_benchmark.csv`",
+        "- `system_gmm_xtabond2_parity.do`",
+        "- `xtabond2_native_system_gmm_coef_comparison.csv`",
+        "- `xtabond2_native_system_gmm_diagnostics_comparison.csv`",
+        "- `xtabond2_native_system_gmm_parity.md`",
+        "",
+        "## Notes",
+        "",
+        "Stata parameter aliases are normalized before comparison: `L.y` maps to `L1.y`, and `_cons` maps to `_con`.",
+        "The signed AR statistics are treated as the primary AR parity object; AR p-values are checked as derived diagnostics.",
+        "",
     ]
 
-    if stata_diag_path is not None and stata_params_path is not None:
-        md.append("Stata xtabond2 outputs detected. Comparison generated.")
-    else:
-        md.append("Native outputs generated. Stata xtabond2 outputs pending. Run the generated `.do` file in Stata.")
+    REPORT_OUT.write_text("\n".join(md), encoding="utf-8")
 
-    md.extend(
-        [
-            "",
-            "## Artifact Sources",
-            "",
-            f"- Native parameters: `{native_params_path.as_posix()}`",
-            f"- Native diagnostics: `{native_diag_path.as_posix()}`",
-            f"- Stata parameters: `{stata_params_path.as_posix() if stata_params_path else 'PENDING'}`",
-            f"- Stata diagnostics: `{stata_diag_path.as_posix() if stata_diag_path else 'PENDING'}`",
-            "",
-            "## Generated Files",
-            "",
-            "- `system_gmm_benchmark.csv`",
-            "- `system_gmm_xtabond2_parity.do`",
-            "- `xtabond2_native_system_gmm_coef_comparison.csv`",
-            "- `xtabond2_native_system_gmm_diagnostics_comparison.csv`",
-            "- `xtabond2_native_system_gmm_parity.md`",
-            "",
-            "## Notes",
-            "",
-            "This comparator prefers the isolated baseline Windmeijer native artifacts and falls back to the legacy top-level native artifacts only when required.",
-            "",
-        ]
-    )
-
-    (OUT / "xtabond2_native_system_gmm_parity.md").write_text("\n".join(md), encoding="utf-8")
-
-    print(f"Wrote comparison outputs to {OUT}")
-    print(f"Native params: {native_params_path}")
-    print(f"Native diagnostics: {native_diag_path}")
-    print(f"Stata params: {stata_params_path if stata_params_path else 'PENDING'}")
-    print(f"Stata diagnostics: {stata_diag_path if stata_diag_path else 'PENDING'}")
+    print(f"Status: {status}")
+    print(certification.to_string(index=False))
+    print(f"\nWrote {COEF_OUT}")
+    print(f"Wrote {DIAG_OUT}")
+    print(f"Wrote {REPORT_OUT}")
 
 
 if __name__ == "__main__":

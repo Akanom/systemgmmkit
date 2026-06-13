@@ -37,7 +37,9 @@ class NativeGMMResult:
     instrument_names: list[str] | None = None
     hansen_p: float | None = None
     sargan_p: float | None = None
+    ar1: float | None = None
     ar1_p: float | None = None
+    ar2: float | None = None
     ar2_p: float | None = None
     z_shape: tuple[int, int] | None = None
     w_shape: tuple[int, int] | None = None
@@ -1180,66 +1182,119 @@ def _native_overid_diagnostics(
     return pvalue, pvalue
 
 
-def _native_ab_serial_correlation_pvalues(
+
+def _native_xtabond2_serial_correlation_stats(
     *,
-    data: pd.DataFrame,
-    entity: str,
-    time: str,
-    row_index: np.ndarray,
     residuals: np.ndarray,
     X: np.ndarray,
-    coef_names: list[str],
-    system: bool,
-) -> tuple[float | None, float | None]:
-    """Experimental Arellano-Bond AR(1)/AR(2)-style residual tests.
+    Z: np.ndarray,
+    W: np.ndarray,
+    cov: np.ndarray,
+    row_meta: list[dict[str, object]],
+) -> tuple[float | None, float | None, float | None, float | None]:
+    """xtabond2-style Arellano-Bond AR(1)/AR(2) diagnostics.
 
-    Uses residuals from differenced-equation rows. For System GMM, level rows
-    are excluded using the level-only `_con` marker.
+    This follows the robust/two-step denominator structure used by xtabond2:
+
+        ar_l = ew / sqrt(d)
+
+        d = wHw + Xw @ (m2VZXA @ ZHw.T + V @ Xw.T)
+
+    with the xtabond2-compatible group scaling identified in the parity probes:
+    W and the covariance used inside m2VZXA are divided by the number of panel
+    groups, while the final coefficient covariance term is used raw.
     """
     try:
-        resid = np.asarray(residuals, dtype=float).reshape(-1)
-        idx = np.asarray(row_index)
+        u = np.asarray(residuals, dtype=float).reshape(-1)
+        X_arr = np.asarray(X, dtype=float)
+        Z_arr = np.asarray(Z, dtype=float)
+        W_arr = np.asarray(W, dtype=float)
+        cov_arr = np.asarray(cov, dtype=float)
 
-        if system and "_con" in coef_names:
-            con_col = coef_names.index("_con")
-            diff_mask = ~np.isclose(np.asarray(X[:, con_col], dtype=float), 1.0)
-        else:
-            diff_mask = np.ones_like(resid, dtype=bool)
+        if not row_meta or len(row_meta) != len(u):
+            return None, None, None, None
 
-        idx = idx[diff_mask]
-        resid = resid[diff_mask]
+        meta = pd.DataFrame(row_meta).copy()
+        if "equation" not in meta.columns:
+            return None, None, None, None
+        if "entity" not in meta.columns or "time" not in meta.columns:
+            return None, None, None, None
 
-        panel_keys = data.loc[idx, [entity, time]].copy()
-        panel_keys["_resid"] = resid
-        panel_keys = panel_keys.sort_values([entity, time])
+        meta["row_pos"] = np.arange(len(meta), dtype=int)
+        equations = meta["equation"].astype(str).to_numpy()
+        diff_mask = equations == "diff"
 
-        def _lag_test(lag: int) -> float | None:
-            d = panel_keys.copy()
-            d["_lag"] = d.groupby(entity)["_resid"].shift(lag)
-            d = d.dropna(subset=["_resid", "_lag"])
+        if not np.any(diff_mask):
+            return None, None, None, None
 
-            if len(d) < 5:
-                return None
+        entities = meta["entity"].astype(str).to_numpy()
+        n_groups = max(int(pd.Series(entities).nunique()), 1)
 
-            a = d["_resid"].to_numpy(dtype=float)
-            b = d["_lag"].to_numpy(dtype=float)
+        D = X_arr.T @ Z_arr
+        W_scaled = W_arr / float(n_groups)
+        cov_for_m2 = cov_arr / float(n_groups)
+        cov_final = cov_arr
 
-            denom = float(np.sqrt(np.sum(a * a) * np.sum(b * b)))
-            if denom <= 0:
-                return None
+        m2_vzxa = -2.0 * cov_for_m2 @ D @ W_scaled
 
-            corr = float(np.sum(a * b) / denom)
-            z = corr * np.sqrt(len(d))
+        diff_meta = meta.loc[diff_mask, ["row_pos", "entity", "time"]].copy()
+        diff_meta["entity"] = diff_meta["entity"].astype(str)
+        diff_meta["time_num"] = pd.to_numeric(diff_meta["time"], errors="coerce")
 
-            if not np.isfinite(z):
-                return None
+        if diff_meta["time_num"].isna().any():
+            return None, None, None, None
 
-            return float(2.0 * stats.norm.sf(abs(z)))
+        lookup = {
+            (str(row.entity), float(row.time_num)): int(row.row_pos)
+            for row in diff_meta.itertuples(index=False)
+        }
 
-        return _lag_test(1), _lag_test(2)
+        def _lag_stat(lag: int) -> tuple[float | None, float | None]:
+            w = np.zeros_like(u, dtype=float)
+
+            for row in diff_meta.itertuples(index=False):
+                lag_pos = lookup.get((str(row.entity), float(row.time_num) - lag))
+                if lag_pos is not None:
+                    w[int(row.row_pos)] = float(u[lag_pos])
+
+            ewvar = np.where(diff_mask, w * u, 0.0)
+            ew = float(np.sum(ewvar))
+            if not np.isfinite(ew) or ew == 0.0:
+                return None, None
+
+            q_by_entity: dict[str, float] = {}
+            for ent, val in zip(entities, ewvar, strict=False):
+                key = str(ent)
+                q_by_entity[key] = q_by_entity.get(key, 0.0) + float(val)
+
+            q_row = np.asarray([q_by_entity[str(ent)] for ent in entities], dtype=float)
+
+            zhw = (q_row * u).reshape(1, -1) @ Z_arr
+            whw = float(np.sum(q_row * u * w))
+            xw = w.reshape(1, -1) @ X_arr
+
+            correction = float(
+                (xw @ (m2_vzxa @ zhw.T + cov_final @ xw.T)).item()
+            )
+            denom = float(whw + correction)
+
+            if not np.isfinite(denom) or denom <= 0.0:
+                return None, None
+
+            z_stat = float(ew / np.sqrt(denom))
+            if not np.isfinite(z_stat):
+                return None, None
+
+            p_value = float(2.0 * stats.norm.sf(abs(z_stat)))
+            return z_stat, p_value
+
+        ar1, ar1_p = _lag_stat(1)
+        ar2, ar2_p = _lag_stat(2)
+        return ar1, ar1_p, ar2, ar2_p
 
     except Exception:
-        return None, None
+        return None, None, None, None
+
 
 def run_native_dynamic_panel_gmm(
     spec: DynamicPanelSpec,
@@ -1271,7 +1326,9 @@ def run_native_dynamic_panel_gmm(
     # Optional strict-parity diagnostic dump. Inactive unless explicitly enabled.
     import os as _native_matrix_dump_os
 
-    native_matrix_dump_dir = _native_matrix_dump_os.getenv("SYSTEMGMMKIT_NATIVE_MATRIX_DUMP_DIR")
+    native_matrix_dump_dir = _native_matrix_dump_os.getenv(
+        "SYSTEMGMMKIT_NATIVE_MATRIX_DUMP_DIR"
+    )
     if native_matrix_dump_dir:
         import json as _native_matrix_dump_json
         from pathlib import Path as _NativeMatrixDumpPath
@@ -1279,9 +1336,31 @@ def run_native_dynamic_panel_gmm(
         dump_dir = _NativeMatrixDumpPath(native_matrix_dump_dir)
         dump_dir.mkdir(parents=True, exist_ok=True)
 
-        safe_name = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in spec.name)
+        safe_name = "".join(
+            ch if ch.isalnum() or ch in "-_." else "_" for ch in spec.name
+        )
         npz_path = dump_dir / f"{safe_name}.npz"
         json_path = dump_dir / f"{safe_name}.json"
+
+        row_equation = np.asarray(
+            [str(meta.get("equation", "")) for meta in row_meta],
+            dtype=object,
+        )
+        row_entity = np.asarray(
+            [str(meta.get("entity", "")) for meta in row_meta],
+            dtype=object,
+        )
+        row_time = np.asarray(
+            [str(meta.get("time", "")) for meta in row_meta],
+            dtype=object,
+        )
+        row_original_index = np.asarray(
+            [str(meta.get("original_index", "")) for meta in row_meta],
+            dtype=object,
+        )
+
+        n_diff_rows = int(np.sum(row_equation == "diff"))
+        n_level_rows = int(np.sum(row_equation == "level"))
 
         np.savez_compressed(
             npz_path,
@@ -1291,6 +1370,10 @@ def run_native_dynamic_panel_gmm(
             row_index=np.asarray([str(v) for v in row_index], dtype=object),
             coef_names=np.asarray(names, dtype=object),
             instrument_names=np.asarray(instrument_names, dtype=object),
+            row_equation=row_equation,
+            row_entity=row_entity,
+            row_time=row_time,
+            row_original_index=row_original_index,
         )
 
         json_path.write_text(
@@ -1299,7 +1382,9 @@ def run_native_dynamic_panel_gmm(
                     "spec": spec.name,
                     "system": bool(spec.system),
                     "nobs_effective": int(nobs_effective),
-                    "n_stacked_rows": int(len(y)),
+                    "n_stacked_rows": int(y.shape[0]),
+                    "n_diff_rows": n_diff_rows,
+                    "n_level_rows": n_level_rows,
                     "x_shape": list(X.shape),
                     "z_shape": list(Z.shape),
                     "coef_names": list(names),
@@ -1309,6 +1394,7 @@ def run_native_dynamic_panel_gmm(
             ),
             encoding="utf-8",
         )
+
     # SYSTEMGMMKIT_STATA_SYSTEM_NOBS_PATCH
     # Keep nobs_effective for internal System-GMM weighting logic.
     # Report Stata/xtabond2-compatible System-GMM N as the level-equation
@@ -1547,15 +1633,13 @@ def run_native_dynamic_panel_gmm(
         n_params=len(names),
     )
 
-    ar1_p, ar2_p = _native_ab_serial_correlation_pvalues(
-        data=data,
-        entity=entity,
-        time=time,
-        row_index=np.asarray(row_index),
+    ar1, ar1_p, ar2, ar2_p = _native_xtabond2_serial_correlation_stats(
         residuals=residual_vec,
         X=X,
-        coef_names=names,
-        system=spec.system,
+        Z=Z,
+        W=W,
+        cov=cov,
+        row_meta=row_meta,
     )
 
     _u_col = residual_vec.reshape(-1, 1)
@@ -1630,6 +1714,12 @@ def run_native_dynamic_panel_gmm(
             debug_dir / "native_A2.csv",
             index=False,
         )
+
+        with contextlib.suppress(Exception):
+            pd.DataFrame(cov).to_csv(
+                debug_dir / "native_covariance.csv",
+                index=False,
+            )
 
         pd.DataFrame(X).to_csv(
             debug_dir / "native_X.csv",
@@ -1722,7 +1812,9 @@ def run_native_dynamic_panel_gmm(
         instrument_names=list(instrument_names),
         hansen_p=hansen_p,
         sargan_p=sargan_p,
+        ar1=ar1,
         ar1_p=ar1_p,
+        ar2=ar2,
         ar2_p=ar2_p,
         z_shape=tuple(Z.shape),
         w_shape=tuple(W.shape),
@@ -1730,6 +1822,7 @@ def run_native_dynamic_panel_gmm(
         ztu_norm=_ztu_norm,
         w_norm=_w_norm,
     )
+
 
 
 

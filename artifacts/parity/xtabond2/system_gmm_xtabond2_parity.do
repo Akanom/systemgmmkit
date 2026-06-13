@@ -10,11 +10,18 @@ if _rc {
     ssc install xtabond2, replace
 }
 
+capture which parmest
+if _rc {
+    ssc install parmest, replace
+}
+
+* Baseline System GMM reference specification.
+* Important: do not use noleveleq here.
+* This benchmark must retain the system-GMM level equation.
 xtabond2 y L.y x w, ///
     gmm(L.y x, lag(2 3) collapse) ///
     iv(w, eq(level)) ///
-    twostep robust small ///
-    noleveleq
+    twostep robust small
 
 matrix b = e(b)
 matrix V = e(V)

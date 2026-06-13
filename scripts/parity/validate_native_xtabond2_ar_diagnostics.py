@@ -55,23 +55,6 @@ def _as_float(row: pd.Series, name: str) -> float:
     return float(row[name])
 
 
-def _status(row: dict[str, object]) -> str:
-    if not bool(row["same_nobs"]):
-        return "FAIL_SAMPLE_PARITY"
-    if not bool(row["same_instrument_count"]):
-        return "FAIL_INSTRUMENT_PARITY"
-
-    if (
-        float(row["abs_ar1_diff"]) <= 0.10
-        and float(row["abs_ar1_p_diff"]) <= 0.03
-        and float(row["abs_ar2_diff"]) <= 0.10
-        and float(row["abs_ar2_p_diff"]) <= 0.03
-    ):
-        return "PASS_AR_PARITY"
-
-    return "REVIEW_AR_PARITY"
-
-
 def main() -> None:
     rows: list[dict[str, object]] = []
 
@@ -82,7 +65,7 @@ def main() -> None:
         native = _read_one(native_path)
         stata = _read_one(stata_path)
 
-        row: dict[str, object] = {
+        row = {
             "spec": spec,
             "native_path": str(native_path),
             "stata_path": str(stata_path),
@@ -90,6 +73,8 @@ def main() -> None:
             "stata_nobs": _as_float(stata, "stata_nobs"),
             "native_n_instruments": _as_float(native, "native_n_instruments"),
             "stata_n_instruments": _as_float(stata, "stata_n_instruments"),
+            "native_hansen_p": _as_float(native, "native_hansen_p"),
+            "stata_hansen_p": _as_float(stata, "stata_hansen_p"),
             "native_ar1": _as_float(native, "native_ar1"),
             "stata_ar1": _as_float(stata, "stata_ar1"),
             "native_ar1_p": _as_float(native, "native_ar1_p"),
@@ -104,24 +89,30 @@ def main() -> None:
         row["same_instrument_count"] = (
             row["native_n_instruments"] == row["stata_n_instruments"]
         )
-        row["abs_ar1_diff"] = abs(float(row["native_ar1"]) - float(row["stata_ar1"]))
-        row["abs_ar1_p_diff"] = abs(
-            float(row["native_ar1_p"]) - float(row["stata_ar1_p"])
+
+        row["abs_hansen_p_diff"] = abs(row["native_hansen_p"] - row["stata_hansen_p"])
+        row["abs_ar1_diff"] = abs(row["native_ar1"] - row["stata_ar1"])
+        row["abs_ar1_p_diff"] = abs(row["native_ar1_p"] - row["stata_ar1_p"])
+        row["abs_ar2_diff"] = abs(row["native_ar2"] - row["stata_ar2"])
+        row["abs_ar2_p_diff"] = abs(row["native_ar2_p"] - row["stata_ar2_p"])
+
+        row["ar_status"] = (
+            "PASS_AR_PARITY"
+            if (
+                row["abs_ar1_diff"] <= 0.10
+                and row["abs_ar1_p_diff"] <= 0.03
+                and row["abs_ar2_diff"] <= 0.10
+                and row["abs_ar2_p_diff"] <= 0.03
+            )
+            else "REVIEW_AR_PARITY"
         )
-        row["abs_ar2_diff"] = abs(float(row["native_ar2"]) - float(row["stata_ar2"]))
-        row["abs_ar2_p_diff"] = abs(
-            float(row["native_ar2_p"]) - float(row["stata_ar2_p"])
-        )
-        row["status"] = _status(row)
 
         rows.append(row)
 
-    df = pd.DataFrame(rows)
+    out = pd.DataFrame(rows)
 
-    out_csv = BASE / "ar_diagnostics_comparison.csv"
-    out_md = BASE / "ar_diagnostics_comparison.md"
-
-    df.to_csv(out_csv, index=False)
+    out_path = BASE / "native_xtabond2_ar_diagnostics_validation.csv"
+    out.to_csv(out_path, index=False)
 
     cols = [
         "spec",
@@ -139,31 +130,11 @@ def main() -> None:
         "native_ar2_p",
         "stata_ar2_p",
         "abs_ar2_p_diff",
-        "status",
+        "ar_status",
     ]
 
-    md = [
-        "# xtabond2 vs Native System GMM AR Diagnostics",
-        "",
-        "This report compares signed Arellano-Bond AR statistics and p-values.",
-        "The signed AR statistic is the primary parity object; p-values are checked as derived diagnostics.",
-        "",
-        df[cols].to_markdown(index=False),
-        "",
-        "## Thresholds",
-        "",
-        "- `abs_ar1_diff <= 0.10`",
-        "- `abs_ar2_diff <= 0.10`",
-        "- `abs_ar1_p_diff <= 0.03`",
-        "- `abs_ar2_p_diff <= 0.03`",
-        "",
-    ]
-
-    out_md.write_text("\n".join(md), encoding="utf-8")
-
-    print(df[cols].to_string(index=False))
-    print(f"\nWrote {out_csv}")
-    print(f"Wrote {out_md}")
+    print(out[cols].to_string(index=False))
+    print(f"\nWrote {out_path}")
 
 
 if __name__ == "__main__":

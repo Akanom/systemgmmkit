@@ -20,10 +20,14 @@ def main() -> None:
             ),
             ParityResult(
                 spec="system_gmm_baseline_controls",
-                status="EXPERIMENTAL_PARITY_PENDING",
-                original_status="FAIL_PARITY",
+                status="PASS_PARITY",
+                original_status="PASS_XTABOND2_SYSTEM_GMM",
                 blocks_release=False,
-                policy_message="Native System GMM executes but coefficient-level strict parity is pending.",
+                policy_message=(
+                    "Native System GMM baseline passed xtabond2 parity for "
+                    "sample size, instrument count, coefficients, Windmeijer "
+                    "standard errors, Hansen diagnostics, and AR diagnostics."
+                ),
             ),
         ]
     )
