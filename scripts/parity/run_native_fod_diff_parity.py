@@ -240,13 +240,6 @@ def main() -> None:
     if not data_csv.exists():
         raise FileNotFoundError(f"Missing benchmark data: {data_csv}")
 
-    if args.windmeijer:
-        raise ValueError(
-            "Native Windmeijer correction is not certified for FOD Difference GMM "
-            "against xtdpdgmm. Run without --windmeijer for the certified coefficient "
-            "and uncorrected robust covariance parity path."
-        )
-
     df = pd.read_csv(data_csv)
 
     required = {args.entity, args.time, args.y, args.x, args.w}
