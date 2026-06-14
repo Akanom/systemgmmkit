@@ -1,0 +1,788 @@
+---------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_dif
+> f/fod_diff_xtdpdgmm_reference.log
+  log type:  text
+ opened on:  13 Jun 2021, 15:58:49
+
+. 
+. display as text "============================================================"
+============================================================
+
+. display as text "FOD Difference GMM reference using xtdpdgmm model(fodev)"
+FOD Difference GMM reference using xtdpdgmm model(fodev)
+
+. display as text "Repo: C:/Users/omoko/OneDrive/Python packages/systemgmmkit"
+Repo: C:/Users/omoko/OneDrive/Python packages/systemgmmkit
+
+. display as text "Data: C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtab
+> ond2/system_gmm_benchmark.csv"
+Data: C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtabond2/system_gmm_ben
+> chmark.csv
+
+. display as text "Output: C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xt
+> dpdgmm/fod_diff"
+Output: C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff
+
+. display as text "============================================================"
+============================================================
+
+. 
+. capture which xtdpdgmm
+
+. if _rc {
+.     display as error "xtdpdgmm not found. Install manually in Stata with: ssc install xtdpdgmm, r
+> eplace"
+.     exit 499
+. }
+
+. 
+. confirm file "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtabond2/syst
+> em_gmm_benchmark.csv"
+
+. 
+. import delimited using "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xta
+> bond2/system_gmm_benchmark.csv", clear varnames(1) numericcols(_all)
+(encoding automatically selected: ISO-8859-1)
+(5 vars, 1,344 obs)
+
+. 
+. describe
+
+Contains data
+ Observations:         1,344                  
+    Variables:             5                  
+---------------------------------------------------------------------------------------------------
+Variable      Storage   Display    Value
+    name         type    format    label      Variable label
+---------------------------------------------------------------------------------------------------
+id              byte    %8.0g                 
+t               byte    %8.0g                 
+y               float   %9.0g                 
+x               float   %9.0g                 
+w               float   %9.0g                 
+---------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. 
+. confirm variable id
+
+. confirm variable t
+
+. confirm variable y
+
+. confirm variable x
+
+. confirm variable w
+
+. 
+. sort id t
+
+. xtset id t
+
+Panel variable: id (strongly balanced)
+ Time variable: t, 0 to 13
+         Delta: 1 unit
+
+. 
+. capture program drop export_last_xtdpdgmm
+
+. program define export_last_xtdpdgmm
+  1.     syntax, SPEC(string) OUTPUT(string)
+  2. 
+.     tempname b V
+  3.     matrix `b' = e(b)
+  4.     matrix `V' = e(V)
+  5. 
+.     local cn : colfullnames `b'
+  6.     local k = colsof(`b')
+  7. 
+.     preserve
+  8.         clear
+  9.         set obs `k'
+ 10. 
+.         gen str80 spec = "`spec'"
+ 11.         gen str80 term = ""
+ 12.         gen double stata_coef = .
+ 13.         gen double stata_std_err = .
+ 14.         gen double stata_z = .
+ 15.         gen double stata_p_value = .
+ 16. 
+.         local j = 1
+ 17.         foreach nm of local cn {
+ 18.             replace term = "`nm'" in `j'
+ 19.             replace stata_coef = el(`b', 1, `j') in `j'
+ 20.             replace stata_std_err = sqrt(el(`V', `j', `j')) in `j'
+ 21.             replace stata_z = stata_coef / stata_std_err in `j'
+ 22.             replace stata_p_value = 2 * normal(-abs(stata_z)) in `j'
+ 23.             local ++j
+ 24.         }
+ 25. 
+.         gen double e_N = .
+ 26.         gen double e_N_g = .
+ 27.         gen double e_j = .
+ 28.         gen double e_j_p = .
+ 29.         gen double e_hansen = .
+ 30.         gen double e_hansenp = .
+ 31.         gen double e_sargan = .
+ 32.         gen double e_sarganp = .
+ 33.         gen double e_ar1 = .
+ 34.         gen double e_ar1p = .
+ 35.         gen double e_ar2 = .
+ 36.         gen double e_ar2p = .
+ 37. 
+.         capture replace e_N = e(N) in 1
+ 38.         capture replace e_N_g = e(N_g) in 1
+ 39.         capture replace e_j = e(j) in 1
+ 40.         capture replace e_j_p = e(j_p) in 1
+ 41.         capture replace e_hansen = e(hansen) in 1
+ 42.         capture replace e_hansenp = e(hansenp) in 1
+ 43.         capture replace e_sargan = e(sargan) in 1
+ 44.         capture replace e_sarganp = e(sarganp) in 1
+ 45.         capture replace e_ar1 = e(ar1) in 1
+ 46.         capture replace e_ar1p = e(ar1p) in 1
+ 47.         capture replace e_ar2 = e(ar2) in 1
+ 48.         capture replace e_ar2p = e(ar2p) in 1
+ 49. 
+.         export delimited using "`output'", replace
+ 50.     restore
+ 51. end
+
+. 
+. display as text "============================================================"
+============================================================
+
+. display as text "SPEC 1: x endogenous, one-step"
+SPEC 1: x endogenous, one-step
+
+. display as text "============================================================"
+============================================================
+
+. 
+. xtdpdgmm L(0/1).y x w, ///
+>     model(fodev) ///
+>     collapse ///
+>     gmm(y, lag(1 2)) ///
+>     gmm(x, lag(1 2)) ///
+>     iv(w) ///
+>     nocons ///
+>     vce(r)
+
+Generalized method of moments estimation
+
+Fitting full model:
+Step 1         f(b) =  .01630427
+
+Group variable: id                           Number of obs         =      1248
+Time variable: t                             Number of groups      =        96
+
+Moment conditions:     linear =       5      Obs per group:    min =        13
+                    nonlinear =       0                        avg =        13
+                        total =       5                        max =        13
+
+                                    (Std. err. adjusted for 96 clusters in id)
+------------------------------------------------------------------------------
+             |               Robust
+           y | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .4739422   .0310182    15.28   0.000     .4131476    .5347367
+             |
+           x |   .8900321   .4039214     2.20   0.028     .0983607    1.681703
+           w |  -.3459312   .0294855   -11.73   0.000    -.4037216   -.2881407
+------------------------------------------------------------------------------
+Instruments corresponding to the linear moment conditions:
+ 1, model(fodev):
+   L1.y L2.y
+ 2, model(fodev):
+   L1.x L2.x
+ 3, model(fodev):
+   w
+
+. 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0163042689059382
+             e(chi2_J) =  9.077070104207634
+           e(chi2_J_u) =  9.361900737620221
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  1
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "onestep"
+                e(vce) : "robust"
+            e(vcetype) : "Robust"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. matrix list e(b)
+
+e(b)[1,3]
+             L.                        
+             y           x           w
+y1   .47394219   .89003209  -.34593118
+
+. matrix list e(V)
+
+symmetric e(V)[3,3]
+              L.                        
+              y           x           w
+L.y   .00096213
+  x   .01068725   .16315248
+  w  -.00073204  -.01050723   .00086939
+
+. export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("C:/Users/omoko/OneDrive/Python pac
+> kages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv")
+Number of observations (_N) was 0, now 3.
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv
+    not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_onestep.csv saved
+
+. 
+. 
+. display as text "============================================================"
+============================================================
+
+. display as text "SPEC 2: x endogenous, two-step"
+SPEC 2: x endogenous, two-step
+
+. display as text "============================================================"
+============================================================
+
+. 
+. xtdpdgmm L(0/1).y x w, ///
+>     model(fodev) ///
+>     collapse ///
+>     gmm(y, lag(1 2)) ///
+>     gmm(x, lag(1 2)) ///
+>     iv(w) ///
+>     nocons ///
+>     two vce(r)
+
+Generalized method of moments estimation
+
+Fitting full model:
+Step 1         f(b) =  .01630427
+Step 2         f(b) =  .09505551
+
+Group variable: id                           Number of obs         =      1248
+Time variable: t                             Number of groups      =        96
+
+Moment conditions:     linear =       5      Obs per group:    min =        13
+                    nonlinear =       0                        avg =        13
+                        total =       5                        max =        13
+
+                                    (Std. err. adjusted for 96 clusters in id)
+------------------------------------------------------------------------------
+             |              WC-Robust
+           y | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .4886099   .0417824    11.69   0.000     .4067178     .570502
+             |
+           x |   1.048705   .5085459     2.06   0.039     .0519738    2.045437
+           w |  -.3566671   .0499535    -7.14   0.000    -.4545741     -.25876
+------------------------------------------------------------------------------
+Instruments corresponding to the linear moment conditions:
+ 1, model(fodev):
+   L1.y L2.y
+ 2, model(fodev):
+   L1.x L2.x
+ 3, model(fodev):
+   w
+
+. 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0950555140533284
+             e(chi2_J) =  9.125329349119525
+           e(chi2_J_u) =  7.158158479743374
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  2
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "twostep"
+                e(vce) : "robust"
+            e(vcetype) : "WC-Robust"
+             e(vcecor) : "wc"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. matrix list e(b)
+
+e(b)[1,3]
+             L.                        
+             y           x           w
+y1   .48860989   1.0487055  -.35666707
+
+. matrix list e(V)
+
+symmetric e(V)[3,3]
+              L.                        
+              y           x           w
+L.y   .00174577
+  x   .01916148   .25861894
+  w  -.00184043  -.02424375   .00249535
+
+. export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("C:/Users/omoko/OneDrive/Python pac
+> kages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv")
+Number of observations (_N) was 0, now 3.
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv
+    not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_twostep.csv saved
+
+. 
+. 
+. display as text "============================================================"
+============================================================
+
+. display as text "SPEC 3: x predetermined, one-step"
+SPEC 3: x predetermined, one-step
+
+. display as text "============================================================"
+============================================================
+
+. 
+. xtdpdgmm L(0/1).y x w, ///
+>     model(fodev) ///
+>     collapse ///
+>     gmm(y, lag(1 2)) ///
+>     gmm(x, lag(0 1)) ///
+>     iv(w) ///
+>     nocons ///
+>     vce(r)
+
+Generalized method of moments estimation
+
+Fitting full model:
+Step 1         f(b) =   .0155601
+
+Group variable: id                           Number of obs         =      1248
+Time variable: t                             Number of groups      =        96
+
+Moment conditions:     linear =       5      Obs per group:    min =        13
+                    nonlinear =       0                        avg =        13
+                        total =       5                        max =        13
+
+                                    (Std. err. adjusted for 96 clusters in id)
+------------------------------------------------------------------------------
+             |               Robust
+           y | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .4730915   .0163714    28.90   0.000     .4410041    .5051788
+             |
+           x |   .8070771   .0135423    59.60   0.000     .7805348    .8336194
+           w |  -.3417783   .0140247   -24.37   0.000    -.3692661   -.3142904
+------------------------------------------------------------------------------
+Instruments corresponding to the linear moment conditions:
+ 1, model(fodev):
+   L1.y L2.y
+ 2, model(fodev):
+   x L1.x
+ 3, model(fodev):
+   w
+
+. 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0155600981502318
+             e(chi2_J) =  9.012588209482166
+           e(chi2_J_u) =  9.814735843837235
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  1
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "onestep"
+                e(vce) : "robust"
+            e(vcetype) : "Robust"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. matrix list e(b)
+
+e(b)[1,3]
+             L.                        
+             y           x           w
+y1   .47309148   .80707709  -.34177826
+
+. matrix list e(V)
+
+symmetric e(V)[3,3]
+              L.                        
+              y           x           w
+L.y   .00026802
+  x   .00008243   .00018339
+  w  -.00004158  -.00002816   .00019669
+
+. export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("C:/Users/omoko/OneDrive/Python pa
+> ckages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv")
+Number of observations (_N) was 0, now 3.
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv
+    not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_onestep.csv saved
+
+. 
+. 
+. display as text "============================================================"
+============================================================
+
+. display as text "SPEC 4: x predetermined, two-step"
+SPEC 4: x predetermined, two-step
+
+. display as text "============================================================"
+============================================================
+
+. 
+. xtdpdgmm L(0/1).y x w, ///
+>     model(fodev) ///
+>     collapse ///
+>     gmm(y, lag(1 2)) ///
+>     gmm(x, lag(0 1)) ///
+>     iv(w) ///
+>     nocons ///
+>     two vce(r)
+
+Generalized method of moments estimation
+
+Fitting full model:
+Step 1         f(b) =   .0155601
+Step 2         f(b) =  .09673658
+
+Group variable: id                           Number of obs         =      1248
+Time variable: t                             Number of groups      =        96
+
+Moment conditions:     linear =       5      Obs per group:    min =        13
+                    nonlinear =       0                        avg =        13
+                        total =       5                        max =        13
+
+                                    (Std. err. adjusted for 96 clusters in id)
+------------------------------------------------------------------------------
+             |              WC-Robust
+           y | Coefficient  std. err.      z    P>|z|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .4757914   .0185985    25.58   0.000      .439339    .5122439
+             |
+           x |   .8000003    .015171    52.73   0.000     .7702657    .8297349
+           w |  -.3376421   .0150704   -22.40   0.000    -.3671795   -.3081046
+------------------------------------------------------------------------------
+Instruments corresponding to the linear moment conditions:
+ 1, model(fodev):
+   L1.y L2.y
+ 2, model(fodev):
+   x L1.x
+ 3, model(fodev):
+   w
+
+. 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0967365769196548
+             e(chi2_J) =  9.28671138428686
+           e(chi2_J_u) =  9.297059993492999
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  2
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "twostep"
+                e(vce) : "robust"
+            e(vcetype) : "WC-Robust"
+             e(vcecor) : "wc"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. matrix list e(b)
+
+e(b)[1,3]
+             L.                        
+             y           x           w
+y1   .47579144   .80000033  -.33764206
+
+. matrix list e(V)
+
+symmetric e(V)[3,3]
+              L.                        
+              y           x           w
+L.y    .0003459
+  x   .00011951   .00023016
+  w  -.00004444  -.00003678   .00022712
+
+. export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("C:/Users/omoko/OneDrive/Python pa
+> ckages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv")
+Number of observations (_N) was 0, now 3.
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(3 missing values generated)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv
+    not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_twostep.csv saved
+
+. 
+. display as text "============================================================"
+============================================================
+
+. display as text "FOD xtdpdgmm oracle export complete"
+FOD xtdpdgmm oracle export complete
+
+. display as text "============================================================"
+============================================================
+
+. 
+. log close
+      name:  <unnamed>
+       log:  C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_dif
+> f/fod_diff_xtdpdgmm_reference.log
+  log type:  text
+ closed on:  13 Jun 2021, 15:58:51
+---------------------------------------------------------------------------------------------------

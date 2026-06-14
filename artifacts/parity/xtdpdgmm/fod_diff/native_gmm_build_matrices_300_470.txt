@@ -1,0 +1,171 @@
+  300:     time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names))
+  301: 
+  302:     y_rows: list[float] = []
+  303:     x_rows: list[list[float]] = []
+  304:     z_rows: list[list[float]] = []
+  305:     z_names: list[str] = []
+  306:     idx_rows: list[object] = []
+  307:     meta_rows: list[dict[str, object]] = []
+  308: 
+  309:     def z_index(name: str) -> int:
+  310:         if name not in z_names:
+  311:             z_names.append(name)
+  312:         return z_names.index(name)
+  313: 
+  314:     staged: list[tuple[float, list[float], dict[str, float], object, dict[str, object]]] = []
+  315:     for entity_value, group in work.groupby(entity, sort=False):
+  316:         group = group.sort_values(time).copy()
+  317:         group["_native_original_index"] = group.index
+  318:         group = group.set_index(time).reindex(time_values)
+  319: 
+  320:         dep = group[spec.dependent].astype(float)
+  321: 
+  322:         def _time_dummy_x_values(current_time: object) -> list[float]:
+  323:             if not time_dummy_values:
+  324:                 return []
+  325:             return [1.0 if current_time == value else 0.0 for value in time_dummy_values]
+  326: 
+  327:         def _add_time_dummy_instrument(z_dict: dict[str, float], current_time: object) -> None:
+  328:             if not time_dummy_lookup:
+  329:                 return
+  330:             name = time_dummy_lookup.get(current_time)
+  331:             if name is not None:
+  332:                 z_dict[f"T:{name}"] = 1.0
+  333: 
+  334:         for pos in range(2, len(group)):
+  335:             y_val = _transform_at(dep, pos, spec.transformation)
+  336:             if y_val is None:
+  337:                 continue
+  338: 
+  339:             x_vals: list[float] = []
+  340:             valid = True
+  341: 
+  342:             for reg in spec.regressors:
+  343:                 val = _transformed_regressor_at(group, reg, pos, spec.transformation)
+  344:                 if val is None:
+  345:                     valid = False
+  346:                     break
+  347:                 x_vals.append(val)
+  348: 
+  349:             if not valid:
+  350:                 continue
+  351: 
+  352:             if time_dummy_names:
+  353:                 x_vals.extend(_time_dummy_x_values(group.index[pos]))
+  354: 
+  355:             z_dict: dict[str, float] = {}
+  356: 
+  357:             # Transformed-equation GMM instruments.
+  358:             #
+  359:             # Collapsed lag-l instruments use the raw source variable named in
+  360:             # the GMM block:
+  361:             #
+  362:             #   row t, lag(l) -> source_{t-l}
+  363:             #
+  364:             # Important: if the structural regressor is L1.y but the GMM block is
+  365:             # y, lag(2 2), the source is still raw y, not already-lagged L1.y.
+  366:             for block in spec.gmm:
+  367:                 s = _style_source_series(group, block.variable)
+  368:                 block_label = _style_label(block.variable)
+  369: 
+  370:                 for lag in range(block.min_lag, block.max_lag + 1):
+  371:                     val = _lagged_level_instrument_at(s, pos, lag)
+  372: 
+  373:                     if val is not None:
+  374:                         z_dict[f"D:{block_label}:L{lag}"] = val
+  375: 
+  376:             # IV-style / exogenous instruments for the transformed equation.
+  377:             # Respect equation scope: eq="level" instruments do not enter D/FOD rows.
+  378:             iv_valid = True
+  379:             for block in spec.iv:
+  380:                 if getattr(block, "eq", None) == "level":
+  381:                     continue
+  382: 
+  383:                 s = _style_source_series(group, block.variable)
+  384:                 val = _transform_at(s, pos, spec.transformation)
+  385: 
+  386:                 if val is None:
+  387:                     iv_valid = False
+  388:                     break
+  389: 
+  390:                 z_dict[f"D:iv:{_style_label(block.variable)}"] = val
+  391: 
+  392:             _add_time_dummy_instrument(z_dict, group.index[pos])
+  393: 
+  394:             if iv_valid and z_dict:
+  395:                 current_time = group.index[pos]
+  396:                 original_index = group["_native_original_index"].iloc[pos]
+  397: 
+  398:                 error_terms = _transformed_error_terms(
+  399:                     group.index,
+  400:                     pos,
+  401:                     spec.transformation,
+  402:                 )
+  403:                 if error_terms is None:
+  404:                     continue
+  405: 
+  406:                 row_meta = {
+  407:                     "entity": entity_value,
+  408:                     "time": current_time,
+  409:                     "equation": "diff",
+  410:                     "original_index": original_index,
+  411:                     "error_terms": error_terms,
+  412:                 }
+  413: 
+  414:                 staged.append((y_val, x_vals, z_dict, original_index, row_meta))
+  415:         if spec.system:
+  416:             for pos in range(1, len(group)):
+  417:                 y_val = _safe_get(dep, pos)
+  418:                 if y_val is None:
+  419:                     continue
+  420:                 x_vals = []
+  421:                 valid = True
+  422:                 for reg in spec.regressors:
+  423:                     val = _level_regressor_at(group, reg, pos)
+  424:                     if val is None:
+  425:                         valid = False
+  426:                         break
+  427:                     x_vals.append(val)
+  428:                 if not valid:
+  429:                     continue
+  430: 
+  431:                 if time_dummy_names:
+  432:                     x_vals.extend(_time_dummy_x_values(group.index[pos]))
+  433: 
+  434:                 z_dict = {}
+  435: 
+  436:                 # System-GMM level-equation instruments.
+  437:                 #
+  438:                 # Level equations use lagged differences as instruments:
+  439:                 #
+  440:                 #   row t -> Δsource_{t-1} = source_{t-1} - source_{t-2}
+  441:                 #
+  442:                 # This is deterministic estimator logic. Diagnostic environment
+  443:                 # switches must not alter production matrix construction.
+  444:                 for block in spec.gmm:
+  445:                     s = _style_source_series(group, block.variable)
+  446:                     block_label = _style_label(block.variable)
+  447:                     val = _lagged_difference_instrument_at(s, pos, lag=1)
+  448: 
+  449:                     if val is not None:
+  450:                         z_dict[f"L:diff:{block_label}:L1"] = val
+  451: 
+  452:                 # IV-style / exogenous instruments for the level equation.
+  453:                 for block in spec.iv:
+  454:                     if getattr(block, "eq", None) == "diff":
+  455:                         continue
+  456: 
+  457:                     s = _style_source_series(group, block.variable)
+  458:                     val = _safe_get(s, pos)
+  459: 
+  460:                     if val is not None:
+  461:                         z_dict[f"L:iv:{_style_label(block.variable)}"] = val
+  462: 
+  463:                 z_dict["L:constant"] = 1.0
+  464:                 # Do not add time-dummy instruments on level-equation rows.
+  465:                 # The same T:* columns remain present through differenced rows,
+  466:                 # preserving instrument count while changing level-row values.
+  467: 
+  468:                 if z_dict:
+  469:                     current_time = group.index[pos]
+  470:                     original_index = group["_native_original_index"].iloc[pos]

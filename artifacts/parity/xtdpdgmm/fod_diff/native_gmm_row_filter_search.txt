@@ -1,0 +1,1584 @@
+2-
+3-import contextlib
+4-from dataclasses import dataclass
+5-
+6-import numpy as np
+7-import pandas as pd
+8-from scipy import stats
+9-
+10-from .fixed_effects import _normal_pvalues_from_t, _require_columns
+11-from .spec import DynamicPanelSpec
+12-
+13-
+14-@dataclass(frozen=True)
+15-class NativeGMMResult:
+16-    """Native dynamic-panel GMM result.
+17-
+18-    The native Difference GMM path has strict benchmark parity. The native
+19-    System GMM path has baseline xtabond2 parity for the current collapsed
+20-    two-step benchmark covering coefficients, raw moments, group-scaled A2,
+21-    and Hansen J.
+22-
+23-    Windmeijer-corrected two-step standard errors are not yet certified.
+24-    """
+25-
+26-    spec: DynamicPanelSpec
+27:    nobs: int
+28:    n_instruments: int
+29-    params: pd.Series
+30-    std_errors: pd.Series
+31-    zstats: pd.Series
+32-    pvalues: pd.Series
+33-    residuals: pd.Series
+34-    covariance_type: str
+35-    backend: str
+36-    notes: list[str]
+37:    instrument_names: list[str] | None = None
+38-    hansen_p: float | None = None
+39-    sargan_p: float | None = None
+40-    ar1_p: float | None = None
+41-    ar2_p: float | None = None
+42:    z_shape: tuple[int, int] | None = None
+43-    w_shape: tuple[int, int] | None = None
+44-    j_stat: float | None = None
+45-    ztu_norm: float | None = None
+46-    w_norm: float | None = None
+47-
+48-    def summary_frame(self) -> pd.DataFrame:
+49-        return pd.DataFrame(
+50-            {
+51-                "coef": self.params,
+52-                "std_err": self.std_errors,
+53-                "z": self.zstats,
+54-                "p_value": self.pvalues,
+55-            }
+56-        )
+57-
+58-    def to_markdown(self, digits: int = 4) -> str:
+59-        table = self.summary_frame().round(digits)
+60-        lines = [f"# Native dynamic-panel GMM result: {self.spec.name}", ""]
+61-        lines.append(f"- Backend: `{self.backend}`")
+62:        lines.append(f"- Observations: `{self.nobs}`")
+63:        lines.append(f"- Instruments: `{self.n_instruments}`")
+64-        lines.append(f"- Covariance: `{self.covariance_type}`")
+65-        if self.notes:
+66-            lines.append("- Notes:")
+67-            for note in self.notes:
+68-                lines.append(f"  - {note}")
+69-        lines.append("")
+70-        lines.append(table.to_markdown())
+71-        return "\n".join(lines)
+72-
+73-
+74-def _parse_lagged_regressor(name: str) -> tuple[int, str] | None:
+75-    if not name.startswith("L") or "." not in name:
+76-        return None
+77-    lag_text, var = name.split(".", 1)
+78-    try:
+79-        return int(lag_text[1:]), var
+80-    except ValueError:
+81-        return None
+82-
+83-
+84-def _required_variables(spec: DynamicPanelSpec) -> list[str]:
+85-    variables = {spec.dependent}
+86-    for reg in spec.regressors:
+87-        parsed = _parse_lagged_regressor(reg)
+88-        variables.add(parsed[1] if parsed else reg)
+89-    for block in spec.gmm:
+90-        parsed = _parse_lagged_regressor(block.variable)
+91-        variables.add(parsed[1] if parsed else block.variable)
+92-    for block in spec.iv:
+93-        parsed = _parse_lagged_regressor(block.variable)
+94-        variables.add(parsed[1] if parsed else block.variable)
+95-    return sorted(variables)
+96-
+97-
+98-def _safe_get(series: pd.Series, pos: int) -> float | None:
+99-    if pos < 0 or pos >= len(series):
+100-        return None
+101-    value = series.iloc[pos]
+102:    if pd.isna(value):
+103-        return None
+104-    return float(value)
+105-
+106-
+107-def _fd_at(series: pd.Series, pos: int) -> float | None:
+108-    """First difference at positional index pos: v_t - v_{t-1}."""
+109-    now = _safe_get(series, pos)
+110-    prev = _safe_get(series, pos - 1)
+111-    if now is None or prev is None:
+112-        return None
+113-    return float(now - prev)
+114-
+115-
+116-def _fod_at(series: pd.Series, pos: int) -> float | None:
+117-    """Forward orthogonal deviation at positional index pos.
+118-
+119-    v*_it = sqrt(k / (k + 1)) * (v_it - mean(v_i,t+1...T))
+120-
+121:    where k is the number of valid future observations for the entity.
+122-    """
+123-    current = _safe_get(series, pos)
+124-    if current is None:
+125-        return None
+126-
+127-    future_values: list[float] = []
+128-    for j in range(pos + 1, len(series)):
+129-        value = _safe_get(series, j)
+130-        if value is not None:
+131-            future_values.append(value)
+132-
+133-    if not future_values:
+134-        return None
+135-
+136-    future = np.asarray(future_values, dtype=float)
+137-    k = float(future.size)
+138-    return float(np.sqrt(k / (k + 1.0)) * (current - float(future.mean())))
+139-
+140-
+141-def _transform_at(series: pd.Series, pos: int, transformation: str) -> float | None:
+142-    """Apply the dynamic-panel transformed-equation operator."""
+143-    transformation_normalized = str(transformation).strip().lower()
+144-
+145-    if transformation_normalized == "fd":
+146-        return _fd_at(series, pos)
+--
+189-        lag, variable = parsed
+190-        return _safe_get(group[variable].astype(float), pos - lag)
+191-
+192-    return _safe_get(group[regressor].astype(float), pos)
+193-
+194-
+195-def _transformed_regressor_at(
+196-    group: pd.DataFrame,
+197-    regressor: str,
+198-    pos: int,
+199-    transformation: str,
+200-) -> float | None:
+201-    """Return the transformed-equation value for a structural regressor."""
+202-    parsed = _parse_lagged_regressor(regressor)
+203-
+204-    if parsed:
+205-        lag, variable = parsed
+206-        base = group[variable].astype(float)
+207-        series = _lagged_series(base, lag)
+208-    else:
+209-        series = group[regressor].astype(float)
+210-
+211-    return _transform_at(series, pos, transformation)
+212-
+213-
+214:def _lagged_level_instrument_at(series: pd.Series, pos: int, lag: int) -> float | None:
+215:    """Collapsed Difference/FOD-equation GMM instrument: level v_{t-lag}."""
+216-    return _safe_get(series, pos - lag)
+217-
+218-
+219:def _lagged_difference_instrument_at(
+220-    series: pd.Series,
+221-    pos: int,
+222-    lag: int = 1,
+223-) -> float | None:
+224:    """System-GMM level-equation instrument: ╬öv_{t-lag}."""
+225-    left = _safe_get(series, pos - lag)
+226-    right = _safe_get(series, pos - lag - 1)
+227-
+228-    if left is None or right is None:
+229-        return None
+230-
+231-    return float(left - right)
+232-
+233-
+234-def _transformed_error_terms(
+235-    index: pd.Index,
+236-    pos: int,
+237-    transformation: str,
+238-) -> dict[object, float] | None:
+239-    """Return raw-error coefficients for a transformed-equation row.
+240-
+241-    This metadata is used to build the one-step weighting matrix. It must match
+242-    the actual transformation used for Y and X.
+243-    """
+244-    transformation_normalized = str(transformation).strip().lower()
+245-
+246-    if transformation_normalized == "fd":
+247-        if pos - 1 < 0:
+248-            return None
+249-        return {
+--
+259-        k = float(len(future_positions))
+260-        scale = float(np.sqrt(k / (k + 1.0)))
+261-
+262-        terms: dict[object, float] = {index[pos]: scale}
+263-        future_weight = -scale / k
+264-
+265-        for future_pos in future_positions:
+266-            terms[index[future_pos]] = future_weight
+267-
+268-        return terms
+269-
+270-    raise ValueError(
+271-        f"Unsupported transformation={transformation!r}. Expected 'fd' or 'fod'."
+272-    )
+273-
+274-
+275-def _build_native_matrices(
+276-    spec: DynamicPanelSpec,
+277-    data: pd.DataFrame,
+278-    *,
+279-    entity: str,
+280-    time: str,
+281-) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[str], pd.Index, int, list[str], list[dict[str, object]]]:
+282-    raw_vars = _required_variables(spec)
+283-    _require_columns(data, [entity, time, *raw_vars])
+284:    work = data[[entity, time, *raw_vars]].dropna().copy().sort_values([entity, time])
+285-
+286-    # Use the full observed time grid before lag construction.
+287-    # This is essential for unbalanced panels: adjacent observed rows are not
+288:    # necessarily valid one-period lags when intermediate time periods are missing.
+289-    # pydynpd treats the declared panel time variable as the lag structure, so the
+290-    # native engine must make missing time periods explicit before building lags.
+291:    time_values = list(pd.Index(work[time].dropna().sort_values().unique()))
+292-
+293-    # Native time-dummy handling.
+294-    # pydynpd's timedumm option adds one dummy for each usable post-lag period.
+295-    # With 14 periods and lagged dynamic-panel construction, this produces +12
+296:    # instruments in the tested baseline. We therefore omit the first two time
+297-    # positions and create dummy columns for time_values[2:].
+298-    time_dummy_values = time_values[2:] if getattr(spec, "time_dummies", False) else []
+299-    time_dummy_names = [f"{time}_{value}" for value in time_dummy_values]
+300-    time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names))
+301-
+302-    y_rows: list[float] = []
+303-    x_rows: list[list[float]] = []
+304-    z_rows: list[list[float]] = []
+305-    z_names: list[str] = []
+306-    idx_rows: list[object] = []
+307-    meta_rows: list[dict[str, object]] = []
+308-
+309-    def z_index(name: str) -> int:
+310-        if name not in z_names:
+311-            z_names.append(name)
+312-        return z_names.index(name)
+313-
+314-    staged: list[tuple[float, list[float], dict[str, float], object, dict[str, object]]] = []
+315-    for entity_value, group in work.groupby(entity, sort=False):
+316-        group = group.sort_values(time).copy()
+317-        group["_native_original_index"] = group.index
+318-        group = group.set_index(time).reindex(time_values)
+319-
+320-        dep = group[spec.dependent].astype(float)
+321-
+322-        def _time_dummy_x_values(current_time: object) -> list[float]:
+323-            if not time_dummy_values:
+324-                return []
+325-            return [1.0 if current_time == value else 0.0 for value in time_dummy_values]
+326-
+327:        def _add_time_dummy_instrument(z_dict: dict[str, float], current_time: object) -> None:
+328-            if not time_dummy_lookup:
+329-                return
+330-            name = time_dummy_lookup.get(current_time)
+331-            if name is not None:
+332-                z_dict[f"T:{name}"] = 1.0
+333-
+334-        for pos in range(2, len(group)):
+335-            y_val = _transform_at(dep, pos, spec.transformation)
+336-            if y_val is None:
+337-                continue
+338-
+339-            x_vals: list[float] = []
+340:            valid = True
+341-
+342-            for reg in spec.regressors:
+343-                val = _transformed_regressor_at(group, reg, pos, spec.transformation)
+344-                if val is None:
+345:                    valid = False
+346-                    break
+347-                x_vals.append(val)
+348-
+349:            if not valid:
+350-                continue
+351-
+352-            if time_dummy_names:
+353-                x_vals.extend(_time_dummy_x_values(group.index[pos]))
+354-
+355-            z_dict: dict[str, float] = {}
+356-
+357:            # Transformed-equation GMM instruments.
+358-            #
+359:            # Collapsed lag-l instruments use the raw source variable named in
+360-            # the GMM block:
+361-            #
+362-            #   row t, lag(l) -> source_{t-l}
+363-            #
+364-            # Important: if the structural regressor is L1.y but the GMM block is
+365-            # y, lag(2 2), the source is still raw y, not already-lagged L1.y.
+366-            for block in spec.gmm:
+367-                s = _style_source_series(group, block.variable)
+368-                block_label = _style_label(block.variable)
+369-
+370-                for lag in range(block.min_lag, block.max_lag + 1):
+371:                    val = _lagged_level_instrument_at(s, pos, lag)
+372-
+373-                    if val is not None:
+374-                        z_dict[f"D:{block_label}:L{lag}"] = val
+375-
+376:            # IV-style / exogenous instruments for the transformed equation.
+377:            # Respect equation scope: eq="level" instruments do not enter D/FOD rows.
+378:            iv_valid = True
+379-            for block in spec.iv:
+380-                if getattr(block, "eq", None) == "level":
+381-                    continue
+382-
+383-                s = _style_source_series(group, block.variable)
+384-                val = _transform_at(s, pos, spec.transformation)
+385-
+386-                if val is None:
+387:                    iv_valid = False
+388-                    break
+389-
+390-                z_dict[f"D:iv:{_style_label(block.variable)}"] = val
+391-
+392:            _add_time_dummy_instrument(z_dict, group.index[pos])
+393-
+394:            if iv_valid and z_dict:
+395-                current_time = group.index[pos]
+396-                original_index = group["_native_original_index"].iloc[pos]
+397-
+398-                error_terms = _transformed_error_terms(
+399-                    group.index,
+400-                    pos,
+401-                    spec.transformation,
+402-                )
+403-                if error_terms is None:
+404-                    continue
+405-
+406-                row_meta = {
+407-                    "entity": entity_value,
+408-                    "time": current_time,
+409-                    "equation": "diff",
+410-                    "original_index": original_index,
+411-                    "error_terms": error_terms,
+412-                }
+413-
+414-                staged.append((y_val, x_vals, z_dict, original_index, row_meta))
+415-        if spec.system:
+416-            for pos in range(1, len(group)):
+417-                y_val = _safe_get(dep, pos)
+418-                if y_val is None:
+419-                    continue
+420-                x_vals = []
+421:                valid = True
+422-                for reg in spec.regressors:
+423-                    val = _level_regressor_at(group, reg, pos)
+424-                    if val is None:
+425:                        valid = False
+426-                        break
+427-                    x_vals.append(val)
+428:                if not valid:
+429-                    continue
+430-
+431-                if time_dummy_names:
+432-                    x_vals.extend(_time_dummy_x_values(group.index[pos]))
+433-
+434-                z_dict = {}
+435-
+436:                # System-GMM level-equation instruments.
+437-                #
+438:                # Level equations use lagged differences as instruments:
+439-                #
+440-                #   row t -> ╬ösource_{t-1} = source_{t-1} - source_{t-2}
+441-                #
+442-                # This is deterministic estimator logic. Diagnostic environment
+443-                # switches must not alter production matrix construction.
+444-                for block in spec.gmm:
+445-                    s = _style_source_series(group, block.variable)
+446-                    block_label = _style_label(block.variable)
+447:                    val = _lagged_difference_instrument_at(s, pos, lag=1)
+448-
+449-                    if val is not None:
+450-                        z_dict[f"L:diff:{block_label}:L1"] = val
+451-
+452:                # IV-style / exogenous instruments for the level equation.
+453-                for block in spec.iv:
+454-                    if getattr(block, "eq", None) == "diff":
+455-                        continue
+456-
+457-                    s = _style_source_series(group, block.variable)
+458-                    val = _safe_get(s, pos)
+459-
+460-                    if val is not None:
+461-                        z_dict[f"L:iv:{_style_label(block.variable)}"] = val
+462-
+463-                z_dict["L:constant"] = 1.0
+464:                # Do not add time-dummy instruments on level-equation rows.
+465-                # The same T:* columns remain present through differenced rows,
+466:                # preserving instrument count while changing level-row values.
+467-
+468-                if z_dict:
+469-                    current_time = group.index[pos]
+470-                    original_index = group["_native_original_index"].iloc[pos]
+471-
+472-                    row_meta = {
+473-                        "entity": entity_value,
+474-                        "time": current_time,
+475-                        "equation": "level",
+476-                        "original_index": original_index,
+477-                        "error_terms": {
+478-                            current_time: 1.0,
+479-                        },
+480-                    }
+481-
+482-                    staged.append((y_val, x_vals, z_dict, original_index, row_meta))
+483-    # SYSTEM_GMM_EFFECTIVE_NOBS_PATCH
+484-    #
+485-    # For Difference GMM, staged contains only differenced-equation rows.
+486-    # For System GMM, staged contains both differenced and level-equation rows.
+487:    # pydynpd reports the effective differenced-equation sample as nobs,
+488-    # not the raw stacked system-equation row count.
+489:    nobs_stacked = len(staged)
+490-
+491-    def _native_is_diff_equation_row(row):
+492-        try:
+493-            z = row[2]
+494-        except Exception:
+495-            return False
+496-
+497-        return isinstance(z, dict) and any(str(k).startswith("D:") for k in z)
+498-
+499-    if spec.system:
+500:        nobs_effective = sum(1 for row in staged if _native_is_diff_equation_row(row))
+501-    else:
+502:        nobs_effective = nobs_stacked
+503-
+504-    # SYSTEMGMMKIT_STACK_DEBUG
+505-    import os as _native_os
+506-    from pathlib import Path as _NativeStackDebugPath
+507-
+508-    stack_debug_file = _native_os.getenv("SYSTEMGMMKIT_DEBUG_STACK_FILE")
+509-    if stack_debug_file:
+510-        stack_debug_path = _NativeStackDebugPath(stack_debug_file)
+511-        stack_debug_path.parent.mkdir(parents=True, exist_ok=True)
+512-
+513-        diff_rows = []
+514-        level_rows = []
+515-
+516-        for row in staged:
+517-            row_z = row[2]
+518-            row_original_index = row[3]
+519-
+520-            if isinstance(row_z, dict) and any(str(k).startswith("D:") for k in row_z):
+521-                diff_rows.append(row_original_index)
+522-            elif isinstance(row_z, dict) and any(str(k).startswith("L:") for k in row_z):
+523-                level_rows.append(row_original_index)
+524-
+525-        def _summarize_original_indices(indices):
+526-            out = {
+527-                "count": len(indices),
+--
+594-        for y_val, x_vals, z_dict, original_index, row_meta in staged:
+595-            is_level_row = isinstance(z_dict, dict) and any(str(k).startswith("L:") for k in z_dict)
+596-            con_value = 1.0 if is_level_row else 0.0
+597-            staged_with_con.append((y_val, [*x_vals, con_value], z_dict, original_index, row_meta))
+598-        staged = staged_with_con
+599-
+600-    coef_names = list(spec.regressors)
+601-    if time_dummy_names:
+602-        coef_names.extend(time_dummy_names)
+603-    if spec.system:
+604-        coef_names.append("_con")
+605-
+606-    for y_val, x_vals, z_dict, row_idx, row_meta in staged:
+607-        y_rows.append(y_val)
+608-        x_rows.append(x_vals)
+609-        z_rows.append([0.0] * len(z_names))
+610-        for key, value in z_dict.items():
+611-            j = z_index(key)
+612-            if j >= len(z_rows[-1]):
+613-                z_rows[-1].extend([0.0] * (j + 1 - len(z_rows[-1])))
+614-            z_rows[-1][j] = value
+615-        idx_rows.append(row_idx)
+616-        meta_rows.append(row_meta)
+617-
+618-    max_z = len(z_names)
+619:    Z = np.zeros((len(z_rows), max_z), dtype=float)
+620-    for i, row in enumerate(z_rows):
+621:        Z[i, : len(row)] = row
+622-    return (
+623-        np.asarray(y_rows, dtype=float),
+624-        np.asarray(x_rows, dtype=float),
+625:        Z,
+626-        coef_names,
+627-        pd.Index(idx_rows),
+628:        nobs_effective,
+629-        z_names,
+630-        meta_rows,
+631-    )
+632-
+633-
+634-def _native_style_variable(style: object) -> str:
+635-    """Extract a variable name from a GMM/IV style object."""
+636-    value = getattr(style, "variable", None)
+637-    if value is not None:
+638-        return str(value)
+639-    value = getattr(style, "name", None)
+640-    if value is not None:
+641-        return str(value)
+642-    raise AttributeError(f"Could not extract variable name from {style!r}.")
+643-
+644-
+645-def _native_style_min_lag(style: object) -> int:
+646-    value = getattr(style, "min_lag", None)
+647-    if value is None:
+648-        raise AttributeError(f"Could not extract min_lag from {style!r}.")
+649-    return int(value)
+650-
+651-
+652-def _native_style_max_lag(style: object) -> int:
+653-    value = getattr(style, "max_lag", None)
+654-    if value is None:
+655-        raise AttributeError(f"Could not extract max_lag from {style!r}.")
+656-    return int(value)
+657-
+658-
+659:def _native_pydynpd_compat_instrument_order(spec: DynamicPanelSpec) -> list[str]:
+660:    """Return pydynpd-compatible collapsed instrument order.
+661-
+662:    pydynpd collapsed Difference/System GMM orders instruments as:
+663-    - D-GMM: each variable, all its requested lags;
+664-    - standard IV columns;
+665:    - System-level GMM diff instruments;
+666-    - System-level constant last.
+667-    """
+668-    labels: list[str] = []
+669-
+670-    for block in spec.gmm:
+671-        var = _style_label(_native_style_variable(block))
+672-        for lag in range(_native_style_min_lag(block), _native_style_max_lag(block) + 1):
+673-            labels.append(f"D:{var}:L{lag}")
+674-
+675-    for iv in spec.iv:
+676-        var = _style_label(_native_style_variable(iv))
+677-        labels.append(f"IV:{var}")
+678-
+679-    if spec.system:
+680-        for block in spec.gmm:
+681-            var = _style_label(_native_style_variable(block))
+682-            labels.append(f"L:diff:{var}:L1")
+683-        for iv in spec.iv:
+684-            if getattr(iv, "eq", None) != "diff":
+685-                var = _style_label(_native_style_variable(iv))
+686-                labels.append(f"L:iv:{var}")
+687-        labels.append("L:constant")
+688-
+689-    return labels
+690-
+691-
+692-def _native_make_pydynpd_compat_z(
+693-    *,
+694-    spec: DynamicPanelSpec,
+695-    X: np.ndarray,
+696:    Z: np.ndarray,
+697-    coef_names: list[str],
+698:    instrument_names: list[str],
+699-) -> tuple[np.ndarray, list[str]]:
+700:    """Build pydynpd-compatible row-level Z from native matrices.
+701-
+702-    Native already builds the correct y/X. For pydynpd compatibility we need
+703:    the same instrument ordering and the same standard-IV convention. pydynpd
+704:    uses the transformed/stacked X columns for IV instruments, not the native
+705-    D:iv:* columns.
+706-    """
+707:    native_cols = {name: idx for idx, name in enumerate(instrument_names)}
+708-    x_cols = {name: idx for idx, name in enumerate(coef_names)}
+709-
+710-    cols: list[np.ndarray] = []
+711-    labels: list[str] = []
+712-
+713:    ordered_labels = list(_native_pydynpd_compat_instrument_order(spec))
+714-
+715:    # Preserve native time-dummy instruments in the pydynpd-compatible Z.
+716:    # _native_pydynpd_compat_instrument_order(spec) is spec-based and cannot
+717-    # infer concrete period labels, so append the actual T:* labels constructed
+718-    # by _build_native_matrices().
+719-    if getattr(spec, "time_dummies", False):
+720-        ordered_labels.extend(
+721-            label
+722:            for label in instrument_names
+723-            if str(label).startswith("T:") and label not in ordered_labels
+724-        )
+725-
+726-    for label in ordered_labels:
+727-        if label.startswith("IV:"):
+728-            var = label.split(":", 1)[1]
+729-            if var not in x_cols:
+730-                raise KeyError(f"Cannot build pydynpd IV column {label!r}; {var!r} not in X names.")
+731-            _iv_col = np.asarray(X[:, x_cols[var]], dtype=float)
+732-
+733:            # SYSTEMGMMKIT_SYSTEM_IV_Z_MODE diagnostic
+734-            # Default "stacked_x" preserves current behavior:
+735-            #   IV:* is the transformed/stacked X column.
+736-            #
+737-            # Alternative modes help identify whether System-GMM parity gaps
+738-            # come from equation-specific IV placement:
+739-            #   level_only -> keep IV values only on level-equation rows
+740-            #   diff_only  -> keep IV values only on differenced-equation rows
+741-            #   zero       -> remove IV values while preserving column count
+742-            if spec.system:
+743-                import os as _native_iv_z_mode_os
+744-
+745-                _iv_mode = (
+746-                    _native_iv_z_mode_os.getenv(
+747:                        "SYSTEMGMMKIT_SYSTEM_IV_Z_MODE",
+748-                        "level_only",
+749-                    )
+750-                    .strip()
+751-                    .lower()
+752-                )
+753-
+754-                if "_con" in x_cols:
+755:                    _level_mask = np.isclose(
+756-                        np.asarray(X[:, x_cols["_con"]], dtype=float),
+757-                        1.0,
+758-                    )
+759-
+760-                    if _iv_mode == "level_only":
+761:                        _iv_col = np.where(_level_mask, _iv_col, 0.0)
+762-                    elif _iv_mode == "diff_only":
+763:                        _iv_col = np.where(~_level_mask, _iv_col, 0.0)
+764-                    elif _iv_mode == "zero":
+765-                        _iv_col = np.zeros_like(_iv_col)
+766-                    elif _iv_mode in {"stacked_x", "default", ""}:
+767-                        pass
+768-                    else:
+769-                        raise ValueError(
+770:                            "Unsupported SYSTEMGMMKIT_SYSTEM_IV_Z_MODE="
+771-                            f"{_iv_mode!r}. Use stacked_x, level_only, diff_only, or zero."
+772-                        )
+773-
+774-            cols.append(_iv_col)
+775-            labels.append(label)
+776-            continue
+777-
+778-        if label not in native_cols:
+779-            raise KeyError(
+780:                f"Cannot build pydynpd instrument {label!r}; available native instruments are "
+781:                f"{instrument_names!r}."
+782-            )
+783-
+784:        cols.append(np.asarray(Z[:, native_cols[label]], dtype=float))
+785-        labels.append(label)
+786-
+787-    if not cols:
+788:        raise ValueError("No instruments were built for pydynpd-compatible Z.")
+789-
+790-    return np.column_stack(cols), labels
+791-
+792-
+793-def _native_fd_system_h1(*, group_rows: int, diff_width: int) -> np.ndarray:
+794-    """Build first-step System GMM H1 matrix.
+795-
+796-    Diagnostic modes controlled by SYSTEMGMMKIT_H1_MODE:
+797-
+798-    - blockdiag:
+799-        Current implementation. Difference-equation FD covariance block plus
+800-        identity level-equation block and no cross-equation covariance.
+801-
+802-    - full_error_cov:
+803-        Adds covariance between differenced errors and level errors:
+804-        Cov(e_t - e_{t-1}, e_s) = 1{s=t} - 1{s=t-1}.
+805-        This is the main candidate for xtabond2-style one-step System-GMM H1.
+806-
+807-    - identity:
+808-        Identity matrix for all stacked rows. Diagnostic only.
+809-    """
+810-    import os as _native_h1_os
+811-
+812-    width = int(group_rows)
+813-    diff_width = int(diff_width)
+--
+849-        #                    = 1 if s == t, -1 if s == t - 1, else 0.
+850-        for di in range(diff_width):
+851-            diff_time = di + 3
+852-            for lj in range(level_width):
+853-                level_time = lj + 2
+854-                row_l = diff_width + lj
+855-
+856-                if level_time == diff_time:
+857-                    h1[di, row_l] = 1.0
+858-                    h1[row_l, di] = 1.0
+859-                elif level_time == diff_time - 1:
+860-                    h1[di, row_l] = -1.0
+861-                    h1[row_l, di] = -1.0
+862-
+863-        return h1
+864-
+865-    raise ValueError(
+866-        "Unsupported SYSTEMGMMKIT_H1_MODE="
+867-        f"{mode!r}. Use blockdiag, full_error_cov, or identity."
+868-    )
+869-
+870-
+871-def _native_infer_panel_blocks(
+872-    *,
+873-    y: np.ndarray,
+874:    nobs_effective: int,
+875-) -> tuple[int, int, int]:
+876-    """Infer balanced pydynpd-style block dimensions from current harness matrices.
+877-
+878-    Returns (n_groups, group_rows, diff_width). This strict compatibility path
+879-    currently assumes the balanced panel structure used by the parity harness.
+880-    """
+881-    n_rows = int(np.asarray(y).shape[0])
+882:    nobs_effective = int(nobs_effective)
+883-
+884:    if nobs_effective <= 0:
+885:        raise ValueError("nobs_effective must be positive.")
+886-
+887-    # In the current pydynpd-compatible System GMM design:
+888:    #   diff_width = effective nobs per group
+889-    #   group_rows = diff_width + level_width
+890-    # and the panel is balanced in the harness.
+891-    #
+892-    # We infer n_groups from gcd to avoid hard-coding 96.
+893-    import math as _native_math
+894-
+895:    n_groups = _native_math.gcd(n_rows, nobs_effective)
+896-    if n_groups <= 0:
+897-        raise ValueError("Could not infer panel groups.")
+898-
+899-    group_rows = n_rows // n_groups
+900:    diff_width = nobs_effective // n_groups
+901-
+902-    if group_rows * n_groups != n_rows:
+903-        raise ValueError("Inconsistent inferred group_rows.")
+904:    if diff_width * n_groups != nobs_effective:
+905-        raise ValueError("Inconsistent inferred diff_width.")
+906-
+907-    return n_groups, group_rows, diff_width
+908-
+909-
+910-
+911-def _native_group_indices_from_row_meta(
+912-    row_meta: list[dict[str, object]],
+913-) -> list[np.ndarray]:
+914-    """Return row indices grouped by entity while preserving original row order."""
+915-    groups: dict[object, list[int]] = {}
+916-
+917-    for idx, meta in enumerate(row_meta):
+918-        ent = meta.get("entity")
+919-        if ent not in groups:
+920-            groups[ent] = []
+921-        groups[ent].append(idx)
+922-
+923-    return [np.asarray(indices, dtype=int) for indices in groups.values()]
+924-
+925-
+926-def _native_h1_from_row_meta(
+927-    row_meta_i: list[dict[str, object]],
+928-) -> np.ndarray:
+929-    """Build entity-specific first-step H1 from stacked error metadata.
+--
+945-    maps: list[dict[object, float]] = []
+946-    for meta in row_meta_i:
+947-        raw_terms = meta.get("error_terms", {})
+948-        if not isinstance(raw_terms, dict):
+949-            raw_terms = {}
+950-        maps.append({k: float(v) for k, v in raw_terms.items()})
+951-
+952-    for i in range(n):
+953-        terms_i = maps[i]
+954-        for j in range(i, n):
+955-            terms_j = maps[j]
+956-
+957-            if len(terms_i) <= len(terms_j):
+958-                val = sum(coef * terms_j.get(t, 0.0) for t, coef in terms_i.items())
+959-            else:
+960-                val = sum(coef * terms_i.get(t, 0.0) for t, coef in terms_j.items())
+961-
+962-            h[i, j] = val
+963-            h[j, i] = val
+964-
+965-    return h
+966-
+967-
+968-def _native_pydynpd_first_step_weight_inv(
+969-    *,
+970:    Z: np.ndarray,
+971-    y: np.ndarray,
+972:    nobs_effective: int,
+973-    row_meta: list[dict[str, object]] | None = None,
+974-) -> tuple[np.ndarray, int, list[np.ndarray] | int, int]:
+975-    """Build System-GMM first-step W_inv.
+976-
+977-    If row_meta is supplied, this uses entity-specific row metadata instead of
+978-    assuming a balanced panel layout. This is the production path for general
+979-    System GMM construction.
+980-
+981-    The fallback balanced path is retained for backward compatibility.
+982-    """
+983:    n_instr = int(Z.shape[1])
+984-
+985-    if row_meta is not None:
+986:        if len(row_meta) != int(Z.shape[0]):
+987-            raise ValueError(
+988:                "row_meta length must match the number of rows in Z: "
+989:                f"{len(row_meta)} != {Z.shape[0]}"
+990-            )
+991-
+992-        group_indices = _native_group_indices_from_row_meta(row_meta)
+993-
+994-        W = np.zeros((n_instr, n_instr), dtype=float)
+995-
+996-        for indices in group_indices:
+997:            Zi = Z[indices, :]
+998-            meta_i = [row_meta[int(i)] for i in indices]
+999-            Hi = _native_h1_from_row_meta(meta_i)
+1000:            W += Zi.T @ Hi @ Zi
+1001-
+1002-        return np.linalg.pinv(W), len(group_indices), group_indices, -1
+1003-
+1004-    n_groups, group_rows, diff_width = _native_infer_panel_blocks(
+1005-        y=y,
+1006:        nobs_effective=nobs_effective,
+1007-    )
+1008-
+1009-    h1 = _native_fd_system_h1(group_rows=group_rows, diff_width=diff_width)
+1010-
+1011-    W = np.zeros((n_instr, n_instr), dtype=float)
+1012-    for i in range(n_groups):
+1013:        Zi_row = Z[i * group_rows : (i + 1) * group_rows, :]
+1014:        zi = Zi_row.T
+1015-        W += zi @ h1 @ zi.T
+1016-
+1017-    return np.linalg.pinv(W), n_groups, group_rows, diff_width
+1018-
+1019-def _native_pydynpd_next_weight_inv(
+1020-    *,
+1021:    Z: np.ndarray,
+1022-    residuals: np.ndarray,
+1023-    n_groups: int,
+1024-    group_rows: list[np.ndarray] | int,
+1025-) -> np.ndarray:
+1026-    """Build two-step W_next and return pinv(W_next).
+1027-
+1028-    group_rows may be:
+1029-    - a list of per-entity row-index arrays from row_meta; or
+1030-    - an integer balanced group width for the fallback path.
+1031-    """
+1032:    n_instr = int(Z.shape[1])
+1033:    ZuuZ = np.zeros((n_instr, n_instr), dtype=float)
+1034-
+1035-    u = np.asarray(residuals, dtype=float).reshape(-1, 1)
+1036-
+1037-    if isinstance(group_rows, list):
+1038-        for indices in group_rows:
+1039:            Zi_row = Z[indices, :]
+1040:            zi = Zi_row.T
+1041-            ui = u[indices, :]
+1042-            temp_zs = zi @ ui
+1043:            ZuuZ += temp_zs @ temp_zs.T
+1044-    else:
+1045-        width = int(group_rows)
+1046-        for i in range(int(n_groups)):
+1047:            Zi_row = Z[i * width : (i + 1) * width, :]
+1048:            zi = Zi_row.T
+1049-            ui = u[i * width : (i + 1) * width, :]
+1050-            temp_zs = zi @ ui
+1051:            ZuuZ += temp_zs @ temp_zs.T
+1052-
+1053:    W_next = ZuuZ * (1.0 / int(n_groups))
+1054-    return np.linalg.pinv(W_next)
+1055-
+1056-def _native_gmm_beta(
+1057-    *,
+1058-    y: np.ndarray,
+1059-    X: np.ndarray,
+1060:    Z: np.ndarray,
+1061-    W_inv: np.ndarray,
+1062-) -> np.ndarray:
+1063:    """Compute beta = (X'ZWZ'X)^- X'ZWZ'y using supplied W_inv."""
+1064-    y2 = np.asarray(y, dtype=float).reshape(-1, 1)
+1065-    X2 = np.asarray(X, dtype=float)
+1066:    Z2 = np.asarray(Z, dtype=float)
+1067-
+1068:    XZ_W = X2.T @ Z2 @ W_inv
+1069:    M_inv = XZ_W @ Z2.T @ X2
+1070:    return np.linalg.pinv(M_inv) @ (XZ_W @ Z2.T @ y2)
+1071-
+1072-
+1073-
+1074-
+1075-def _native_group_indices_from_entities(row_entities: np.ndarray) -> list[np.ndarray]:
+1076-    """Return row-position indices grouped by entity, preserving first-seen order."""
+1077-    entities = pd.unique(row_entities)
+1078-    return [np.flatnonzero(row_entities == ent) for ent in entities]
+1079-
+1080-
+1081-def _native_group_moment_sum(
+1082-    *,
+1083:    Z: np.ndarray,
+1084-    residuals: np.ndarray,
+1085-    group_indices: list[np.ndarray],
+1086-) -> np.ndarray:
+1087:    """Return sum_i (Z_i' u_i)(Z_i' u_i)' in native row-major orientation."""
+1088:    q = int(Z.shape[1])
+1089-    out = np.zeros((q, q), dtype=float)
+1090-    u = np.asarray(residuals, dtype=float).reshape(-1, 1)
+1091-
+1092-    for indices in group_indices:
+1093:        Zi = Z[indices, :]
+1094-        ui = u[indices, :]
+1095:        gi = Zi.T @ ui
+1096-        out += gi @ gi.T
+1097-
+1098-    return out
+1099-
+1100-
+1101-def _native_pydynpd_step1_vcov(
+1102-    *,
+1103-    X: np.ndarray,
+1104:    Z: np.ndarray,
+1105-    W1: np.ndarray,
+1106-    residuals1: np.ndarray,
+1107-    group_indices: list[np.ndarray],
+1108-    n_groups: int,
+1109-) -> np.ndarray:
+1110-    """pydynpd-compatible robust one-step covariance used inside Windmeijer."""
+1111:    D_xz = X.T @ Z
+1112-    M1 = np.linalg.pinv(D_xz @ W1 @ D_xz.T)
+1113:    M1_XZ_W1 = M1 @ D_xz @ W1
+1114-
+1115:    ZuuZ1 = _native_group_moment_sum(
+1116:        Z=Z,
+1117-        residuals=residuals1,
+1118-        group_indices=group_indices,
+1119-    )
+1120:    W_next1 = ZuuZ1 * (1.0 / int(n_groups))
+1121-
+1122:    cov1 = int(n_groups) * (M1_XZ_W1 @ W_next1 @ M1_XZ_W1.T)
+1123-    return 0.5 * (cov1 + cov1.T)
+1124-
+1125-
+1126-def _native_windmeijer_covariance(
+1127-    *,
+1128-    M2: np.ndarray,
+1129:    M2_XZ_W2: np.ndarray,
+1130-    W2_inv: np.ndarray,
+1131-    zs2: np.ndarray,
+1132-    vcov_step1: np.ndarray,
+1133-    X: np.ndarray,
+1134:    Z: np.ndarray,
+1135-    residuals1: np.ndarray,
+1136-    group_indices: list[np.ndarray],
+1137-    n_groups: int,
+1138-) -> np.ndarray:
+1139-    """pydynpd-compatible Windmeijer finite-sample correction."""
+1140-    N = int(n_groups)
+1141-    k = int(X.shape[1])
+1142:    q = int(Z.shape[1])
+1143-
+1144-    D_wind = np.empty((k, k), dtype=float)
+1145-    u1 = np.asarray(residuals1, dtype=float).reshape(-1, 1)
+1146-    zs2 = np.asarray(zs2, dtype=float).reshape(-1, 1)
+1147-
+1148-    for j in range(k):
+1149-        zxz = np.zeros((q, q), dtype=float)
+1150-
+1151-        for indices in group_indices:
+1152-            x_i = X[indices, :]
+1153-            u_i = u1[indices, :]
+1154:            z_i_t = Z[indices, :].T
+1155-
+1156-            xu = x_i[:, j : j + 1] @ u_i.T
+1157-            zxz += z_i_t @ (xu + xu.T) @ z_i_t.T
+1158-
+1159-        partial_dir = (-1.0 / N) * zxz
+1160:        Dj = -(M2_XZ_W2 @ partial_dir @ W2_inv @ zs2)
+1161-        D_wind[:, j : j + 1] = Dj
+1162-
+1163-    D_M2 = D_wind @ M2
+1164-    cov = (N * M2) + (N * D_M2) + (N * D_M2.T)
+1165-    cov = cov + (D_wind @ vcov_step1 @ D_wind.T)
+1166-
+1167-    return 0.5 * (cov + cov.T)
+1168-
+1169-def _native_overid_diagnostics(
+1170-    *,
+1171-    residuals: np.ndarray,
+1172:    Z: np.ndarray,
+1173-    W: np.ndarray,
+1174-    n_params: int,
+1175-) -> tuple[float | None, float | None]:
+1176-    """Experimental Hansen/Sargan-style overidentification diagnostics.
+1177-
+1178-    This is a native diagnostic approximation. It is intentionally exposed as
+1179-    experimental until strict xtabond2 parity is certified.
+1180-    """
+1181:    n_instr = int(Z.shape[1])
+1182-    df = n_instr - int(n_params)
+1183-
+1184-    if df <= 0:
+1185-        return None, None
+1186-
+1187-    u = np.asarray(residuals, dtype=float).reshape(-1, 1)
+1188-
+1189-    try:
+1190:        j_stat = float((u.T @ Z @ W @ Z.T @ u).squeeze())
+1191-    except Exception:
+1192-        return None, None
+1193-
+1194:    if not np.isfinite(j_stat) or j_stat < 0:
+1195-        return None, None
+1196-
+1197-    pvalue = float(stats.chi2.sf(j_stat, df))
+1198-    return pvalue, pvalue
+1199-
+1200-
+1201-def _native_ab_serial_correlation_pvalues(
+1202-    *,
+1203-    data: pd.DataFrame,
+1204-    entity: str,
+1205-    time: str,
+1206-    row_index: np.ndarray,
+1207-    residuals: np.ndarray,
+1208-    X: np.ndarray,
+1209-    coef_names: list[str],
+1210-    system: bool,
+1211-) -> tuple[float | None, float | None]:
+1212-    """Experimental Arellano-Bond AR(1)/AR(2)-style residual tests.
+1213-
+1214-    Uses residuals from differenced-equation rows. For System GMM, level rows
+1215-    are excluded using the level-only `_con` marker.
+1216-    """
+1217-    try:
+1218-        resid = np.asarray(residuals, dtype=float).reshape(-1)
+1219-        idx = np.asarray(row_index)
+1220-
+1221-        if system and "_con" in coef_names:
+1222-            con_col = coef_names.index("_con")
+1223:            diff_mask = ~np.isclose(np.asarray(X[:, con_col], dtype=float), 1.0)
+1224-        else:
+1225:            diff_mask = np.ones_like(resid, dtype=bool)
+1226-
+1227:        idx = idx[diff_mask]
+1228:        resid = resid[diff_mask]
+1229-
+1230-        panel_keys = data.loc[idx, [entity, time]].copy()
+1231-        panel_keys["_resid"] = resid
+1232-        panel_keys = panel_keys.sort_values([entity, time])
+1233-
+1234-        def _lag_test(lag: int) -> float | None:
+1235-            d = panel_keys.copy()
+1236-            d["_lag"] = d.groupby(entity)["_resid"].shift(lag)
+1237:            d = d.dropna(subset=["_resid", "_lag"])
+1238-
+1239-            if len(d) < 5:
+1240-                return None
+1241-
+1242-            a = d["_resid"].to_numpy(dtype=float)
+1243-            b = d["_lag"].to_numpy(dtype=float)
+1244-
+1245-            denom = float(np.sqrt(np.sum(a * a) * np.sum(b * b)))
+1246-            if denom <= 0:
+1247-                return None
+1248-
+1249-            corr = float(np.sum(a * b) / denom)
+1250-            z = corr * np.sqrt(len(d))
+1251-
+1252:            if not np.isfinite(z):
+1253-                return None
+1254-
+1255-            return float(2.0 * stats.norm.sf(abs(z)))
+1256-
+1257-        return _lag_test(1), _lag_test(2)
+1258-
+1259-    except Exception:
+1260-        return None, None
+1261-
+1262-def run_native_dynamic_panel_gmm(
+1263-    spec: DynamicPanelSpec,
+1264-    data: pd.DataFrame,
+1265-    *,
+1266-    entity: str,
+1267-    time: str,
+1268-    windmeijer: bool = False,
+1269-) -> NativeGMMResult:
+1270-    """Run the native Difference/System GMM estimator.
+1271-
+1272-    Native System GMM has baseline xtabond2 parity for the current collapsed
+1273-    two-step benchmark covering coefficients, raw moments, group-scaled A2,
+1274-    and Hansen J.
+1275-
+1276-    Windmeijer correction is deliberately not implemented yet because an
+1277:    incorrect correction would be worse than no correction. Use a validated
+1278-    backend for Windmeijer-style two-step inference until native SE parity is
+1279-    implemented and tested.
+1280-    """
+1281-
+1282-    windmeijer_requested = bool(windmeijer)
+1283-
+1284:    y, X, Z, names, row_index, nobs_effective, instrument_names, row_meta = _build_native_matrices(
+1285-        spec, data, entity=entity, time=time
+1286-    )
+1287-    y = np.asarray(y, dtype=float).reshape(-1, 1)
+1288-
+1289-    # Optional strict-parity diagnostic dump. Inactive unless explicitly enabled.
+1290-    import os as _native_matrix_dump_os
+1291-
+1292-    native_matrix_dump_dir = _native_matrix_dump_os.getenv("SYSTEMGMMKIT_NATIVE_MATRIX_DUMP_DIR")
+1293-    if native_matrix_dump_dir:
+1294-        import json as _native_matrix_dump_json
+1295-        from pathlib import Path as _NativeMatrixDumpPath
+1296-
+1297-        dump_dir = _NativeMatrixDumpPath(native_matrix_dump_dir)
+1298-        dump_dir.mkdir(parents=True, exist_ok=True)
+1299-
+1300-        safe_name = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in spec.name)
+1301-        npz_path = dump_dir / f"{safe_name}.npz"
+1302-        json_path = dump_dir / f"{safe_name}.json"
+1303-
+1304-        np.savez_compressed(
+1305-            npz_path,
+1306-            y=y,
+1307-            X=X,
+1308:            Z=Z,
+1309-            row_index=np.asarray([str(v) for v in row_index], dtype=object),
+1310-            coef_names=np.asarray(names, dtype=object),
+1311:            instrument_names=np.asarray(instrument_names, dtype=object),
+1312-        )
+1313-
+1314-        json_path.write_text(
+1315-            _native_matrix_dump_json.dumps(
+1316-                {
+1317-                    "spec": spec.name,
+1318-                    "system": bool(spec.system),
+1319:                    "nobs_effective": int(nobs_effective),
+1320-                    "n_stacked_rows": int(len(y)),
+1321-                    "x_shape": list(X.shape),
+1322:                    "z_shape": list(Z.shape),
+1323-                    "coef_names": list(names),
+1324:                    "instrument_names": list(instrument_names),
+1325-                },
+1326-                indent=2,
+1327-            ),
+1328-            encoding="utf-8",
+1329-        )
+1330-    # SYSTEMGMMKIT_STATA_SYSTEM_NOBS_PATCH
+1331:    # Keep nobs_effective for internal System-GMM weighting logic.
+1332-    # Report Stata/xtabond2-compatible System-GMM N as the level-equation
+1333-    # usable row count. In the current stacked design, level-equation rows
+1334-    # are identified by the level-only `_con` column.
+1335-    if spec.system and "_con" in names:
+1336:        _stata_nobs_con_col = names.index("_con")
+1337:        nobs_reported = int(np.sum(np.isclose(X[:, _stata_nobs_con_col], 1.0)))
+1338:        if nobs_reported <= 0:
+1339:            nobs_reported = int(nobs_effective)
+1340-    else:
+1341:        nobs_reported = int(nobs_effective)
+1342-
+1343-    # Production native GMM must not rescale equation blocks via environment
+1344-    # variables. Equation weighting belongs in the explicitly constructed first-
+1345-    # and second-step weighting matrices.
+1346-
+1347-    # SYSTEMGMMKIT_FILE_INSTRUMENT_DEBUG
+1348-    import os
+1349-    from pathlib import Path as _NativeDebugPath
+1350-
+1351-    debug_file = os.getenv("SYSTEMGMMKIT_DEBUG_INSTRUMENTS_FILE")
+1352-    if debug_file:
+1353-        debug_path = _NativeDebugPath(debug_file)
+1354-        debug_path.parent.mkdir(parents=True, exist_ok=True)
+1355-        with debug_path.open("a", encoding="utf-8") as fh:
+1356-            fh.write("\n" + "=" * 120 + "\n")
+1357-            fh.write(f"spec={spec.name} | system={spec.system}\n")
+1358:            fh.write(f"nobs_effective={nobs_effective} | n_instruments={len(instrument_names)}\n")
+1359:            for j, label in enumerate(instrument_names, start=1):
+1360-                fh.write(f"{j:03d}: {label}\n")
+1361-            fh.write("=" * 120 + "\n")
+1362-
+1363-    # Estimation path.
+1364-    #
+1365-    # Difference GMM keeps the native row-level clustered two-step path that
+1366:    # already passes strict parity on the validation harness.
+1367-    #
+1368-    # System GMM uses the pydynpd-compatible matrix path identified by strict
+1369-    # parity diagnostics:
+1370:    #   - pydynpd-compatible instrument order,
+1371-    #   - IV columns taken from transformed/stacked X,
+1372-    #   - pydynpd FD-System H1 first-step weighting,
+1373-    #   - pydynpd grouped residual moment W_next for two-step weighting.
+1374-    steps_normalized = (
+1375-        str(getattr(spec, "steps", "twostep"))
+1376-        .lower()
+1377-        .replace("-", "")
+1378-        .replace("_", "")
+1379-        .replace(" ", "")
+1380-    )
+1381-    use_twostep = steps_normalized in {"twostep", "two", "2", "iterated"}
+1382-
+1383-    # SYSTEMGMMKIT_FORCE_ONESTEP diagnostic:
+1384-    # Force the native estimator to return the first-step estimate.
+1385:    # This isolates whether System-GMM parity fails in W1/Z/H1 or in W2.
+1386-    import os as _native_force_onestep_os
+1387-    if _native_force_onestep_os.getenv("SYSTEMGMMKIT_FORCE_ONESTEP") == "1":
+1388-        use_twostep = False
+1389-
+1390-    if spec.system:
+1391-        W1, n_groups, group_rows, _diff_width = _native_pydynpd_first_step_weight_inv(
+1392:            Z=Z,
+1393-            y=y,
+1394:            nobs_effective=nobs_effective,
+1395-            row_meta=row_meta,
+1396-        )
+1397-
+1398:        beta1 = _native_gmm_beta(y=y, X=X, Z=Z, W_inv=W1)
+1399-        residuals1 = y - X @ beta1
+1400-
+1401-        if use_twostep:
+1402-            W = _native_pydynpd_next_weight_inv(
+1403:                Z=Z,
+1404-                residuals=residuals1,
+1405-                n_groups=n_groups,
+1406-                group_rows=group_rows,
+1407-            )
+1408:            beta = _native_gmm_beta(y=y, X=X, Z=Z, W_inv=W)
+1409-        else:
+1410-            W = W1
+1411-            beta = beta1
+1412-
+1413:        xzwzx = X.T @ Z @ W @ Z.T @ X
+1414-
+1415-    else:
+1416:        W1 = np.linalg.pinv(Z.T @ Z)
+1417:        xzwzx1 = X.T @ Z @ W1 @ Z.T @ X
+1418:        beta1 = np.linalg.pinv(xzwzx1) @ (X.T @ Z @ W1 @ Z.T @ y)
+1419-        residuals1 = y - X @ beta1
+1420-
+1421-        if use_twostep:
+1422-            row_entities = data.loc[row_index, entity].to_numpy()
+1423:            S = np.zeros((Z.shape[1], Z.shape[1]), dtype=float)
+1424-
+1425-            for ent in pd.unique(row_entities):
+1426:                mask = row_entities == ent
+1427:                Zi = Z[mask, :]
+1428:                ui = residuals1[mask]
+1429:                gi = Zi.T @ ui
+1430-                S += np.outer(gi, gi)
+1431-
+1432-            W = np.linalg.pinv(S)
+1433:            xzwzx = X.T @ Z @ W @ Z.T @ X
+1434:            beta = np.linalg.pinv(xzwzx) @ (X.T @ Z @ W @ Z.T @ y)
+1435-        else:
+1436-            W = W1
+1437-            xzwzx = xzwzx1
+1438-            beta = beta1
+1439-
+1440-    residuals = y - X @ beta
+1441-    n, k = X.shape
+1442-
+1443-    beta_vec = np.asarray(beta, dtype=float).reshape(-1)
+1444-    residual_vec = np.asarray(residuals, dtype=float).reshape(-1)
+1445-
+1446-    bread = np.linalg.pinv(xzwzx)
+1447-
+1448-    # Dynamic-panel GMM robust covariance is based on entity-level moment sums.
+1449:    # For entity i, the score contribution is g_i = Z_i' u_i.
+1450-    row_entities_for_cov = data.loc[row_index, entity].to_numpy()
+1451-    group_indices_for_cov = _native_group_indices_from_entities(row_entities_for_cov)
+1452-    n_groups_for_cov = int(len(group_indices_for_cov))
+1453-
+1454:    D = X.T @ Z
+1455-
+1456-    windmeijer_xtabond2_small_correction = 1.0
+1457-    if spec.system and windmeijer_requested and use_twostep:
+1458-        # xtabond2's twostep robust small Windmeijer path applies an
+1459-        # additional System-GMM finite-sample scalar. Empirically, across
+1460-        # the xtabond2 parity harness, this uses the raw panel rows plus
+1461-        # xtabond2's reported usable System-GMM observations.
+1462:        windmeijer_xtabond2_small_n = int(len(data)) + int(nobs_reported)
+1463-        if windmeijer_xtabond2_small_n > k:
+1464-            windmeijer_xtabond2_small_correction = (
+1465-                (windmeijer_xtabond2_small_n - 1.0)
+1466-                / (windmeijer_xtabond2_small_n - k)
+1467-            )
+1468-
+1469-    if windmeijer_requested and not use_twostep:
+1470-        raise ValueError("windmeijer=True requires two-step dynamic-panel GMM estimation.")
+1471-
+1472-    if windmeijer_requested and use_twostep:
+1473-        vcov_step1 = _native_pydynpd_step1_vcov(
+1474-            X=X,
+1475:            Z=Z,
+1476-            W1=W1,
+1477-            residuals1=residuals1,
+1478-            group_indices=group_indices_for_cov,
+1479-            n_groups=n_groups_for_cov,
+1480-        )
+1481-
+1482-        M2 = bread
+1483:        M2_XZ_W2 = M2 @ D @ W
+1484:        zs2 = Z.T @ residual_vec.reshape(-1, 1)
+1485-
+1486-        if n_groups_for_cov > 1:
+1487-            cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+1488-                (n - 1.0) / max(n - k, 1)
+1489-            )
+1490-        else:
+1491-            cov_correction = n / max(n - k, 1)
+1492-
+1493-        windmeijer_base_cov = _native_windmeijer_covariance(
+1494-            M2=M2,
+1495:            M2_XZ_W2=M2_XZ_W2,
+1496-            W2_inv=W,
+1497-            zs2=zs2,
+1498-            vcov_step1=vcov_step1,
+1499-            X=X,
+1500:            Z=Z,
+1501-            residuals1=residuals1,
+1502-            group_indices=group_indices_for_cov,
+1503-            n_groups=n_groups_for_cov,
+1504-        )
+1505-        cov = (
+1506-            cov_correction
+1507-            * windmeijer_xtabond2_small_correction
+1508-            * windmeijer_base_cov
+1509-        )
+1510-    else:
+1511-        s_group = _native_group_moment_sum(
+1512:            Z=Z,
+1513-            residuals=residual_vec,
+1514-            group_indices=group_indices_for_cov,
+1515-        )
+1516-
+1517-        meat = D @ W @ s_group @ W @ D.T
+1518-
+1519-        if n_groups_for_cov > 1:
+1520-            cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+1521-                (n - 1.0) / max(n - k, 1)
+1522-            )
+1523-        else:
+1524-            cov_correction = n / max(n - k, 1)
+1525-
+1526-        cov = cov_correction * bread @ meat @ bread
+1527-
+1528-    cov = 0.5 * (cov + cov.T)
+1529-    se = np.sqrt(np.maximum(np.diag(cov), 0.0))
+1530:    with np.errstate(divide="ignore", invalid="ignore"):
+1531-        zstats = beta_vec / se
+1532-    pvalues = _normal_pvalues_from_t(zstats)
+1533-
+1534-    hansen_p, sargan_p = _native_overid_diagnostics(
+1535-        residuals=residual_vec,
+1536:        Z=Z,
+1537-        W=W,
+1538-        n_params=len(names),
+1539-    )
+1540-
+1541-    ar1_p, ar2_p = _native_ab_serial_correlation_pvalues(
+1542-        data=data,
+1543-        entity=entity,
+1544-        time=time,
+1545-        row_index=np.asarray(row_index),
+1546-        residuals=residual_vec,
+1547-        X=X,
+1548-        coef_names=names,
+1549-        system=spec.system,
+1550-    )
+1551-
+1552-    _u_col = residual_vec.reshape(-1, 1)
+1553:    _ztu = Z.T @ _u_col
+1554-    _j_stat_raw = float((_ztu.T @ W @ _ztu).squeeze())
+1555-
+1556-    # One-step overidentification diagnostics.
+1557-    #
+1558-    # For one-step GMM, the quadratic form based on W1 is a Sargan-style
+1559-    # statistic, not a robust Hansen statistic. Do not report the group-scaled
+1560-    # tiny value as Hansen/J. xtabond2's one-step Sargan is closely matched by
+1561-    # a finite-sample group adjustment.
+1562:    _overid_df = int(Z.shape[1]) - int(len(names))
+1563-    _n_groups_for_diag = max(int(data[entity].nunique()), 1)
+1564-
+1565-    _sargan_small_scale = (
+1566-        max(float(_n_groups_for_diag - len(names)), 1.0)
+1567-        / float(_n_groups_for_diag)
+1568-    )
+1569-    _sargan_stat = float(_j_stat_raw * _sargan_small_scale)
+1570-
+1571-    # Store a one-step Sargan-style J statistic only for one-step estimation.
+1572-    # In two-step / Windmeijer mode, W is the two-step weighting matrix, so the
+1573-    # same quadratic form is not comparable to xtabond2's one-step Sargan.
+1574-    _steps_label = str(getattr(spec, "steps", "")).strip().lower()
+1575-
+1576-    # covariance_type may be assigned later in this function depending on the
+1577-    # estimation branch, so do not reference it directly here.
+1578-    _cov_label = str(locals().get("covariance_type", "")).strip().lower()
+1579-    _windmeijer_flag = bool(locals().get("windmeijer", False))
+1580-
+1581-    _is_twostep_like = (
+1582-        _windmeijer_flag
+1583-        or "two" in _steps_label
+1584-        or _steps_label in {"2", "twostep", "two-step"}
+1585-        or "two-step" in _cov_label
+1586-        or "twostep" in _cov_label
+1587-        or "windmeijer" in _cov_label
+1588-    )
+1589-
+1590-    if _is_twostep_like:
+1591-        _j_stat = None
+1592-        sargan_p = None
+1593-    else:
+1594-        _j_stat = _sargan_stat
+1595-
+1596:        if _overid_df > 0 and np.isfinite(_sargan_stat) and _sargan_stat >= 0:
+1597-            sargan_p = float(stats.chi2.sf(_sargan_stat, _overid_df))
+1598-        else:
+1599-            sargan_p = None
+1600-
+1601-    # Robust Hansen parity requires the robust moment covariance, not the
+1602-    # one-step Sargan quadratic form. Leave it undefined here rather than
+1603-    # reporting a misleading pseudo-Hansen p-value.
+1604-    hansen_p = None
+1605-
+1606-
+1607-    _ztu_norm = float(np.linalg.norm(_ztu))
+1608-    _w_norm = float(np.linalg.norm(W))
+1609-
+1610-    # Optional parity/debug export for xtabond2 internals.
+1611-    # Enable with:
+1612-    #   $env:SYSTEMGMMKIT_EXPORT_GMM_DEBUG = "1"
+1613-    #   $env:SYSTEMGMMKIT_GMM_DEBUG_DIR = "artifacts/parity/xtabond2"
+1614-    if __import__("os").environ.get("SYSTEMGMMKIT_EXPORT_GMM_DEBUG") == "1":
+1615-        from pathlib import Path as _GmmDebugPath
+1616-
+1617-        debug_dir = _GmmDebugPath(
+1618-            __import__("os").environ.get(
+1619-                "SYSTEMGMMKIT_GMM_DEBUG_DIR",
+1620-                "artifacts/parity/xtabond2",
+1621-            )
+1622-        )
+1623-        debug_dir.mkdir(parents=True, exist_ok=True)
+1624-
+1625:        pd.DataFrame(_ztu, columns=["native_Ze"]).to_csv(
+1626:            debug_dir / "native_Ze.csv",
+1627-            index=False,
+1628-        )
+1629-
+1630:        pd.DataFrame(Z).to_csv(
+1631:            debug_dir / "native_Z.csv",
+1632-            index=False,
+1633-        )
+1634-
+1635-        pd.DataFrame(_u_col, columns=["native_u_stack"]).to_csv(
+1636-            debug_dir / "native_u_stack.csv",
+1637-            index=False,
+1638-        )
+1639-
+1640-        pd.DataFrame(W).to_csv(
+1641-            debug_dir / "native_A2.csv",
+1642-            index=False,
+1643-        )
+1644-
+1645-        pd.DataFrame(X).to_csv(
+1646-            debug_dir / "native_X.csv",
+1647-            index=False,
+1648-        )
+1649-
+1650-        pd.DataFrame(y.reshape(-1, 1), columns=["native_y_stack"]).to_csv(
+1651-            debug_dir / "native_y_stack.csv",
+1652-            index=False,
+1653-        )
+1654-
+1655-        pd.DataFrame(
+1656-            {
+1657:                "instrument_index": range(1, len(instrument_names) + 1),
+1658:                "instrument_name": list(instrument_names),
+1659-            }
+1660-        ).to_csv(
+1661:            debug_dir / "native_instrument_names.csv",
+1662-            index=False,
+1663-        )
+1664-
+1665-        pd.DataFrame(
+1666-            {
+1667-                "regressor_index": range(1, len(names) + 1),
+1668-                "regressor_name": list(names),
+1669-            }
+1670-        ).to_csv(
+1671-            debug_dir / "native_regressor_names.csv",
+1672-            index=False,
+1673-        )
+1674-
+1675-        pd.DataFrame(
+1676-            [
+1677-                {
+1678:                    "Z_rows": int(Z.shape[0]),
+1679:                    "Z_cols": int(Z.shape[1]),
+1680-                    "X_rows": int(X.shape[0]),
+1681-                    "X_cols": int(X.shape[1]),
+1682-                    "y_rows": int(y.reshape(-1, 1).shape[0]),
+1683-                    "u_rows": int(_u_col.shape[0]),
+1684:                    "Ze_rows": int(_ztu.shape[0]),
+1685:                    "Ze_cols": int(_ztu.shape[1]),
+1686-                    "W_rows": int(W.shape[0]),
+1687-                    "W_cols": int(W.shape[1]),
+1688-                    "native_j_stat": _j_stat,
+1689-                    "native_ztu_norm": _ztu_norm,
+1690-                    "native_w_norm": _w_norm,
+1691-                }
+1692-            ]
+1693-        ).to_csv(
+1694-            debug_dir / "native_debug_shapes.csv",
+1695-            index=False,
+1696-        )
+1697-
+1698-        with contextlib.suppress(Exception):
+1699-            pd.DataFrame(row_meta).to_csv(
+1700-                debug_dir / "native_row_meta.csv",
+1701-                index=False,
+1702-            )
+1703-
+1704-    return NativeGMMResult(
+1705-        spec=spec,
+1706:        nobs=int(nobs_reported),
+1707:        n_instruments=int(Z.shape[1]),
+1708-        params=pd.Series(beta_vec, index=names, name="coef"),
+1709-        std_errors=pd.Series(se, index=names, name="std_err"),
+1710-        zstats=pd.Series(zstats, index=names, name="z"),
+1711-        pvalues=pd.Series(pvalues, index=names, name="p_value"),
+1712-        residuals=pd.Series(residual_vec, index=row_index, name="residual"),
+1713-        covariance_type=(
+1714-            "robust-clustered-two-step-windmeijer"
+1715-            if windmeijer_requested and use_twostep
+1716-            else (
+1717-                "robust-clustered-two-step-uncorrected"
+1718-                if use_twostep
+1719-                else "robust-clustered-one-step"
+1720-            )
+1721-        ),
+1722-        backend="native-gmm",
+1723-        notes=[
+1724-            "Native dynamic-panel GMM engine.",
+1725-            "Native System GMM baseline parity with xtabond2 is verified for coefficients, raw moments, group-scaled A2, and Hansen J on the current collapsed two-step benchmark.",
+1726-            (
+1727-                "Windmeijer-corrected two-step standard errors are enabled via windmeijer=True "
+1728-                "using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked."
+1729-                if windmeijer_requested and use_twostep
+1730-                else "Windmeijer-corrected two-step standard errors are available via windmeijer=True but are not the default."
+1731-            ),
+1732-        ],
+1733:        instrument_names=list(instrument_names),
+1734-        hansen_p=hansen_p,
+1735-        sargan_p=sargan_p,
+1736-        ar1_p=ar1_p,
+1737-        ar2_p=ar2_p,
+1738:        z_shape=tuple(Z.shape),
+1739-        w_shape=tuple(W.shape),
+1740-        j_stat=_j_stat,
+1741-        ztu_norm=_ztu_norm,
+1742-        w_norm=_w_norm,
+1743-    )
+1744-
+1745-
+1746-
+1747-

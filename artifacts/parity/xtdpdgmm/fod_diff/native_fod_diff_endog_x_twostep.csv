@@ -1,0 +1,4 @@
+spec,term,native_coef,native_std_err,native_z,native_p_value,covariance_type,dep_gmm_variable_used,windmeijer
+fod_diff_endog_x_twostep,L1.y,0.4886099058104861,0.043742066521595575,11.170251994593306,5.701888712312908e-29,robust-clustered-two-step-windmeijer,y,True
+fod_diff_endog_x_twostep,x,1.0487056019174983,0.5156755038214594,2.033654098645314,0.04198648321274523,robust-clustered-two-step-windmeijer,y,True
+fod_diff_endog_x_twostep,w,-0.3566670772009129,0.046859394749687616,-7.611431583914997,2.7107638493296162e-14,robust-clustered-two-step-windmeijer,y,True

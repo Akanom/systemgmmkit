@@ -1,0 +1,386 @@
+ 1250:             if len(d) < 5:
+ 1251:                 return None
+ 1252: 
+ 1253:             a = d["_resid"].to_numpy(dtype=float)
+ 1254:             b = d["_lag"].to_numpy(dtype=float)
+ 1255: 
+ 1256:             denom = float(np.sqrt(np.sum(a * a) * np.sum(b * b)))
+ 1257:             if denom <= 0:
+ 1258:                 return None
+ 1259: 
+ 1260:             corr = float(np.sum(a * b) / denom)
+ 1261:             z = corr * np.sqrt(len(d))
+ 1262: 
+ 1263:             if not np.isfinite(z):
+ 1264:                 return None
+ 1265: 
+ 1266:             return float(2.0 * stats.norm.sf(abs(z)))
+ 1267: 
+ 1268:         return _lag_test(1), _lag_test(2)
+ 1269: 
+ 1270:     except Exception:
+ 1271:         return None, None
+ 1272: 
+ 1273: def run_native_dynamic_panel_gmm(
+ 1274:     spec: DynamicPanelSpec,
+ 1275:     data: pd.DataFrame,
+ 1276:     *,
+ 1277:     entity: str,
+ 1278:     time: str,
+ 1279:     windmeijer: bool = False,
+ 1280: ) -> NativeGMMResult:
+ 1281:     """Run the native Difference/System GMM estimator.
+ 1282: 
+ 1283:     Native System GMM has baseline xtabond2 parity for the current collapsed
+ 1284:     two-step benchmark covering coefficients, raw moments, group-scaled A2,
+ 1285:     and Hansen J.
+ 1286: 
+ 1287:     Windmeijer correction is deliberately not implemented yet because an
+ 1288:     incorrect correction would be worse than no correction. Use a validated
+ 1289:     backend for Windmeijer-style two-step inference until native SE parity is
+ 1290:     implemented and tested.
+ 1291:     """
+ 1292: 
+ 1293:     windmeijer_requested = bool(windmeijer)
+ 1294: 
+ 1295:     y, X, Z, names, row_index, nobs_effective, instrument_names, row_meta = _build_native_matrices(
+ 1296:         spec, data, entity=entity, time=time
+ 1297:     )
+ 1298:     y = np.asarray(y, dtype=float).reshape(-1, 1)
+ 1299: 
+ 1300:     # Optional strict-parity diagnostic dump. Inactive unless explicitly enabled.
+ 1301:     import os as _native_matrix_dump_os
+ 1302: 
+ 1303:     native_matrix_dump_dir = _native_matrix_dump_os.getenv("SYSTEMGMMKIT_NATIVE_MATRIX_DUMP_DIR")
+ 1304:     if native_matrix_dump_dir:
+ 1305:         import json as _native_matrix_dump_json
+ 1306:         from pathlib import Path as _NativeMatrixDumpPath
+ 1307: 
+ 1308:         dump_dir = _NativeMatrixDumpPath(native_matrix_dump_dir)
+ 1309:         dump_dir.mkdir(parents=True, exist_ok=True)
+ 1310: 
+ 1311:         safe_name = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in spec.name)
+ 1312:         npz_path = dump_dir / f"{safe_name}.npz"
+ 1313:         json_path = dump_dir / f"{safe_name}.json"
+ 1314: 
+ 1315:         np.savez_compressed(
+ 1316:             npz_path,
+ 1317:             y=y,
+ 1318:             X=X,
+ 1319:             Z=Z,
+ 1320:             row_index=np.asarray([str(v) for v in row_index], dtype=object),
+ 1321:             coef_names=np.asarray(names, dtype=object),
+ 1322:             instrument_names=np.asarray(instrument_names, dtype=object),
+ 1323:         )
+ 1324: 
+ 1325:         json_path.write_text(
+ 1326:             _native_matrix_dump_json.dumps(
+ 1327:                 {
+ 1328:                     "spec": spec.name,
+ 1329:                     "system": bool(spec.system),
+ 1330:                     "nobs_effective": int(nobs_effective),
+ 1331:                     "n_stacked_rows": int(len(y)),
+ 1332:                     "x_shape": list(X.shape),
+ 1333:                     "z_shape": list(Z.shape),
+ 1334:                     "coef_names": list(names),
+ 1335:                     "instrument_names": list(instrument_names),
+ 1336:                 },
+ 1337:                 indent=2,
+ 1338:             ),
+ 1339:             encoding="utf-8",
+ 1340:         )
+ 1341:     # SYSTEMGMMKIT_STATA_SYSTEM_NOBS_PATCH
+ 1342:     # Keep nobs_effective for internal System-GMM weighting logic.
+ 1343:     # Report Stata/xtabond2-compatible System-GMM N as the level-equation
+ 1344:     # usable row count. In the current stacked design, level-equation rows
+ 1345:     # are identified by the level-only `_con` column.
+ 1346:     if spec.system and "_con" in names:
+ 1347:         _stata_nobs_con_col = names.index("_con")
+ 1348:         nobs_reported = int(np.sum(np.isclose(X[:, _stata_nobs_con_col], 1.0)))
+ 1349:         if nobs_reported <= 0:
+ 1350:             nobs_reported = int(nobs_effective)
+ 1351:     else:
+ 1352:         nobs_reported = int(nobs_effective)
+ 1353: 
+ 1354:     # Production native GMM must not rescale equation blocks via environment
+ 1355:     # variables. Equation weighting belongs in the explicitly constructed first-
+ 1356:     # and second-step weighting matrices.
+ 1357: 
+ 1358:     # SYSTEMGMMKIT_FILE_INSTRUMENT_DEBUG
+ 1359:     import os
+ 1360:     from pathlib import Path as _NativeDebugPath
+ 1361: 
+ 1362:     debug_file = os.getenv("SYSTEMGMMKIT_DEBUG_INSTRUMENTS_FILE")
+ 1363:     if debug_file:
+ 1364:         debug_path = _NativeDebugPath(debug_file)
+ 1365:         debug_path.parent.mkdir(parents=True, exist_ok=True)
+ 1366:         with debug_path.open("a", encoding="utf-8") as fh:
+ 1367:             fh.write("\n" + "=" * 120 + "\n")
+ 1368:             fh.write(f"spec={spec.name} | system={spec.system}\n")
+ 1369:             fh.write(f"nobs_effective={nobs_effective} | n_instruments={len(instrument_names)}\n")
+ 1370:             for j, label in enumerate(instrument_names, start=1):
+ 1371:                 fh.write(f"{j:03d}: {label}\n")
+ 1372:             fh.write("=" * 120 + "\n")
+ 1373: 
+ 1374:     # Estimation path.
+ 1375:     #
+ 1376:     # Difference GMM keeps the native row-level clustered two-step path that
+ 1377:     # already passes strict parity on the validation harness.
+ 1378:     #
+ 1379:     # System GMM uses the pydynpd-compatible matrix path identified by strict
+ 1380:     # parity diagnostics:
+ 1381:     #   - pydynpd-compatible instrument order,
+ 1382:     #   - IV columns taken from transformed/stacked X,
+ 1383:     #   - pydynpd FD-System H1 first-step weighting,
+ 1384:     #   - pydynpd grouped residual moment W_next for two-step weighting.
+ 1385:     steps_normalized = (
+ 1386:         str(getattr(spec, "steps", "twostep"))
+ 1387:         .lower()
+ 1388:         .replace("-", "")
+ 1389:         .replace("_", "")
+ 1390:         .replace(" ", "")
+ 1391:     )
+ 1392:     use_twostep = steps_normalized in {"twostep", "two", "2", "iterated"}
+ 1393: 
+ 1394:     # SYSTEMGMMKIT_FORCE_ONESTEP diagnostic:
+ 1395:     # Force the native estimator to return the first-step estimate.
+ 1396:     # This isolates whether System-GMM parity fails in W1/Z/H1 or in W2.
+ 1397:     import os as _native_force_onestep_os
+ 1398:     if _native_force_onestep_os.getenv("SYSTEMGMMKIT_FORCE_ONESTEP") == "1":
+ 1399:         use_twostep = False
+ 1400: 
+ 1401:     if spec.system:
+ 1402:         W1, n_groups, group_rows, _diff_width = _native_pydynpd_first_step_weight_inv(
+ 1403:             Z=Z,
+ 1404:             y=y,
+ 1405:             nobs_effective=nobs_effective,
+ 1406:             row_meta=row_meta,
+ 1407:         )
+ 1408: 
+ 1409:         beta1 = _native_gmm_beta(y=y, X=X, Z=Z, W_inv=W1)
+ 1410:         residuals1 = y - X @ beta1
+ 1411: 
+ 1412:         if use_twostep:
+ 1413:             W = _native_pydynpd_next_weight_inv(
+ 1414:                 Z=Z,
+ 1415:                 residuals=residuals1,
+ 1416:                 n_groups=n_groups,
+ 1417:                 group_rows=group_rows,
+ 1418:             )
+ 1419:             beta = _native_gmm_beta(y=y, X=X, Z=Z, W_inv=W)
+ 1420:         else:
+ 1421:             W = W1
+ 1422:             beta = beta1
+ 1423: 
+ 1424:         xzwzx = X.T @ Z @ W @ Z.T @ X
+ 1425: 
+ 1426:     else:
+ 1427:         W1 = np.linalg.pinv(Z.T @ Z)
+ 1428:         xzwzx1 = X.T @ Z @ W1 @ Z.T @ X
+ 1429:         beta1 = np.linalg.pinv(xzwzx1) @ (X.T @ Z @ W1 @ Z.T @ y)
+ 1430:         residuals1 = y - X @ beta1
+ 1431: 
+ 1432:         if use_twostep:
+ 1433:             row_entities = data.loc[row_index, entity].to_numpy()
+ 1434:             S = np.zeros((Z.shape[1], Z.shape[1]), dtype=float)
+ 1435: 
+ 1436:             for ent in pd.unique(row_entities):
+ 1437:                 mask = row_entities == ent
+ 1438:                 Zi = Z[mask, :]
+ 1439:                 ui = residuals1[mask]
+ 1440:                 gi = Zi.T @ ui
+ 1441:                 S += np.outer(gi, gi)
+ 1442: 
+ 1443:             W = np.linalg.pinv(S)
+ 1444:             xzwzx = X.T @ Z @ W @ Z.T @ X
+ 1445:             beta = np.linalg.pinv(xzwzx) @ (X.T @ Z @ W @ Z.T @ y)
+ 1446:         else:
+ 1447:             W = W1
+ 1448:             xzwzx = xzwzx1
+ 1449:             beta = beta1
+ 1450: 
+ 1451:     residuals = y - X @ beta
+ 1452:     n, k = X.shape
+ 1453: 
+ 1454:     beta_vec = np.asarray(beta, dtype=float).reshape(-1)
+ 1455:     residual_vec = np.asarray(residuals, dtype=float).reshape(-1)
+ 1456: 
+ 1457:     bread = np.linalg.pinv(xzwzx)
+ 1458: 
+ 1459:     # Dynamic-panel GMM robust covariance is based on entity-level moment sums.
+ 1460:     # For entity i, the score contribution is g_i = Z_i' u_i.
+ 1461:     row_entities_for_cov = data.loc[row_index, entity].to_numpy()
+ 1462:     group_indices_for_cov = _native_group_indices_from_entities(row_entities_for_cov)
+ 1463:     n_groups_for_cov = int(len(group_indices_for_cov))
+ 1464: 
+ 1465:     D = X.T @ Z
+ 1466: 
+ 1467:     windmeijer_xtabond2_small_correction = 1.0
+ 1468:     if spec.system and windmeijer_requested and use_twostep:
+ 1469:         # xtabond2's twostep robust small Windmeijer path applies an
+ 1470:         # additional System-GMM finite-sample scalar. Empirically, across
+ 1471:         # the xtabond2 parity harness, this uses the raw panel rows plus
+ 1472:         # xtabond2's reported usable System-GMM observations.
+ 1473:         windmeijer_xtabond2_small_n = int(len(data)) + int(nobs_reported)
+ 1474:         if windmeijer_xtabond2_small_n > k:
+ 1475:             windmeijer_xtabond2_small_correction = (
+ 1476:                 (windmeijer_xtabond2_small_n - 1.0)
+ 1477:                 / (windmeijer_xtabond2_small_n - k)
+ 1478:             )
+ 1479: 
+ 1480:     if windmeijer_requested and not use_twostep:
+ 1481:         raise ValueError("windmeijer=True requires two-step dynamic-panel GMM estimation.")
+ 1482: 
+ 1483:     if windmeijer_requested and use_twostep:
+ 1484:         vcov_step1 = _native_pydynpd_step1_vcov(
+ 1485:             X=X,
+ 1486:             Z=Z,
+ 1487:             W1=W1,
+ 1488:             residuals1=residuals1,
+ 1489:             group_indices=group_indices_for_cov,
+ 1490:             n_groups=n_groups_for_cov,
+ 1491:         )
+ 1492: 
+ 1493:         M2 = bread
+ 1494:         M2_XZ_W2 = M2 @ D @ W
+ 1495:         zs2 = Z.T @ residual_vec.reshape(-1, 1)
+ 1496: 
+ 1497:         if n_groups_for_cov > 1:
+ 1498:             cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+ 1499:                 (n - 1.0) / max(n - k, 1)
+ 1500:             )
+ 1501:         else:
+ 1502:             cov_correction = n / max(n - k, 1)
+ 1503: 
+ 1504:         windmeijer_base_cov = _native_windmeijer_covariance(
+ 1505:             M2=M2,
+ 1506:             M2_XZ_W2=M2_XZ_W2,
+ 1507:             W2_inv=W,
+ 1508:             zs2=zs2,
+ 1509:             vcov_step1=vcov_step1,
+ 1510:             X=X,
+ 1511:             Z=Z,
+ 1512:             residuals1=residuals1,
+ 1513:             group_indices=group_indices_for_cov,
+ 1514:             n_groups=n_groups_for_cov,
+ 1515:         )
+ 1516:         cov = (
+ 1517:             cov_correction
+ 1518:             * windmeijer_xtabond2_small_correction
+ 1519:             * windmeijer_base_cov
+ 1520:         )
+ 1521:     else:
+ 1522:         s_group = _native_group_moment_sum(
+ 1523:             Z=Z,
+ 1524:             residuals=residual_vec,
+ 1525:             group_indices=group_indices_for_cov,
+ 1526:         )
+ 1527: 
+ 1528:         meat = D @ W @ s_group @ W @ D.T
+ 1529: 
+ 1530:         if n_groups_for_cov > 1:
+ 1531:             cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+ 1532:                 (n - 1.0) / max(n - k, 1)
+ 1533:             )
+ 1534:         else:
+ 1535:             cov_correction = n / max(n - k, 1)
+ 1536: 
+ 1537:         cov = cov_correction * bread @ meat @ bread
+ 1538: 
+ 1539:     cov = 0.5 * (cov + cov.T)
+ 1540:     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
+ 1541:     with np.errstate(divide="ignore", invalid="ignore"):
+ 1542:         zstats = beta_vec / se
+ 1543:     pvalues = _normal_pvalues_from_t(zstats)
+ 1544: 
+ 1545:     hansen_p, sargan_p = _native_overid_diagnostics(
+ 1546:         residuals=residual_vec,
+ 1547:         Z=Z,
+ 1548:         W=W,
+ 1549:         n_params=len(names),
+ 1550:     )
+ 1551: 
+ 1552:     ar1_p, ar2_p = _native_ab_serial_correlation_pvalues(
+ 1553:         data=data,
+ 1554:         entity=entity,
+ 1555:         time=time,
+ 1556:         row_index=np.asarray(row_index),
+ 1557:         residuals=residual_vec,
+ 1558:         X=X,
+ 1559:         coef_names=names,
+ 1560:         system=spec.system,
+ 1561:     )
+ 1562: 
+ 1563:     _u_col = residual_vec.reshape(-1, 1)
+ 1564:     _ztu = Z.T @ _u_col
+ 1565:     _j_stat_raw = float((_ztu.T @ W @ _ztu).squeeze())
+ 1566: 
+ 1567:     # One-step overidentification diagnostics.
+ 1568:     #
+ 1569:     # For one-step GMM, the quadratic form based on W1 is a Sargan-style
+ 1570:     # statistic, not a robust Hansen statistic. Do not report the group-scaled
+ 1571:     # tiny value as Hansen/J. xtabond2's one-step Sargan is closely matched by
+ 1572:     # a finite-sample group adjustment.
+ 1573:     _overid_df = int(Z.shape[1]) - int(len(names))
+ 1574:     _n_groups_for_diag = max(int(data[entity].nunique()), 1)
+ 1575: 
+ 1576:     _sargan_small_scale = (
+ 1577:         max(float(_n_groups_for_diag - len(names)), 1.0)
+ 1578:         / float(_n_groups_for_diag)
+ 1579:     )
+ 1580:     _sargan_stat = float(_j_stat_raw * _sargan_small_scale)
+ 1581: 
+ 1582:     # Store a one-step Sargan-style J statistic only for one-step estimation.
+ 1583:     # In two-step / Windmeijer mode, W is the two-step weighting matrix, so the
+ 1584:     # same quadratic form is not comparable to xtabond2's one-step Sargan.
+ 1585:     _steps_label = str(getattr(spec, "steps", "")).strip().lower()
+ 1586: 
+ 1587:     # covariance_type may be assigned later in this function depending on the
+ 1588:     # estimation branch, so do not reference it directly here.
+ 1589:     _cov_label = str(locals().get("covariance_type", "")).strip().lower()
+ 1590:     _windmeijer_flag = bool(locals().get("windmeijer", False))
+ 1591: 
+ 1592:     _is_twostep_like = (
+ 1593:         _windmeijer_flag
+ 1594:         or "two" in _steps_label
+ 1595:         or _steps_label in {"2", "twostep", "two-step"}
+ 1596:         or "two-step" in _cov_label
+ 1597:         or "twostep" in _cov_label
+ 1598:         or "windmeijer" in _cov_label
+ 1599:     )
+ 1600: 
+ 1601:     if _is_twostep_like:
+ 1602:         _j_stat = None
+ 1603:         sargan_p = None
+ 1604:     else:
+ 1605:         _j_stat = _sargan_stat
+ 1606: 
+ 1607:         if _overid_df > 0 and np.isfinite(_sargan_stat) and _sargan_stat >= 0:
+ 1608:             sargan_p = float(stats.chi2.sf(_sargan_stat, _overid_df))
+ 1609:         else:
+ 1610:             sargan_p = None
+ 1611: 
+ 1612:     # Robust Hansen parity requires the robust moment covariance, not the
+ 1613:     # one-step Sargan quadratic form. Leave it undefined here rather than
+ 1614:     # reporting a misleading pseudo-Hansen p-value.
+ 1615:     hansen_p = None
+ 1616: 
+ 1617: 
+ 1618:     _ztu_norm = float(np.linalg.norm(_ztu))
+ 1619:     _w_norm = float(np.linalg.norm(W))
+ 1620: 
+ 1621:     # Optional parity/debug export for xtabond2 internals.
+ 1622:     # Enable with:
+ 1623:     #   $env:SYSTEMGMMKIT_EXPORT_GMM_DEBUG = "1"
+ 1624:     #   $env:SYSTEMGMMKIT_GMM_DEBUG_DIR = "artifacts/parity/xtabond2"
+ 1625:     if __import__("os").environ.get("SYSTEMGMMKIT_EXPORT_GMM_DEBUG") == "1":
+ 1626:         from pathlib import Path as _GmmDebugPath
+ 1627: 
+ 1628:         debug_dir = _GmmDebugPath(
+ 1629:             __import__("os").environ.get(
+ 1630:                 "SYSTEMGMMKIT_GMM_DEBUG_DIR",
+ 1631:                 "artifacts/parity/xtabond2",
+ 1632:             )
+ 1633:         )
+ 1634:         debug_dir.mkdir(parents=True, exist_ok=True)
+ 1635: 

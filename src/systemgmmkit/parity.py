@@ -20,21 +20,60 @@ def stata_xtreg_fe_command(spec: FixedEffectsSpec, *, entity: str, time: str) ->
 
 
 def stata_xtabond2_command(spec: DynamicPanelSpec, *, entity: str, time: str) -> str:
-    """Build a conservative xtabond2 command template for dynamic GMM parity checks."""
+    """Build a conservative xtabond2 command template for dynamic GMM parity checks.
 
-    rhs = " ".join(spec.regressors)
-    gmm_parts = []
+    The command is intended as an auditable Stata reference template for the
+    Python specification. It preserves the package's instrument classification
+    while making transformation and system/difference choices explicit.
+    """
+
+    rhs = " ".join(str(v) for v in spec.regressors)
+
+    gmm_parts: list[str] = []
     for block in spec.gmm:
-        gmm_parts.append(f"gmm({block.variable}, lag({block.min_lag} {block.max_lag}) collapse)")
-    iv_vars = " ".join(iv.variable for iv in spec.iv)
-    iv_part = f"iv({iv_vars})" if iv_vars else ""
-    time_part = f"iv(i.{time}, eq(level))" if spec.time_dummies else ""
-    nolevel = " noleveleq" if not spec.system else ""
-    robust = " twostep robust small"
-    parts = " ".join(p for p in [*gmm_parts, iv_part, time_part] if p)
-    return f"xtset {entity} {time}\nxtabond2 {spec.dependent} {rhs}, {parts}{nolevel}{robust}"
+        option_parts = [f"lag({block.min_lag} {block.max_lag})"]
 
+        collapse_enabled = bool(
+            getattr(block, "collapse", False)
+            or getattr(spec, "collapse", False)
+        )
+        if collapse_enabled:
+            option_parts.append("collapse")
 
+        options = " ".join(option_parts)
+        gmm_parts.append(f"gmmstyle({block.variable}, {options})")
+
+    iv_vars = " ".join(str(iv.variable) for iv in spec.iv)
+    iv_part = f"ivstyle({iv_vars})" if iv_vars else ""
+
+    time_part = f"ivstyle(i.{time}, equation(level))" if spec.time_dummies else ""
+
+    nolevel = "noleveleq" if not spec.system else ""
+
+    transformation = str(getattr(spec, "transformation", "")).lower()
+    orthogonal = (
+        "orthogonal"
+        if transformation in {"fod", "forward_orthogonal_deviations"}
+        else ""
+    )
+
+    steps = str(getattr(spec, "steps", "")).lower()
+    step_option = "twostep" if steps == "twostep" else "onestep"
+
+    options = [
+        *gmm_parts,
+        iv_part,
+        time_part,
+        nolevel,
+        step_option,
+        "robust",
+        "small",
+        orthogonal,
+    ]
+
+    parts = " ".join(str(p).strip() for p in options if str(p).strip())
+
+    return f"xtset {entity} {time}\nxtabond2 {spec.dependent} {rhs}, {parts}"
 def write_stata_parity_do_file(
     path: str | Path,
     *,

@@ -24,16 +24,16 @@ def main() -> None:
         dependent="y",
         regressors=["L1.y", "x", "w"],
         gmm=[
-            GMMStyle(variable="y", min_lag=2, max_lag=3),
+            GMMStyle(variable="L1.y", min_lag=2, max_lag=3),
             GMMStyle(variable="x", min_lag=2, max_lag=3),
         ],
         iv=[
-            IVStyle(variable="w"),
+            IVStyle(variable="w", eq="level"),
         ],
         time_dummies=False,
-        system=True,
+        system=os.getenv("SYSTEMGMMKIT_NATIVE_SYSTEM", "1").strip().lower() not in {"0", "false", "no", "off"},
         collapse=True,
-        transformation="fod",
+        transformation=os.getenv("SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "fd").strip().lower(),
         steps="twostep",
         name="system_gmm_baseline_controls",
     )

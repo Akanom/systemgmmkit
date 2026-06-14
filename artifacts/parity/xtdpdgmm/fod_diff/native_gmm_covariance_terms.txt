@@ -1,0 +1,160 @@
+
+LineNumber Line
+---------- ----
+        21     two-step benchmark covering coefficients, raw moments, group-scaled A2,
+        28     nobs: int
+        31     std_errors: pd.Series
+        35     covariance_type: str
+        53                 "std_err": self.std_errors,
+        63         lines.append(f"- Observations: `{self.nobs}`")
+        65         lines.append(f"- Covariance: `{self.covariance_type}`")
+       261         scale = float(np.sqrt(k / (k + 1.0)))
+       263         terms: dict[object, float] = {index[pos]: scale}
+       264         future_weight = -scale / k
+       494     # SYSTEM_GMM_EFFECTIVE_NOBS_PATCH
+       498     # pydynpd reports the effective differenced-equation sample as nobs,
+       500     nobs_stacked = len(staged)
+       511         nobs_effective = sum(1 for row in staged if _native_is_diff_equation_row(row))
+       513         nobs_effective = nobs_stacked
+       639         nobs_effective,
+       810         Current implementation. Difference-equation FD covariance block plus
+       811         identity level-equation block and no cross-equation covariance.
+       813     - full_error_cov:
+       814         Adds covariance between differenced errors and level errors:
+       815         Cov(e_t - e_{t-1}, e_s) = 1{s=t} - 1{s=t-1}.
+       838     # Difference-equation block: first-difference error covariance.
+       853     if mode in {"full_error_cov", "full", "cross"}:
+       858         # Cross covariance:
+       859         #   Cov(Δe_t, e_s) = Cov(e_t - e_{t-1}, e_s)
+       878         f"{mode!r}. Use blockdiag, full_error_cov, or identity."
+       885     nobs_effective: int,
+       889     Returns (n_groups, group_rows, diff_width). This strict compatibility path
+       893     nobs_effective = int(nobs_effective)
+       895     if nobs_effective <= 0:
+       896         raise ValueError("nobs_effective must be positive.")
+       899     #   diff_width = effective nobs per group
+       903     # We infer n_groups from gcd to avoid hard-coding 96.
+       906     n_groups = _native_math.gcd(n_rows, nobs_effective)
+       907     if n_groups <= 0:
+       910     group_rows = n_rows // n_groups
+       911     diff_width = nobs_effective // n_groups
+       913     if group_rows * n_groups != n_rows:
+       915     if diff_width * n_groups != nobs_effective:
+       918     return n_groups, group_rows, diff_width
+       948     Cov(row_a, row_b) is the dot product of their error-term coefficient maps.
+       983     nobs_effective: int,
+      1015     n_groups, group_rows, diff_width = _native_infer_panel_blocks(
+      1017         nobs_effective=nobs_effective,
+      1023     for i in range(n_groups):
+      1028     return np.linalg.pinv(W), n_groups, group_rows, diff_width
+      1034     n_groups: int,
+      1057         for i in range(int(n_groups)):
+      1064     W_next = ZuuZ * (1.0 / int(n_groups))
+      1112 def _native_pydynpd_step1_vcov(
+      1116     W1: np.ndarray,
+      1119     n_groups: int,
+      1121     """pydynpd-compatible robust one-step covariance used inside Windmeijer."""
+      1123     M1 = np.linalg.pinv(D_xz @ W1 @ D_xz.T)
+      1124     M1_XZ_W1 = M1 @ D_xz @ W1
+      1131     W_next1 = ZuuZ1 * (1.0 / int(n_groups))
+      1133     cov1 = int(n_groups) * (M1_XZ_W1 @ W_next1 @ M1_XZ_W1.T)
+      1134     return 0.5 * (cov1 + cov1.T)
+      1137 def _native_windmeijer_covariance(
+      1140     M2_XZ_W2: np.ndarray,
+      1141     W2_inv: np.ndarray,
+      1143     vcov_step1: np.ndarray,
+      1148     n_groups: int,
+      1151     N = int(n_groups)
+      1171         Dj = -(M2_XZ_W2 @ partial_dir @ W2_inv @ zs2)
+      1175     cov = (N * M2) + (N * D_M2) + (N * D_M2.T)
+      1176     cov = cov + (D_wind @ vcov_step1 @ D_wind.T)
+      1178     return 0.5 * (cov + cov.T)
+      1254             b = d["_lag"].to_numpy(dtype=float)
+      1284     two-step benchmark covering coefficients, raw moments, group-scaled A2,
+      1295     y, X, Z, names, row_index, nobs_effective, instrument_names, row_meta = _build_native_matrices(
+      1330                     "nobs_effective": int(nobs_effective),
+      1341     # SYSTEMGMMKIT_STATA_SYSTEM_NOBS_PATCH
+      1342     # Keep nobs_effective for internal System-GMM weighting logic.
+      1347         _stata_nobs_con_col = names.index("_con")
+      1348         nobs_reported = int(np.sum(np.isclose(X[:, _stata_nobs_con_col], 1.0)))
+      1349         if nobs_reported <= 0:
+      1350             nobs_reported = int(nobs_effective)
+      1352         nobs_reported = int(nobs_effective)
+      1354     # Production native GMM must not rescale equation blocks via environment
+      1369             fh.write(f"nobs_effective={nobs_effective} | n_instruments={len(instrument_names)}\n")
+      1376     # Difference GMM keeps the native row-level clustered two-step path that
+      1396     # This isolates whether System-GMM parity fails in W1/Z/H1 or in W2.
+      1402         W1, n_groups, group_rows, _diff_width = _native_pydynpd_first_step_weight_inv(
+      1405             nobs_effective=nobs_effective,
+      1409         beta1 = _native_gmm_beta(y=y, X=X, Z=Z, W_inv=W1)
+      1410         residuals1 = y - X @ beta1
+      1416                 n_groups=n_groups,
+      1421             W = W1
+      1422             beta = beta1
+      1427         W1 = np.linalg.pinv(Z.T @ Z)
+      1428         xzwzx1 = X.T @ Z @ W1 @ Z.T @ X
+      1429         beta1 = np.linalg.pinv(xzwzx1) @ (X.T @ Z @ W1 @ Z.T @ y)
+      1430         residuals1 = y - X @ beta1
+      1447             W = W1
+      1449             beta = beta1
+      1457     bread = np.linalg.pinv(xzwzx)
+      1459     # Dynamic-panel GMM robust covariance is based on entity-level moment sums.
+      1461     row_entities_for_cov = data.loc[row_index, entity].to_numpy()
+      1462     group_indices_for_cov = _native_group_indices_from_entities(row_entities_for_cov)
+      1463     n_groups_for_cov = int(len(group_indices_for_cov))
+      1467     windmeijer_xtabond2_small_correction = 1.0
+      1469         # xtabond2's twostep robust small Windmeijer path applies an
+      1473         windmeijer_xtabond2_small_n = int(len(data)) + int(nobs_reported)
+      1474         if windmeijer_xtabond2_small_n > k:
+      1475             windmeijer_xtabond2_small_correction = (
+      1476                 (windmeijer_xtabond2_small_n - 1.0)
+      1477                 / (windmeijer_xtabond2_small_n - k)
+      1484         vcov_step1 = _native_pydynpd_step1_vcov(
+      1487             W1=W1,
+      1489             group_indices=group_indices_for_cov,
+      1490             n_groups=n_groups_for_cov,
+      1493         M2 = bread
+      1494         M2_XZ_W2 = M2 @ D @ W
+      1497         if n_groups_for_cov > 1:
+      1498             cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+      1502             cov_correction = n / max(n - k, 1)
+      1504         windmeijer_base_cov = _native_windmeijer_covariance(
+      1506             M2_XZ_W2=M2_XZ_W2,
+      1507             W2_inv=W,
+      1509             vcov_step1=vcov_step1,
+      1513             group_indices=group_indices_for_cov,
+      1514             n_groups=n_groups_for_cov,
+      1516         cov = (
+      1517             cov_correction
+      1518             * windmeijer_xtabond2_small_correction
+      1519             * windmeijer_base_cov
+      1525             group_indices=group_indices_for_cov,
+      1528         meat = D @ W @ s_group @ W @ D.T
+      1530         if n_groups_for_cov > 1:
+      1531             cov_correction = (n_groups_for_cov / (n_groups_for_cov - 1.0)) * (
+      1535             cov_correction = n / max(n - k, 1)
+      1537         cov = cov_correction * bread @ meat @ bread
+      1539     cov = 0.5 * (cov + cov.T)
+      1540     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
+      1569     # For one-step GMM, the quadratic form based on W1 is a Sargan-style
+      1570     # statistic, not a robust Hansen statistic. Do not report the group-scaled
+      1574     _n_groups_for_diag = max(int(data[entity].nunique()), 1)
+      1576     _sargan_small_scale = (
+      1577         max(float(_n_groups_for_diag - len(names)), 1.0)
+      1578         / float(_n_groups_for_diag)
+      1580     _sargan_stat = float(_j_stat_raw * _sargan_small_scale)
+      1587     # covariance_type may be assigned later in this function depending on the
+      1589     _cov_label = str(locals().get("covariance_type", "")).strip().lower()
+      1596         or "two-step" in _cov_label
+      1597         or "twostep" in _cov_label
+      1598         or "windmeijer" in _cov_label
+      1612     # Robust Hansen parity requires the robust moment covariance, not the
+      1652             debug_dir / "native_A2.csv",
+      1717         nobs=int(nobs_reported),
+      1720         std_errors=pd.Series(se, index=names, name="std_err"),
+      1724         covariance_type=(
+      1725             "robust-clustered-two-step-windmeijer"
+      1728                 "robust-clustered-two-step-uncorrected"
+      1730                 else "robust-clustered-one-step"
+      1736             "Native System GMM baseline parity with xtabond2 is verified for coefficients, raw moments, group-scaled A2, and Hansen J on the current collapsed two-step benchmark.",
+
