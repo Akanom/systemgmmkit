@@ -3,7 +3,7 @@
        log:  C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_dif
 > f/fod_diff_xtdpdgmm_reference.log
   log type:  text
- opened on:  13 Jun 2021, 15:58:49
+ opened on:  13 Jun 2021, 18:38:12
 
 . 
 . display as text "============================================================"
@@ -160,6 +160,197 @@ SPEC 1: x endogenous, one-step
 ============================================================
 
 . 
+. capture program drop dump_xtdpdgmm_diag
+
+. program define dump_xtdpdgmm_diag
+  1.     syntax, Spec(string) Outfile(string)
+  2. 
+.     preserve
+  3.         clear
+  4.         set obs 1
+  5. 
+.         gen str80 spec = "`spec'"
+  6. 
+.         gen double N          = .
+  7.         gen double N_g        = .
+  8.         gen double k          = .
+  9.         gen double k_eq       = .
+ 10.         gen double k_inst     = .
+ 11.         gen double j          = .
+ 12.         gen double j_p        = .
+ 13.         gen double hansen     = .
+ 14.         gen double hansen_p   = .
+ 15.         gen double sargan     = .
+ 16.         gen double sargan_p   = .
+ 17.         gen double ar1_z      = .
+ 18.         gen double ar1_p      = .
+ 19.         gen double ar2_z      = .
+ 20.         gen double ar2_p      = .
+ 21. 
+.         capture replace N = e(N)
+ 22.         capture replace N_g = e(N_g)
+ 23.         capture replace k = e(k)
+ 24.         capture replace k_eq = e(k_eq)
+ 25.         capture replace k_inst = e(k_inst)
+ 26. 
+.         capture replace j = e(j)
+ 27.         capture replace j_p = e(j_p)
+ 28.         capture replace hansen = e(hansen)
+ 29.         capture replace hansen_p = e(hansen_p)
+ 30.         capture replace sargan = e(sargan)
+ 31.         capture replace sargan_p = e(sargan_p)
+ 32. 
+.         capture replace ar1_z = e(ar1)
+ 33.         capture replace ar1_p = e(ar1p)
+ 34.         capture replace ar2_z = e(ar2)
+ 35.         capture replace ar2_p = e(ar2p)
+ 36. 
+.         export delimited using "`outfile'", replace
+ 37.     restore
+ 38. end
+
+. 
+. capture program drop dump_xtdpdgmm_ereturn
+
+. program define dump_xtdpdgmm_ereturn
+  1.     syntax, Spec(string) Outfile(string)
+  2. 
+.     tempfile tmp
+  3.     tempname handle
+  4. 
+.     postfile `handle' str80 spec str20 kind str80 name double value_num str244 value_text using `
+> tmp', replace
+  5. 
+.     local scalars : e(scalars)
+  6.     foreach s of local scalars {
+  7.         capture scalar __v = e(`s')
+  8.         if !_rc {
+  9.             post `handle' ("`spec'") ("scalar") ("`s'") (__v) ("")
+ 10.         }
+ 11.     }
+ 12. 
+.     local macros : e(macros)
+ 13.     foreach m of local macros {
+ 14.         local __txt `"`e(`m')'"'
+ 15.         post `handle' ("`spec'") ("macro") ("`m'") (.) (`"`__txt'"')
+ 16.     }
+ 17. 
+.     postclose `handle'
+ 18. 
+.     preserve
+ 19.         use `tmp', clear
+ 20.         export delimited using "`outfile'", replace
+ 21.     restore
+ 22. end
+
+. 
+. capture program drop dump_xtdpdgmm_diag
+
+. program define dump_xtdpdgmm_diag
+  1.     syntax, Spec(string) Outfile(string)
+  2. 
+.     preserve
+  3.         clear
+  4.         set obs 1
+  5. 
+.         gen str80 spec = "`spec'"
+  6. 
+.         gen double N             = .
+  7.         gen double N_g           = .
+  8.         gen double N_clust       = .
+  9.         gen double g_min         = .
+ 10.         gen double g_avg         = .
+ 11.         gen double g_max         = .
+ 12.         gen double rank          = .
+ 13.         gen double zrank         = .
+ 14.         gen double zrank_nl      = .
+ 15.         gen double steps         = .
+ 16.         gen double twostep       = .
+ 17.         gen double chi2_J        = .
+ 18.         gen double chi2_J_u      = .
+ 19.         gen double overid_df     = .
+ 20.         gen double chi2_J_p      = .
+ 21.         gen double chi2_J_u_p    = .
+ 22. 
+.         capture replace N = e(N)
+ 23.         capture replace N_g = e(N_g)
+ 24.         capture replace N_clust = e(N_clust)
+ 25.         capture replace g_min = e(g_min)
+ 26.         capture replace g_avg = e(g_avg)
+ 27.         capture replace g_max = e(g_max)
+ 28.         capture replace rank = e(rank)
+ 29.         capture replace zrank = e(zrank)
+ 30.         capture replace zrank_nl = e(zrank_nl)
+ 31.         capture replace steps = e(steps)
+ 32.         capture replace twostep = e(twostep)
+ 33.         capture replace chi2_J = e(chi2_J)
+ 34.         capture replace chi2_J_u = e(chi2_J_u)
+ 35. 
+.         capture replace overid_df = e(zrank) - e(rank)
+ 36.         capture replace chi2_J_p = chi2tail(overid_df, chi2_J) if overid_df < . & chi2_J < .
+ 37.         capture replace chi2_J_u_p = chi2tail(overid_df, chi2_J_u) if overid_df < . & chi2_J_u
+>  < .
+ 38. 
+.         export delimited using "`outfile'", replace
+ 39.     restore
+ 40. end
+
+. 
+. capture program drop dump_return_scalars
+
+. program define dump_return_scalars
+  1.     syntax, Spec(string) Command(string) Outfile(string)
+  2. 
+.     tempfile tmp
+  3.     tempname handle
+  4. 
+.     postfile `handle' str80 spec str40 command str20 kind str80 name double value_num str244 valu
+> e_text using `tmp', replace
+  5. 
+.     local scalars : r(scalars)
+  6.     foreach s of local scalars {
+  7.         capture scalar __v = r(`s')
+  8.         if !_rc {
+  9.             post `handle' ("`spec'") ("`command'") ("scalar") ("`s'") (__v) ("")
+ 10.         }
+ 11.     }
+ 12. 
+.     local macros : r(macros)
+ 13.     foreach m of local macros {
+ 14.         local __txt `"`r(`m')'"'
+ 15.         post `handle' ("`spec'") ("`command'") ("macro") ("`m'") (.) (`"`__txt'"')
+ 16.     }
+ 17. 
+.     postclose `handle'
+ 18. 
+.     preserve
+ 19.         use `tmp', clear
+ 20.         export delimited using "`outfile'", replace
+ 21.     restore
+ 22. end
+
+. 
+. capture program drop dump_failed_postestimation
+
+. program define dump_failed_postestimation
+  1.     syntax, Spec(string) Command(string) Outfile(string) RC(integer)
+  2. 
+.     preserve
+  3.         clear
+  4.         set obs 1
+  5. 
+.         gen str80 spec = "`spec'"
+  6.         gen str40 command = "`command'"
+  7.         gen str20 kind = "failed"
+  8.         gen str80 name = "_rc"
+  9.         gen double value_num = `rc'
+ 10.         gen str244 value_text = ""
+ 11. 
+.         export delimited using "`outfile'", replace
+ 12.     restore
+ 13. end
+
+. 
 . xtdpdgmm L(0/1).y x w, ///
 >     model(fodev) ///
 >     collapse ///
@@ -261,6 +452,156 @@ L.y   .00096213
   x   .01068725   .16315248
   w  -.00073204  -.01050723   .00086939
 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0163042689059382
+             e(chi2_J) =  9.077070104207634
+           e(chi2_J_u) =  9.361900737620221
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  1
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "onestep"
+                e(vce) : "robust"
+            e(vcetype) : "Robust"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. dump_xtdpdgmm_diag, spec("fod_diff_endog_x_onestep") outfile("C:/Users/omoko/OneDrive/Python pack
+> ages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_diagnostics.c
+> sv")
+Number of observations (_N) was 0, now 1.
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_onestep_diagnostics.csv saved
+
+. dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_onestep") outfile("C:/Users/omoko/OneDrive/Python p
+> ackages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_ereturn.cs
+> v")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_onestep_ereturn.csv saved
+
+. capture noisily estat overid
+
+Sargan-Hansen test of the overidentifying restrictions
+H0: overidentifying restrictions are valid
+
+1-step moment functions, 1-step weighting matrix       chi2(2)     =    9.0771
+note: *                                                Prob > chi2 =    0.0107
+
+1-step moment functions, 2-step weighting matrix       chi2(2)     =    9.3619
+note: *                                                Prob > chi2 =    0.0093
+
+* asymptotically invalid if the one-step weighting matrix is not optimal
+
+. local __rc_overid = _rc
+
+. if `__rc_overid' == 0 {
+.     return list
+
+scalars:
+             r(chi2_J) =  9.077070104207634
+               r(df_J) =  2
+                r(p_J) =  .0106890539965446
+           r(chi2_J_u) =  9.361900737620221
+              r(p_J_u) =  .0092701995907575
+.     dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("C:/Use
+> rs/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_
+> endog_x_onestep_estat_overid_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat
+    > _overid_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_onestep_estat_overid_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile(
+> "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fo
+> d_diff_endog_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
+. }
+
+. 
+. capture noisily estat serial, ar(1/2)
+
+Arellano-Bond test for autocorrelation of the first-differenced residuals
+H0: no autocorrelation of order 1      z =   -3.7017   Prob > |z|  =    0.0002
+H0: no autocorrelation of order 2      z =    1.3928   Prob > |z|  =    0.1637
+
+. local __rc_serial = _rc
+
+. if `__rc_serial' == 0 {
+.     return list
+
+scalars:
+                r(z_2) =  1.392848339082235
+                r(p_2) =  .1636656572725258
+                r(z_1) =  -3.701708752660295
+                r(p_1) =  .0002141523582349
+.     dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("C
+> :/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_
+> diff_endog_x_onestep_estat_serial_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat
+    > _serial_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_onestep_estat_serial_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") out
+> file("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/sta
+> ta_fod_diff_endog_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
+. }
+
+. 
 . export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("C:/Users/omoko/OneDrive/Python pac
 > kages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv")
 Number of observations (_N) was 0, now 3.
@@ -296,9 +637,6 @@ Number of observations (_N) was 0, now 3.
 (3 missing values generated)
 (3 missing values generated)
 (3 missing values generated)
-(file C:/Users/omoko/OneDrive/Python
-    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv
-    not found)
 file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
 > fod_diff_endog_x_onestep.csv saved
 
@@ -417,6 +755,155 @@ L.y   .00174577
   x   .01916148   .25861894
   w  -.00184043  -.02424375   .00249535
 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0950555140533284
+             e(chi2_J) =  9.125329349119525
+           e(chi2_J_u) =  7.158158479743374
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  2
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "twostep"
+                e(vce) : "robust"
+            e(vcetype) : "WC-Robust"
+             e(vcecor) : "wc"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. dump_xtdpdgmm_diag, spec("fod_diff_endog_x_twostep") outfile("C:/Users/omoko/OneDrive/Python pack
+> ages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_diagnostics.c
+> sv")
+Number of observations (_N) was 0, now 1.
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_twostep_diagnostics.csv saved
+
+. dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_twostep") outfile("C:/Users/omoko/OneDrive/Python p
+> ackages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_ereturn.cs
+> v")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_twostep_ereturn.csv saved
+
+. capture noisily estat overid
+
+Sargan-Hansen test of the overidentifying restrictions
+H0: overidentifying restrictions are valid
+
+2-step moment functions, 2-step weighting matrix       chi2(2)     =    9.1253
+                                                       Prob > chi2 =    0.0104
+
+2-step moment functions, 3-step weighting matrix       chi2(2)     =    7.1582
+                                                       Prob > chi2 =    0.0279
+
+. local __rc_overid = _rc
+
+. if `__rc_overid' == 0 {
+.     return list
+
+scalars:
+             r(chi2_J) =  9.125329349119525
+               r(df_J) =  2
+                r(p_J) =  .0104342180710234
+           r(chi2_J_u) =  7.158158479743374
+              r(p_J_u) =  .0279013769068744
+.     dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("C:/Use
+> rs/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_
+> endog_x_twostep_estat_overid_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat
+    > _overid_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_twostep_estat_overid_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile(
+> "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fo
+> d_diff_endog_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
+. }
+
+. 
+. capture noisily estat serial, ar(1/2)
+
+Arellano-Bond test for autocorrelation of the first-differenced residuals
+H0: no autocorrelation of order 1      z =   -1.7197   Prob > |z|  =    0.0855
+H0: no autocorrelation of order 2      z =    0.8440   Prob > |z|  =    0.3987
+
+. local __rc_serial = _rc
+
+. if `__rc_serial' == 0 {
+.     return list
+
+scalars:
+                r(z_2) =  .843951860229936
+                r(p_2) =  .3986963067698245
+                r(z_1) =  -1.719696566991883
+                r(p_1) =  .0854876121963456
+.     dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("C
+> :/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_
+> diff_endog_x_twostep_estat_serial_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat
+    > _serial_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_endog_x_twostep_estat_serial_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") out
+> file("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/sta
+> ta_fod_diff_endog_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
+. }
+
+. 
 . export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("C:/Users/omoko/OneDrive/Python pac
 > kages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv")
 Number of observations (_N) was 0, now 3.
@@ -452,9 +939,6 @@ Number of observations (_N) was 0, now 3.
 (3 missing values generated)
 (3 missing values generated)
 (3 missing values generated)
-(file C:/Users/omoko/OneDrive/Python
-    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv
-    not found)
 file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
 > fod_diff_endog_x_twostep.csv saved
 
@@ -571,6 +1055,156 @@ L.y   .00026802
   x   .00008243   .00018339
   w  -.00004158  -.00002816   .00019669
 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0155600981502318
+             e(chi2_J) =  9.012588209482166
+           e(chi2_J_u) =  9.814735843837235
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  1
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "onestep"
+                e(vce) : "robust"
+            e(vcetype) : "Robust"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. dump_xtdpdgmm_diag, spec("fod_diff_predet_x_onestep") outfile("C:/Users/omoko/OneDrive/Python pac
+> kages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_diagnostics
+> .csv")
+Number of observations (_N) was 0, now 1.
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_onestep_diagnostics.csv saved
+
+. dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_onestep") outfile("C:/Users/omoko/OneDrive/Python 
+> packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_ereturn.
+> csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_onestep_ereturn.csv saved
+
+. capture noisily estat overid
+
+Sargan-Hansen test of the overidentifying restrictions
+H0: overidentifying restrictions are valid
+
+1-step moment functions, 1-step weighting matrix       chi2(2)     =    9.0126
+note: *                                                Prob > chi2 =    0.0110
+
+1-step moment functions, 2-step weighting matrix       chi2(2)     =    9.8147
+note: *                                                Prob > chi2 =    0.0074
+
+* asymptotically invalid if the one-step weighting matrix is not optimal
+
+. local __rc_overid = _rc
+
+. if `__rc_overid' == 0 {
+.     return list
+
+scalars:
+             r(chi2_J) =  9.012588209482166
+               r(df_J) =  2
+                r(p_J) =  .0110392949351641
+           r(chi2_J_u) =  9.814735843837235
+              r(p_J_u) =  .0073919188564222
+.     dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("C:/Us
+> ers/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff
+> _predet_x_onestep_estat_overid_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_esta
+    > t_overid_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_onestep_estat_overid_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile
+> ("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_f
+> od_diff_predet_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
+. }
+
+. 
+. capture noisily estat serial, ar(1/2)
+
+Arellano-Bond test for autocorrelation of the first-differenced residuals
+H0: no autocorrelation of order 1      z =   -7.3724   Prob > |z|  =    0.0000
+H0: no autocorrelation of order 2      z =    1.6523   Prob > |z|  =    0.0985
+
+. local __rc_serial = _rc
+
+. if `__rc_serial' == 0 {
+.     return list
+
+scalars:
+                r(z_2) =  1.65225335042355
+                r(p_2) =  .0984829147508442
+                r(z_1) =  -7.372446775101257
+                r(p_1) =  1.67524486136e-13
+.     dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("
+> C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod
+> _diff_predet_x_onestep_estat_serial_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_esta
+    > t_serial_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_onestep_estat_serial_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") ou
+> tfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/st
+> ata_fod_diff_predet_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
+. }
+
+. 
 . export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("C:/Users/omoko/OneDrive/Python pa
 > ckages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv")
 Number of observations (_N) was 0, now 3.
@@ -606,9 +1240,6 @@ Number of observations (_N) was 0, now 3.
 (3 missing values generated)
 (3 missing values generated)
 (3 missing values generated)
-(file C:/Users/omoko/OneDrive/Python
-    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv
-    not found)
 file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
 > fod_diff_predet_x_onestep.csv saved
 
@@ -727,6 +1358,155 @@ L.y    .0003459
   x   .00011951   .00023016
   w  -.00004444  -.00003678   .00022712
 
+. ereturn list
+
+scalars:
+                  e(N) =  1248
+                e(N_g) =  96
+            e(N_clust) =  96
+              e(g_min) =  13
+              e(g_avg) =  13
+              e(g_max) =  13
+                  e(f) =  .0967365769196548
+             e(chi2_J) =  9.28671138428686
+           e(chi2_J_u) =  9.297059993492999
+               e(rank) =  3
+              e(zrank) =  5
+           e(zrank_nl) =  0
+              e(steps) =  2
+                 e(ic) =  0
+          e(converged) =  1
+
+macros:
+                e(cmd) : "xtdpdgmm"
+            e(cmdline) : "xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1.."
+               e(ivar) : "id"
+               e(tvar) : "t"
+          e(estat_cmd) : "xtdpdgmm_estat"
+            e(predict) : "xtdpdgmm_p"
+          e(marginsok) : "XB default"
+            e(wmatrix) : "unadjusted, ratio(0)"
+          e(estimator) : "twostep"
+                e(vce) : "robust"
+            e(vcetype) : "WC-Robust"
+             e(vcecor) : "wc"
+         e(properties) : "b V"
+             e(depvar) : "y"
+
+matrices:
+                  e(b) :  1 x 3
+                  e(V) :  3 x 3
+       e(V_modelbased) :  3 x 3
+                  e(W) :  5 x 5
+               e(ilog) :  20 x 1
+
+functions:
+             e(sample)   
+
+. dump_xtdpdgmm_diag, spec("fod_diff_predet_x_twostep") outfile("C:/Users/omoko/OneDrive/Python pac
+> kages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_diagnostics
+> .csv")
+Number of observations (_N) was 0, now 1.
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+(1 missing value generated)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_twostep_diagnostics.csv saved
+
+. dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_twostep") outfile("C:/Users/omoko/OneDrive/Python 
+> packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_ereturn.
+> csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_twostep_ereturn.csv saved
+
+. capture noisily estat overid
+
+Sargan-Hansen test of the overidentifying restrictions
+H0: overidentifying restrictions are valid
+
+2-step moment functions, 2-step weighting matrix       chi2(2)     =    9.2867
+                                                       Prob > chi2 =    0.0096
+
+2-step moment functions, 3-step weighting matrix       chi2(2)     =    9.2971
+                                                       Prob > chi2 =    0.0096
+
+. local __rc_overid = _rc
+
+. if `__rc_overid' == 0 {
+.     return list
+
+scalars:
+             r(chi2_J) =  9.28671138428686
+               r(df_J) =  2
+                r(p_J) =  .0096253436827851
+           r(chi2_J_u) =  9.297059993492999
+              r(p_J_u) =  .0095756678524326
+.     dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("C:/Us
+> ers/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff
+> _predet_x_twostep_estat_overid_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_esta
+    > t_overid_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_twostep_estat_overid_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile
+> ("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_f
+> od_diff_predet_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
+. }
+
+. 
+. capture noisily estat serial, ar(1/2)
+
+Arellano-Bond test for autocorrelation of the first-differenced residuals
+H0: no autocorrelation of order 1      z =   -7.3164   Prob > |z|  =    0.0000
+H0: no autocorrelation of order 2      z =    1.6787   Prob > |z|  =    0.0932
+
+. local __rc_serial = _rc
+
+. if `__rc_serial' == 0 {
+.     return list
+
+scalars:
+                r(z_2) =  1.678728723745238
+                r(p_2) =  .0932049252599807
+                r(z_1) =  -7.316420394604412
+                r(p_1) =  2.54672983572e-13
+.     dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("
+> C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod
+> _diff_predet_x_twostep_estat_serial_return.csv")
+(file C:\Users\omoko\AppData\Local\Temp\ST_48f8_000001.tmp not found)
+(file C:/Users/omoko/OneDrive/Python
+    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_esta
+    > t_serial_return.csv not found)
+file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
+> fod_diff_predet_x_twostep_estat_serial_return.csv saved
+. }
+
+. else {
+.     dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") ou
+> tfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/st
+> ata_fod_diff_predet_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
+. }
+
+. 
 . export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("C:/Users/omoko/OneDrive/Python pa
 > ckages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv")
 Number of observations (_N) was 0, now 3.
@@ -762,9 +1542,6 @@ Number of observations (_N) was 0, now 3.
 (3 missing values generated)
 (3 missing values generated)
 (3 missing values generated)
-(file C:/Users/omoko/OneDrive/Python
-    packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv
-    not found)
 file C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_
 > fod_diff_predet_x_twostep.csv saved
 
@@ -784,5 +1561,5 @@ FOD xtdpdgmm oracle export complete
        log:  C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_dif
 > f/fod_diff_xtdpdgmm_reference.log
   log type:  text
- closed on:  13 Jun 2021, 15:58:51
+ closed on:  13 Jun 2021, 18:38:14
 ---------------------------------------------------------------------------------------------------

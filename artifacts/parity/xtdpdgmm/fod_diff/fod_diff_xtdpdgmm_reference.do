@@ -99,6 +99,184 @@ display as text "============================================================"
 display as text "SPEC 1: x endogenous, one-step"
 display as text "============================================================"
 
+capture program drop dump_xtdpdgmm_diag
+program define dump_xtdpdgmm_diag
+    syntax, Spec(string) Outfile(string)
+
+    preserve
+        clear
+        set obs 1
+
+        gen str80 spec = "`spec'"
+
+        gen double N          = .
+        gen double N_g        = .
+        gen double k          = .
+        gen double k_eq       = .
+        gen double k_inst     = .
+        gen double j          = .
+        gen double j_p        = .
+        gen double hansen     = .
+        gen double hansen_p   = .
+        gen double sargan     = .
+        gen double sargan_p   = .
+        gen double ar1_z      = .
+        gen double ar1_p      = .
+        gen double ar2_z      = .
+        gen double ar2_p      = .
+
+        capture replace N = e(N)
+        capture replace N_g = e(N_g)
+        capture replace k = e(k)
+        capture replace k_eq = e(k_eq)
+        capture replace k_inst = e(k_inst)
+
+        capture replace j = e(j)
+        capture replace j_p = e(j_p)
+        capture replace hansen = e(hansen)
+        capture replace hansen_p = e(hansen_p)
+        capture replace sargan = e(sargan)
+        capture replace sargan_p = e(sargan_p)
+
+        capture replace ar1_z = e(ar1)
+        capture replace ar1_p = e(ar1p)
+        capture replace ar2_z = e(ar2)
+        capture replace ar2_p = e(ar2p)
+
+        export delimited using "`outfile'", replace
+    restore
+end
+
+capture program drop dump_xtdpdgmm_ereturn
+program define dump_xtdpdgmm_ereturn
+    syntax, Spec(string) Outfile(string)
+
+    tempfile tmp
+    tempname handle
+
+    postfile `handle' str80 spec str20 kind str80 name double value_num str244 value_text using `tmp', replace
+
+    local scalars : e(scalars)
+    foreach s of local scalars {
+        capture scalar __v = e(`s')
+        if !_rc {
+            post `handle' ("`spec'") ("scalar") ("`s'") (__v) ("")
+        }
+    }
+
+    local macros : e(macros)
+    foreach m of local macros {
+        local __txt `"`e(`m')'"'
+        post `handle' ("`spec'") ("macro") ("`m'") (.) (`"`__txt'"')
+    }
+
+    postclose `handle'
+
+    preserve
+        use `tmp', clear
+        export delimited using "`outfile'", replace
+    restore
+end
+
+capture program drop dump_xtdpdgmm_diag
+program define dump_xtdpdgmm_diag
+    syntax, Spec(string) Outfile(string)
+
+    preserve
+        clear
+        set obs 1
+
+        gen str80 spec = "`spec'"
+
+        gen double N             = .
+        gen double N_g           = .
+        gen double N_clust       = .
+        gen double g_min         = .
+        gen double g_avg         = .
+        gen double g_max         = .
+        gen double rank          = .
+        gen double zrank         = .
+        gen double zrank_nl      = .
+        gen double steps         = .
+        gen double twostep       = .
+        gen double chi2_J        = .
+        gen double chi2_J_u      = .
+        gen double overid_df     = .
+        gen double chi2_J_p      = .
+        gen double chi2_J_u_p    = .
+
+        capture replace N = e(N)
+        capture replace N_g = e(N_g)
+        capture replace N_clust = e(N_clust)
+        capture replace g_min = e(g_min)
+        capture replace g_avg = e(g_avg)
+        capture replace g_max = e(g_max)
+        capture replace rank = e(rank)
+        capture replace zrank = e(zrank)
+        capture replace zrank_nl = e(zrank_nl)
+        capture replace steps = e(steps)
+        capture replace twostep = e(twostep)
+        capture replace chi2_J = e(chi2_J)
+        capture replace chi2_J_u = e(chi2_J_u)
+
+        capture replace overid_df = e(zrank) - e(rank)
+        capture replace chi2_J_p = chi2tail(overid_df, chi2_J) if overid_df < . & chi2_J < .
+        capture replace chi2_J_u_p = chi2tail(overid_df, chi2_J_u) if overid_df < . & chi2_J_u < .
+
+        export delimited using "`outfile'", replace
+    restore
+end
+
+capture program drop dump_return_scalars
+program define dump_return_scalars
+    syntax, Spec(string) Command(string) Outfile(string)
+
+    tempfile tmp
+    tempname handle
+
+    postfile `handle' str80 spec str40 command str20 kind str80 name double value_num str244 value_text using `tmp', replace
+
+    local scalars : r(scalars)
+    foreach s of local scalars {
+        capture scalar __v = r(`s')
+        if !_rc {
+            post `handle' ("`spec'") ("`command'") ("scalar") ("`s'") (__v) ("")
+        }
+    }
+
+    local macros : r(macros)
+    foreach m of local macros {
+        local __txt `"`r(`m')'"'
+        post `handle' ("`spec'") ("`command'") ("macro") ("`m'") (.) (`"`__txt'"')
+    }
+
+    postclose `handle'
+
+    preserve
+        use `tmp', clear
+        export delimited using "`outfile'", replace
+    restore
+end
+
+capture program drop dump_failed_postestimation
+program define dump_failed_postestimation
+    syntax, Spec(string) Command(string) Outfile(string) RC(integer)
+
+    preserve
+        clear
+        set obs 1
+
+        gen str80 spec = "`spec'"
+        gen str40 command = "`command'"
+        gen str20 kind = "failed"
+        gen str80 name = "_rc"
+        gen double value_num = `rc'
+        gen str244 value_text = ""
+
+        export delimited using "`outfile'", replace
+    restore
+end
+
 xtdpdgmm L(0/1).y x w, ///
     model(fodev) ///
     collapse ///
@@ -111,6 +289,29 @@ xtdpdgmm L(0/1).y x w, ///
 ereturn list
 matrix list e(b)
 matrix list e(V)
+ereturn list
+dump_xtdpdgmm_diag, spec("fod_diff_endog_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_ereturn.csv")
+capture noisily estat overid
+local __rc_overid = _rc
+if `__rc_overid' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_overid_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
+}
+
+capture noisily estat serial, ar(1/2)
+local __rc_serial = _rc
+if `__rc_serial' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_serial_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
+}
+
 export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv")
 
 
@@ -130,6 +331,29 @@ xtdpdgmm L(0/1).y x w, ///
 ereturn list
 matrix list e(b)
 matrix list e(V)
+ereturn list
+dump_xtdpdgmm_diag, spec("fod_diff_endog_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_ereturn.csv")
+capture noisily estat overid
+local __rc_overid = _rc
+if `__rc_overid' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_overid_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
+}
+
+capture noisily estat serial, ar(1/2)
+local __rc_serial = _rc
+if `__rc_serial' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_serial_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
+}
+
 export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv")
 
 
@@ -149,6 +373,29 @@ xtdpdgmm L(0/1).y x w, ///
 ereturn list
 matrix list e(b)
 matrix list e(V)
+ereturn list
+dump_xtdpdgmm_diag, spec("fod_diff_predet_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_ereturn.csv")
+capture noisily estat overid
+local __rc_overid = _rc
+if `__rc_overid' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_overid_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
+}
+
+capture noisily estat serial, ar(1/2)
+local __rc_serial = _rc
+if `__rc_serial' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_serial_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
+}
+
 export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv")
 
 
@@ -168,6 +415,29 @@ xtdpdgmm L(0/1).y x w, ///
 ereturn list
 matrix list e(b)
 matrix list e(V)
+ereturn list
+dump_xtdpdgmm_diag, spec("fod_diff_predet_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_ereturn.csv")
+capture noisily estat overid
+local __rc_overid = _rc
+if `__rc_overid' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_overid_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
+}
+
+capture noisily estat serial, ar(1/2)
+local __rc_serial = _rc
+if `__rc_serial' == 0 {
+    return list
+    dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_serial_return.csv")
+}
+else {
+    dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
+}
+
 export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv")
 
 display as text "============================================================"

@@ -1,0 +1,6 @@
+spec,command,kind,name,value_num,value_text
+fod_diff_endog_x_onestep,estat_overid,scalar,chi2_J,9.077070104207634,
+fod_diff_endog_x_onestep,estat_overid,scalar,df_J,2,
+fod_diff_endog_x_onestep,estat_overid,scalar,p_J,.0106890539965446,
+fod_diff_endog_x_onestep,estat_overid,scalar,chi2_J_u,9.361900737620221,
+fod_diff_endog_x_onestep,estat_overid,scalar,p_J_u,.0092701995907575,

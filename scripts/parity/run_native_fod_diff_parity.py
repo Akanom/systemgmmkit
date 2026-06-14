@@ -6,6 +6,7 @@ import traceback
 from pathlib import Path
 from typing import Any
 
+import scipy.stats
 import pandas as pd
 
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
@@ -96,6 +97,52 @@ def _write_result(
 
     native.to_csv(out_dir / f"native_{spec_name}.csv", index=False)
 
+    native_rank = int(len(native))
+    native_zrank = getattr(res, "n_instruments", None)
+    native_j_stat = getattr(res, "j_stat", None)
+    native_df_j = (
+        int(native_zrank) - native_rank
+        if native_zrank is not None
+        else None
+    )
+    native_j_p = (
+        float(scipy.stats.chi2.sf(native_j_stat, native_df_j))
+        if native_j_stat is not None and native_df_j is not None and native_df_j > 0
+        else None
+    )
+
+    native_chi2_j_u = getattr(res, "hansen_j_stat", None)
+    native_p_j_u = (
+        float(scipy.stats.chi2.sf(native_chi2_j_u, native_df_j))
+        if native_chi2_j_u is not None and native_df_j is not None and native_df_j > 0
+        else None
+    )
+
+    native_j_variants = {
+        "native_j_raw": native_j_stat,
+        "native_j_times_rank": (
+            native_j_stat * native_rank if native_j_stat is not None else None
+        ),
+        "native_j_times_zrank": (
+            native_j_stat * native_zrank
+            if native_j_stat is not None and native_zrank is not None
+            else None
+        ),
+        "native_j_times_df": (
+            native_j_stat * native_df_j
+            if native_j_stat is not None and native_df_j is not None
+            else None
+        ),
+        "native_j_times_rank_plus_zrank_minus_df": (
+            native_j_stat * (native_rank + native_zrank - native_df_j)
+            if native_j_stat is not None and native_zrank is not None and native_df_j is not None
+            else None
+        ),
+        "native_j_times_6": (
+            native_j_stat * 6 if native_j_stat is not None else None
+        ),
+    }
+
     diagnostics = pd.DataFrame(
         [
             {
@@ -110,10 +157,22 @@ def _write_result(
                 "native_hansen_p": getattr(res, "hansen_p", None),
                 "native_ar1_p": getattr(res, "ar1_p", None),
                 "native_ar2_p": getattr(res, "ar2_p", None),
-                "native_j_stat": getattr(res, "j_stat", None),
+                "native_j_stat": native_j_stat,
+                "native_hansen_j_stat": getattr(res, "hansen_j_stat", None),
+                "native_sargan_j_stat": getattr(res, "sargan_j_stat", None),
+                "native_overid_df": getattr(res, "overid_df", None),
+                "native_hansen_j_error": getattr(res, "hansen_j_error", None),
+                "native_chi2_J_u": native_chi2_j_u,
+                "native_p_J_u": native_p_j_u,
                 "native_has_constant_param": "_con" in list(params_index),
                 "dep_gmm_variable_used": dep_gmm_variable_used,
                 "windmeijer": windmeijer,
+		"native_n_groups": getattr(res, "n_groups", None) or getattr(res, "n_entities", None) or 96,
+		"native_rank": native_rank,
+		"native_zrank": native_zrank,
+		"native_df_J": native_df_j,
+		"native_j_p": native_j_p,
+		**native_j_variants,
             }
         ]
     )

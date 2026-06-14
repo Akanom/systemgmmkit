@@ -45,6 +45,10 @@ class NativeGMMResult:
     j_stat: float | None = None
     ztu_norm: float | None = None
     w_norm: float | None = None
+    hansen_j_stat: float | None = None
+    sargan_j_stat: float | None = None
+    overid_df: int | None = None
+    hansen_j_error: str | None = None
 
     def summary_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -1711,6 +1715,28 @@ def run_native_dynamic_panel_gmm(
     )
     _sargan_stat = float(_j_stat_raw * _sargan_small_scale)
 
+    _hansen_j_stat = None
+    _hansen_p_candidate = None
+    _hansen_j_error = None
+
+    try:
+        _s_group_diag = _native_group_moment_sum(
+            Z=Z,
+            residuals=residual_vec,
+            group_indices=group_indices_for_cov,
+        )
+        _hansen_weight = np.linalg.pinv(_s_group_diag)
+        _hansen_j_candidate = float((_ztu.T @ _hansen_weight @ _ztu).squeeze())
+
+        if np.isfinite(_hansen_j_candidate) and _hansen_j_candidate >= 0:
+            _hansen_j_stat = _hansen_j_candidate
+            if _overid_df > 0:
+                _hansen_p_candidate = float(stats.chi2.sf(_hansen_j_candidate, _overid_df))
+    except Exception as exc:
+        _hansen_j_stat = None
+        _hansen_p_candidate = None
+        _hansen_j_error = f"{type(exc).__name__}: {exc}"
+
     # Store a one-step Sargan-style J statistic only for one-step estimation.
     # In two-step / Windmeijer mode, W is the two-step weighting matrix, so the
     # same quadratic form is not comparable to xtabond2's one-step Sargan.
@@ -1829,6 +1855,9 @@ def run_native_dynamic_panel_gmm(
                     "W_rows": int(W.shape[0]),
                     "W_cols": int(W.shape[1]),
                     "native_j_stat": _j_stat,
+                    "native_hansen_j_stat": _hansen_j_stat,
+                    "native_sargan_j_stat": _sargan_stat,
+                    "native_overid_df": _overid_df,
                     "native_ztu_norm": _ztu_norm,
                     "native_w_norm": _w_norm,
                 }
@@ -1883,6 +1912,10 @@ def run_native_dynamic_panel_gmm(
         j_stat=_j_stat,
         ztu_norm=_ztu_norm,
         w_norm=_w_norm,
+        hansen_j_stat=_hansen_j_stat,
+        sargan_j_stat=_sargan_stat,
+        overid_df=_overid_df,
+        hansen_j_error=_hansen_j_error,
     )
 
 

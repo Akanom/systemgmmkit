@@ -1,0 +1,2 @@
+spec,N,N_g,N_clust,g_min,g_avg,g_max,rank,zrank,zrank_nl,steps,twostep,chi2_J,chi2_J_u,overid_df,chi2_J_p,chi2_J_u_p
+fod_diff_predet_x_onestep,1248,96,96,13,13,13,3,5,0,1,0,9.012588209482166,9.814735843837235,2,.0110392949351641,.0073919188564222

@@ -1,0 +1,5 @@
+spec,command,kind,name,value_num,value_text
+fod_diff_endog_x_twostep,estat_serial_ar12,scalar,z_2,.843951860229936,
+fod_diff_endog_x_twostep,estat_serial_ar12,scalar,p_2,.3986963067698245,
+fod_diff_endog_x_twostep,estat_serial_ar12,scalar,z_1,-1.719696566991883,
+fod_diff_endog_x_twostep,estat_serial_ar12,scalar,p_1,.0854876121963456,

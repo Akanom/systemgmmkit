@@ -1,0 +1,32 @@
+spec,kind,name,value_num,value_text
+fod_diff_endog_x_onestep,scalar,N,1248,
+fod_diff_endog_x_onestep,scalar,N_g,96,
+fod_diff_endog_x_onestep,scalar,N_clust,96,
+fod_diff_endog_x_onestep,scalar,g_min,13,
+fod_diff_endog_x_onestep,scalar,g_avg,13,
+fod_diff_endog_x_onestep,scalar,g_max,13,
+fod_diff_endog_x_onestep,scalar,f,.0163042689059382,
+fod_diff_endog_x_onestep,scalar,chi2_J,9.077070104207634,
+fod_diff_endog_x_onestep,scalar,chi2_J_u,9.361900737620221,
+fod_diff_endog_x_onestep,scalar,rank,3,
+fod_diff_endog_x_onestep,scalar,zrank,5,
+fod_diff_endog_x_onestep,scalar,zrank_nl,0,
+fod_diff_endog_x_onestep,scalar,steps,1,
+fod_diff_endog_x_onestep,scalar,ic,0,
+fod_diff_endog_x_onestep,scalar,converged,1,
+fod_diff_endog_x_onestep,scalar,twostep,0,
+fod_diff_endog_x_onestep,macro,mopt,,xtdpdgmm_opt_1
+fod_diff_endog_x_onestep,macro,cmd,,xtdpdgmm
+fod_diff_endog_x_onestep,macro,cmdline,,"xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1 2))     gmm(x, lag(1 2))     iv(w)     nocons     vce(r)"
+fod_diff_endog_x_onestep,macro,ivar,,id
+fod_diff_endog_x_onestep,macro,tvar,,t
+fod_diff_endog_x_onestep,macro,estat_cmd,,xtdpdgmm_estat
+fod_diff_endog_x_onestep,macro,predict,,xtdpdgmm_p
+fod_diff_endog_x_onestep,macro,marginsok,,XB default
+fod_diff_endog_x_onestep,macro,fodivvars,,L(1/2).y L(1/2).x w
+fod_diff_endog_x_onestep,macro,wmatrix,,"unadjusted, ratio(0)"
+fod_diff_endog_x_onestep,macro,estimator,,onestep
+fod_diff_endog_x_onestep,macro,vce,,robust
+fod_diff_endog_x_onestep,macro,vcetype,,Robust
+fod_diff_endog_x_onestep,macro,properties,,b V
+fod_diff_endog_x_onestep,macro,depvar,,y
