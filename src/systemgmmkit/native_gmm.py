@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -331,7 +332,10 @@ def _build_native_matrices(
             if name is not None:
                 z_dict[f"T:{name}"] = 1.0
 
-        for pos in range(2, len(group)):
+        transformation_normalized = str(spec.transformation).strip().lower()
+        transformed_start_pos = 0 if transformation_normalized == "fod" else 2
+
+        for pos in range(transformed_start_pos, len(group)):
             y_val = _transform_at(dep, pos, spec.transformation)
             if y_val is None:
                 continue
@@ -381,7 +385,14 @@ def _build_native_matrices(
                     continue
 
                 s = _style_source_series(group, block.variable)
-                val = _transform_at(s, pos, spec.transformation)
+
+                # xtdpdgmm model(fodev) compatibility:
+                # IV-style instruments in the FOD transformed equation are entered
+                # as current level values, not as FOD-transformed instruments.
+                if str(spec.transformation).strip().lower() == "fod":
+                    val = _safe_get(s, pos)
+                else:
+                    val = _transform_at(s, pos, spec.transformation)
 
                 if val is None:
                     iv_valid = False
