@@ -1,0 +1,78 @@
+{
+  "data_csv": "artifacts\\parity\\xtabond2\\system_gmm_benchmark.csv",
+  "out_dir": "artifacts\\parity\\xtdpdgmm\\fod_diff",
+  "entity": "id",
+  "time": "t",
+  "y": "y",
+  "x": "x",
+  "w": "w",
+  "system": false,
+  "collapse": true,
+  "transformation": "fod",
+  "time_dummies": false,
+  "iv": [
+    {
+      "variable": "w",
+      "eq": "diff"
+    }
+  ],
+  "dep_gmm_variable_order": [
+    "y",
+    "L1.y"
+  ],
+  "windmeijer": true,
+  "specs": [
+    {
+      "name": "fod_diff_endog_x_onestep",
+      "x_classification": "endogenous",
+      "steps": "onestep",
+      "y_lags": [
+        1,
+        2
+      ],
+      "x_lags": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "fod_diff_endog_x_twostep",
+      "x_classification": "endogenous",
+      "steps": "twostep",
+      "y_lags": [
+        1,
+        2
+      ],
+      "x_lags": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "fod_diff_predet_x_onestep",
+      "x_classification": "predetermined",
+      "steps": "onestep",
+      "y_lags": [
+        1,
+        2
+      ],
+      "x_lags": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "fod_diff_predet_x_twostep",
+      "x_classification": "predetermined",
+      "steps": "twostep",
+      "y_lags": [
+        1,
+        2
+      ],
+      "x_lags": [
+        0,
+        1
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+spec,native_nobs,native_n_instruments,native_backend,native_covariance_type,native_instrument_names,native_hansen_p,native_ar1_p,native_ar2_p,native_j_stat,native_has_constant_param,dep_gmm_variable_used,windmeijer
+fod_diff_predet_x_onestep,1152,5,native-gmm,robust-clustered-one-step,D:y:L1;D:x:L0;D:x:L1;D:iv:w;D:y:L2,,0.5641387884638744,0.0013283714968907244,1.4470891757746414,False,y,False
