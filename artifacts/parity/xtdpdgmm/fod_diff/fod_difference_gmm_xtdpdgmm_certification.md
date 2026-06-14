@@ -13,7 +13,7 @@ Native `systemgmmkit` FOD Difference GMM is certified against Stata `xtdpdgmm mo
 - Predetermined `x`: `gmm(x, lag(0 1))`
 - One-step and two-step coefficient parity
 - IV-style transformed-equation instruments under FOD use current level values, matching `xtdpdgmm model(fodev)` behavior
-- FOD Difference GMM two-step Windmeijer standard errors near `xtdpdgmm` parity with max absolute SE gap below `1e-2` on the maintained oracle set
+- FOD Difference GMM two-step Windmeijer standard errors near `xtdpdgmm` parity with maximum absolute SE gap below `1e-2` on the maintained oracle set
 
 ## Key result
 
@@ -23,6 +23,12 @@ Native `systemgmmkit` FOD Difference GMM is certified against Stata `xtdpdgmm mo
 | fod_diff_endog_x_twostep  | COMPARED |               3 |         1.1819e-07  |          4.68984e-08 |       0.0071296   |        0.0040611   |           |
 | fod_diff_predet_x_onestep | COMPARED |               3 |         4.69298e-09 |          3.1645e-09  |       0.000100256 |        8.96907e-05 |           |
 | fod_diff_predet_x_twostep | COMPARED |               3 |         4.50738e-09 |          2.96234e-09 |       0.000498957 |        0.000374957 |           |
+
+## Interpretation
+
+The maximum absolute coefficient differences are effectively at numerical precision for all four maintained FOD Difference GMM specifications. This certifies the native point-estimate construction against the `xtdpdgmm model(fodev)` oracle for both endogenous and predetermined GMM-style timing.
+
+The two-step Windmeijer standard errors are near parity. The largest remaining standard-error gap is below `1e-2`, concentrated in the endogenous-x two-step specification.
 
 ## Implementation notes
 
