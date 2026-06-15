@@ -6,12 +6,11 @@ import traceback
 from pathlib import Path
 from typing import Any
 
-import scipy.stats
 import pandas as pd
+import scipy.stats
 
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
-
 
 OUT_DEFAULT = Path("artifacts/parity/xtdpdgmm/fod_diff")
 DATA_DEFAULT = Path("artifacts/parity/xtabond2/system_gmm_benchmark.csv")

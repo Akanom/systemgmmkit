@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import contextlib
-import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -1364,7 +1363,6 @@ def _native_fod_difference_windmeijer_covariance(
         idx = np.asarray(indices, dtype=int)
 
         Zi = Z[idx, :]
-        Xi = X[idx, :]
         ui1 = u1[idx, :]
         ui2 = u2[idx, :]
 
@@ -1465,10 +1463,10 @@ def run_native_dynamic_panel_gmm(
     # and second-step weighting matrices.
 
     # SYSTEMGMMKIT_FILE_INSTRUMENT_DEBUG
-    import os
+    import os as _native_debug_os
     from pathlib import Path as _NativeDebugPath
 
-    debug_file = os.getenv("SYSTEMGMMKIT_DEBUG_INSTRUMENTS_FILE")
+    debug_file = _native_debug_os.getenv("SYSTEMGMMKIT_DEBUG_INSTRUMENTS_FILE")
     if debug_file:
         debug_path = _NativeDebugPath(debug_file)
         debug_path.parent.mkdir(parents=True, exist_ok=True)

@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 SPECS = [
     "fod_diff_endog_x_onestep",
     "fod_diff_endog_x_twostep",

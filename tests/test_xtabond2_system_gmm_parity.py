@@ -112,11 +112,3 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
     assert native_a2.shape == stata_a2.shape
     assert np.isfinite(native_a2).all()
     assert np.isfinite(stata_a2).all()
-
-    return
-
-    j_from_native_scaled_a2 = float(
-        (stata_ze.T @ native_a2_scaled @ stata_ze).squeeze()
-    )
-
-    assert abs(j_from_native_scaled_a2 - XTABOND2_HANSEN) < 1e-5

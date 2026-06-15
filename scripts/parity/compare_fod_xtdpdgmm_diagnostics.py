@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 import math
-import pandas as pd
+from pathlib import Path
 
+import pandas as pd
 
 OUT = Path("artifacts/parity/xtdpdgmm/fod_diff")
 

@@ -11,9 +11,9 @@ systemgmmkit reporting helpers:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from math import erf, sqrt
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -164,7 +164,7 @@ def first_difference(
     rss = float(resid @ resid)
 
     if nobs > 0:
-        tss = float(((y_vec - y_vec.mean()) @ (y_vec - y_vec.mean())))
+        tss = float((y_vec - y_vec.mean()) @ (y_vec - y_vec.mean()))
         r2 = float(1.0 - rss / tss) if tss > 0 else float("nan")
     else:
         r2 = float("nan")
@@ -189,10 +189,7 @@ def first_difference(
         coef = params[name]
         se = std_errors[name]
 
-        if np.isfinite(se) and se > 0:
-            stat = float(coef / se)
-        else:
-            stat = float("nan")
+        stat = float(coef / se) if np.isfinite(se) and se > 0 else float("nan")
 
         t_stats[name] = stat
         p_values[name] = _normal_two_sided_pvalue(stat)

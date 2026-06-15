@@ -1,6 +1,6 @@
 from pathlib import Path
+
 import pandas as pd
-import math
 
 OUT = Path("artifacts/parity/xtdpdgmm/fod_diff")
 comp = pd.read_csv(OUT / "fod_diff_xtdpdgmm_native_diagnostics_comparison.csv")

@@ -1,9 +1,9 @@
 instrument_index,instrument_name
-1,D:y:L2
-2,D:y:L3
-3,D:x:L2
-4,D:x:L3
-5,IV:w
-6,L:diff:y:L1
+1,D:x:L2
+2,D:L1.y:L2
+3,D:x:L3
+4,D:L1.y:L3
+5,L:iv:w
+6,L:constant
 7,L:diff:x:L1
-8,L:constant
+8,L:diff:L1.y:L1

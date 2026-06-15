@@ -1,6 +1,7 @@
-from pathlib import Path
-import pandas as pd
 import math
+from pathlib import Path
+
+import pandas as pd
 
 OUT = Path("artifacts/parity/xtdpdgmm/fod_diff")
 
