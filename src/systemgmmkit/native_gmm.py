@@ -694,10 +694,37 @@ def _native_pydynpd_compat_instrument_order(spec: DynamicPanelSpec) -> list[str]
         for block in spec.gmm:
             var = _style_label(_native_style_variable(block))
             labels.append(f"L:diff:{var}:L1")
-        for iv in spec.iv:
-            if getattr(iv, "eq", None) != "diff":
-                var = _style_label(_native_style_variable(iv))
-                labels.append(f"L:iv:{var}")
+        # SYSTEMGMMKIT_SYSTEM_IV_LAYOUT diagnostic:
+        #
+        # xtabond2 ivstyle(..., equation(both)) appears to use one standard-IV
+        # column per variable across the stacked System-GMM equations. The native
+        # raw layout may instead duplicate IV columns as D:iv:* and L:iv:*.
+        #
+        # duplicated: keep separate L:iv:* columns
+        # single_both: suppress L:iv:* columns and keep only IV:* columns
+        import os as _native_system_iv_layout_os
+        _system_iv_layout = (
+            _native_system_iv_layout_os.getenv(
+                "SYSTEMGMMKIT_SYSTEM_IV_LAYOUT",
+                "single_both",
+            )
+            .strip()
+            .lower()
+        )
+
+        if _system_iv_layout in {"duplicated", "separate", "default", ""}:
+            for iv in spec.iv:
+                if getattr(iv, "eq", None) != "diff":
+                    var = _style_label(_native_style_variable(iv))
+                    labels.append(f"L:iv:{var}")
+        elif _system_iv_layout in {"single_both", "single", "both"}:
+            pass
+        else:
+            raise ValueError(
+                "Unsupported SYSTEMGMMKIT_SYSTEM_IV_LAYOUT="
+                f"{_system_iv_layout!r}. Use duplicated or single_both."
+            )
+
         labels.append("L:constant")
 
     return labels
@@ -759,7 +786,7 @@ def _native_make_pydynpd_compat_z(
                 _iv_mode = (
                     _native_iv_z_mode_os.getenv(
                         "SYSTEMGMMKIT_SYSTEM_IV_Z_MODE",
-                        "level_only",
+                        "stacked_x",
                     )
                     .strip()
                     .lower()
@@ -1504,6 +1531,21 @@ def run_native_dynamic_panel_gmm(
     import os as _native_force_onestep_os
     if _native_force_onestep_os.getenv("SYSTEMGMMKIT_FORCE_ONESTEP") == "1":
         use_twostep = False
+
+    # xtabond2/pydynpd-compatible System-GMM Z construction.
+    #
+    # For System GMM, standard IV-style variables under equation(both) must be
+    # represented as one stacked standard-IV column per variable, not duplicated
+    # as separate D:iv:* and L:iv:* columns. This is required for parity with
+    # xtabond2's ivstyle(..., equation(both)) convention.
+    if spec.system:
+        Z, instrument_names = _native_make_pydynpd_compat_z(
+            spec=spec,
+            X=X,
+            Z=Z,
+            coef_names=names,
+            instrument_names=instrument_names,
+        )
 
     if spec.system:
         W1, n_groups, group_rows, _diff_width = _native_pydynpd_first_step_weight_inv(
