@@ -1652,6 +1652,19 @@ def run_native_dynamic_panel_gmm(
                 * windmeijer_xtabond2_small_correction
                 * windmeijer_base_cov
             )
+
+            # xtabond2-compatible normalization for FD Difference GMM:
+            # the generic Windmeijer helper returns a group-summed covariance.
+            # For non-system first-difference GMM this must be averaged by
+            # the number of entity clusters; otherwise SEs are inflated by
+            # sqrt(n_groups). Do not apply to System GMM, whose parity is
+            # already certified under the existing scaling.
+            is_fd_difference_gmm = (
+                not bool(spec.system)
+                and str(getattr(spec, "transformation", "")).strip().lower() == "fd"
+            )
+            if is_fd_difference_gmm and n_groups_for_cov > 0:
+                cov = cov / float(n_groups_for_cov)
     else:
         s_group = _native_group_moment_sum(
             Z=Z,
@@ -1669,6 +1682,18 @@ def run_native_dynamic_panel_gmm(
             cov_correction = n / max(n - k, 1)
 
         cov = cov_correction * bread @ meat @ bread
+
+        # xtabond2-compatible normalization for FD Difference GMM:
+        # _native_group_moment_sum returns an entity-summed moment covariance.
+        # For non-system first-difference GMM, xtabond2's reported robust SEs
+        # correspond to the group-averaged covariance. Without this division,
+        # SEs are inflated by sqrt(n_groups).
+        is_fd_difference_gmm = (
+            not bool(spec.system)
+            and str(getattr(spec, "transformation", "")).strip().lower() == "fd"
+        )
+        if is_fd_difference_gmm and n_groups_for_cov > 0:
+            cov = cov / float(n_groups_for_cov)
 
     cov = 0.5 * (cov + cov.T)
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
