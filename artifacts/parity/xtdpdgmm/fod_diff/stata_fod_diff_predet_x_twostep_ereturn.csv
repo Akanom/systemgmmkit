@@ -1,0 +1,33 @@
+spec,kind,name,value_num,value_text
+fod_diff_predet_x_twostep,scalar,N,1248,
+fod_diff_predet_x_twostep,scalar,N_g,96,
+fod_diff_predet_x_twostep,scalar,N_clust,96,
+fod_diff_predet_x_twostep,scalar,g_min,13,
+fod_diff_predet_x_twostep,scalar,g_avg,13,
+fod_diff_predet_x_twostep,scalar,g_max,13,
+fod_diff_predet_x_twostep,scalar,f,.0967365769196548,
+fod_diff_predet_x_twostep,scalar,chi2_J,9.28671138428686,
+fod_diff_predet_x_twostep,scalar,chi2_J_u,9.297059993492999,
+fod_diff_predet_x_twostep,scalar,rank,3,
+fod_diff_predet_x_twostep,scalar,zrank,5,
+fod_diff_predet_x_twostep,scalar,zrank_nl,0,
+fod_diff_predet_x_twostep,scalar,steps,2,
+fod_diff_predet_x_twostep,scalar,ic,0,
+fod_diff_predet_x_twostep,scalar,converged,1,
+fod_diff_predet_x_twostep,scalar,twostep,1,
+fod_diff_predet_x_twostep,macro,mopt,,xtdpdgmm_opt_4
+fod_diff_predet_x_twostep,macro,cmd,,xtdpdgmm
+fod_diff_predet_x_twostep,macro,cmdline,,"xtdpdgmm L(0/1).y x w,     model(fodev)     collapse     gmm(y, lag(1 2))     gmm(x, lag(0 1))     iv(w)     nocons     two vce(r)"
+fod_diff_predet_x_twostep,macro,ivar,,id
+fod_diff_predet_x_twostep,macro,tvar,,t
+fod_diff_predet_x_twostep,macro,estat_cmd,,xtdpdgmm_estat
+fod_diff_predet_x_twostep,macro,predict,,xtdpdgmm_p
+fod_diff_predet_x_twostep,macro,marginsok,,XB default
+fod_diff_predet_x_twostep,macro,fodivvars,,L(1/2).y L(0/1).x w
+fod_diff_predet_x_twostep,macro,wmatrix,,"unadjusted, ratio(0)"
+fod_diff_predet_x_twostep,macro,estimator,,twostep
+fod_diff_predet_x_twostep,macro,vce,,robust
+fod_diff_predet_x_twostep,macro,vcetype,,WC-Robust
+fod_diff_predet_x_twostep,macro,vcecor,,wc
+fod_diff_predet_x_twostep,macro,properties,,b V
+fod_diff_predet_x_twostep,macro,depvar,,y

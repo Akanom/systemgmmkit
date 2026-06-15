@@ -1,0 +1,4 @@
+spec,term,stata_coef,stata_std_err,stata_z,stata_p_value,e_N,e_N_g,e_j,e_j_p,e_hansen,e_hansenp,e_sargan,e_sarganp,e_ar1,e_ar1p,e_ar2,e_ar2p
+fod_diff_endog_x_twostep,L.y,.4886098941393419,.0417824469689617,11.69414262650313,1.36559358944e-31,1248,96,,,,,,,,,,
+fod_diff_endog_x_twostep,x,1.048705483727288,.5085459070572449,2.062164829515065,.0391920458985087,,,,,,,,,,,,
+fod_diff_endog_x_twostep,w,-.3566670663670232,.0499534896803598,-7.13998298515777,9.33424726852e-13,,,,,,,,,,,,

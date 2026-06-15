@@ -1,0 +1,308 @@
+
+Path                                                                                                                            LineNumber Line
+----                                                                                                                            ---------- ----
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_certification_report.py                                       12     ("Difference GMM Expanded Certification", "PASS", "tests/parity/gmm/test_di…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_certification_report.py                                       13     ("System GMM Certification", "PASS", "tests/parity/gmm/test_system_gmm_cert…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_certification_report.py                                       23     lines.append("# systemgmmkit Panel Econometrics Certification Report")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_strict_parity_report.py                                        5 from systemgmmkit.reporting import ParityReport, ParityResult
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_strict_parity_report.py                                       15                 spec="difference_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_strict_parity_report.py                                       22                 spec="system_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_decomposition_controls_do.py               8 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_decomposition_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_decomposition_controls_do.py               9 DATA = OUT / "system_gmm_decomposition_controls_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_decomposition_controls_do.py              10 DOFILE = OUT / "system_gmm_decomposition_controls.do"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_decomposition_controls_do.py              85     twostep robust small
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_decomposition_controls_do.py              96 gen spec = "system_gmm_decomposition_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                      9 DATA = OUT / "system_gmm_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     10 DOFILE = OUT / "system_gmm_xtabond2_parity.do"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     54     twostep robust small ///
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     66 gen spec = "system_gmm_baseline_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     77 export delimited using "{(OUT / "xtabond2_system_gmm_diagnostics.csv").as_posix…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     80 parmest, saving("{(OUT / "xtabond2_system_gmm_params.dta").as_posix()}", replac…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     82 use "{(OUT / "xtabond2_system_gmm_params.dta").as_posix()}", clear
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_do.py                                     83 export delimited using "{(OUT / "xtabond2_system_gmm_params.csv").as_posix()}",…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_no_controls_do.py                          8 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_no_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_no_controls_do.py                          9 DATA = OUT / "system_gmm_no_controls_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_no_controls_do.py                         10 DOFILE = OUT / "system_gmm_no_controls.do"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_no_controls_do.py                         58     twostep robust small ///
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_no_controls_do.py                         69 gen spec = "system_gmm_no_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_three_way_controls_do.py                   8 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_three_way_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_three_way_controls_do.py                   9 DATA = OUT / "system_gmm_three_way_controls_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_three_way_controls_do.py                  10 DOFILE = OUT / "system_gmm_three_way_controls.do"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_three_way_controls_do.py                  97     twostep robust small
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\build_xtabond2_system_gmm_three_way_controls_do.py                 108 gen spec = "system_gmm_three_way_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\calibrate_native_gmm_diagnostics.py                                 10 diag = pd.read_csv(OUT / "xtabond2_native_system_gmm_diagnostics_comparison.csv…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_covariance_variants_to_stata_v.py                           17 PARAMS = ART / "native_system_gmm_params.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_fod_xtdpdgmm_native.py                                      10     "fod_diff_endog_x_onestep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_fod_xtdpdgmm_native.py                                      11     "fod_diff_endog_x_twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_fod_xtdpdgmm_native.py                                      12     "fod_diff_predet_x_onestep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_fod_xtdpdgmm_native.py                                      13     "fod_diff_predet_x_twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     18     "native_system_gmm_windmeijer_params.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     21     "native_system_gmm_params.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     23     "native_system_gmm_results.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     72     native_system_gmm_params.csv path is retained only as a fallback for
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     84         / "system_gmm_baseline_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     87         artifact_dir / "native_system_gmm_windmeijer_params.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     88         artifact_dir / "native_system_gmm_params.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_se_to_stata_v.py                                     89         artifact_dir / "native_system_gmm_results.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_coefficients.py                                12 NATIVE_PARAMS = ART / "native_system_gmm_params.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                     8 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                     9 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                    12 DATA = OUT / "system_gmm_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                    34         system=True,
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                    36         transformation="fod",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                    37         steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_native_stata_matrices.py                                    38         name="system_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_onestep.py                                9 NATIVE_PARAMS = ART / "specs" / "system_gmm_baseline_controls" / "uncorrected" …
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_onestep.py                               10 NATIVE_DIAG = ART / "specs" / "system_gmm_baseline_controls" / "uncorrected" / …
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_onestep.py                               12 STATA_PARAMS = ART / "system_gmm_fd_onestep_params.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_onestep.py                               13 STATA_DIAG = ART / "system_gmm_fd_onestep_diagnostics.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_onestep.py                               15 OUT = ART / "system_gmm_fd_onestep_native_vs_xtabond2_coef_comparison.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_onestep.py                               16 OUT_DIAG = ART / "system_gmm_fd_onestep_native_vs_xtabond2_diagnostics_comparis…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_twostep.py                                8 NATIVE_PARAMS = ART / "specs" / "system_gmm_baseline_controls" / "windmeijer" /…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_twostep.py                                9 NATIVE_DIAG = ART / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_twostep.py                               11 STATA_PARAMS = ART / "system_gmm_fd_twostep_params.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_twostep.py                               12 STATA_DIAG = ART / "system_gmm_fd_twostep_diagnostics.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_twostep.py                               14 OUT = ART / "system_gmm_fd_twostep_native_vs_xtabond2_coef_comparison.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_true_system_gmm_fd_twostep.py                               15 OUT_DIAG = ART / "system_gmm_fd_twostep_native_vs_xtabond2_diagnostics_comparis…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  11     "system_gmm_baseline_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  13             BASE / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "n…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  16             BASE / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "s…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  17             BASE / "xtabond2_system_gmm_diagnostics.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  21     "system_gmm_no_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  23             BASE / "specs" / "system_gmm_no_controls" / "native_diagnostics.csv…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  26             BASE / "specs" / "system_gmm_no_controls" / "stata_diagnostics.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  29     "system_gmm_three_way_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  31             BASE / "specs" / "system_gmm_three_way_controls" / "native_diagnost…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  34             BASE / "specs" / "system_gmm_three_way_controls" / "stata_diagnosti…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  37     "system_gmm_decomposition_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  39             BASE / "specs" / "system_gmm_decomposition_controls" / "native_diag…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_ar_diagnostics.py                                  42             BASE / "specs" / "system_gmm_decomposition_controls" / "stata_diagn…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                                8 BASELINE_WINDMEIJER = OUT / "specs" / "system_gmm_baseline_controls" / "windmei…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                               66             OUT / "native_system_gmm_params.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                               73             OUT / "native_system_gmm_diagnostics.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                               80             OUT / "xtabond2_system_gmm_params.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                               85             OUT / "xtabond2_system_gmm_diagnostics.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              115     compare.to_csv(OUT / "xtabond2_native_system_gmm_coef_comparison.csv", inde…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              132     diag.to_csv(OUT / "xtabond2_native_system_gmm_diagnostics_comparison.csv", …
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              158             "- `system_gmm_benchmark.csv`",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              159             "- `system_gmm_xtabond2_parity.do`",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              160             "- `xtabond2_native_system_gmm_coef_comparison.csv`",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              161             "- `xtabond2_native_system_gmm_diagnostics_comparison.csv`",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              162             "- `xtabond2_native_system_gmm_parity.md`",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_native_system_gmm.py                              171     (OUT / "xtabond2_native_system_gmm_parity.md").write_text("\n".join(md), en…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_decomposition_controls.py                8 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_decomposition_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_decomposition_controls.py               55             "Run scripts/parity/run_native_system_gmm_decomposition_controls.py…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_decomposition_controls.py               64                     "spec": "system_gmm_decomposition_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_decomposition_controls.py               84         "spec": "system_gmm_decomposition_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_no_controls.py                           8 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_no_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_no_controls.py                          55             "Run scripts/parity/run_native_system_gmm_no_controls.py first."
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_no_controls.py                          64                     "spec": "system_gmm_no_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_no_controls.py                          84         "spec": "system_gmm_no_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_three_way_controls.py                    8 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_three_way_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_three_way_controls.py                   55             "Run scripts/parity/run_native_system_gmm_three_way_controls.py fir…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_three_way_controls.py                   64                     "spec": "system_gmm_three_way_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_xtabond2_system_gmm_three_way_controls.py                   84         "spec": "system_gmm_three_way_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_ze_at_stata_beta.py                                         18 NATIVE_PARAMS = ART / "native_system_gmm_params.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_ze_native_vs_stata.py                                       11 NATIVE_FILE = ART / "native_ze_system_gmm_baseline_controls.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\compare_ze_native_vs_stata.py                                       12 STATA_FILE = ART / "stata_ze_system_gmm_baseline_controls.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\diagnose_lagged_y_candidates.py                                     11 DATA_FILE = ART / "system_gmm_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\diagnose_level_y_candidates_exhaustive.py                           11 DATA_FILE = ART / "system_gmm_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\force_patch_level_dep_lag1_block.py                                  4 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\force_patch_level_dep_lag1_block.py                                 21     print(r'Run: rg -n -C 45 -e "_level_diff_mode" .\src\systemgmmkit\native_gm…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\force_patch_level_dep_lag1_block.py                                 29                                 "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                      8 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                      9 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                     12 DATA = OUT / "system_gmm_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                     27         system=True,
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                     29         transformation="fod",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                     30         steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_gmm_internals.py                                     31         name="system_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                         5 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                         6 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                         8 df = pd.read_csv("artifacts/parity/xtabond2/system_gmm_benchmark.csv")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                        19     system=True,
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                        21     transformation="fod",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                        22     steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\inspect_native_system_gmm.py                                        23     name="system_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     12     "system_gmm_baseline_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     13         "data": BASE / "system_gmm_benchmark.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     14         "params": BASE / "specs" / "system_gmm_baseline_controls" / "windmeijer…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     15         "stata": BASE / "xtabond2_system_gmm_diagnostics.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     19     "system_gmm_no_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     20         "data": BASE / "specs" / "system_gmm_no_controls" / "system_gmm_no_cont…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     21         "params": BASE / "specs" / "system_gmm_no_controls" / "native_params.cs…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     22         "stata": BASE / "specs" / "system_gmm_no_controls" / "stata_diagnostics…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     26     "system_gmm_three_way_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     27         "data": BASE / "specs" / "system_gmm_three_way_controls" / "system_gmm_…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     28         "params": BASE / "specs" / "system_gmm_three_way_controls" / "native_pa…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     29         "stata": BASE / "specs" / "system_gmm_three_way_controls" / "stata_diag…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     44     "system_gmm_decomposition_controls": {
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     45         "data": BASE / "specs" / "system_gmm_decomposition_controls" / "system_…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     46         "params": BASE / "specs" / "system_gmm_decomposition_controls" / "nativ…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\probe_xtabond2_ar_candidates.py                                     47         "stata": BASE / "specs" / "system_gmm_decomposition_controls" / "stata_…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_all_certification.ps1                                           12 python -m pytest tests/parity/gmm/test_difference_gmm_expanded_certification.py…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_all_certification.ps1                                           15 python -m pytest tests/parity/gmm/test_system_gmm_certification.py -q
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_difference_gmm_expanded_certification.ps1                        5 python -m pytest tests/parity/gmm/test_difference_gmm_expanded_certification.py…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                        9     ("fod_diff_endog_x_onestep", "endogenous", 1, (1, 2)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       10     ("fod_diff_endog_x_twostep", "endogenous", 2, (1, 2)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       11     ("fod_diff_predet_x_onestep", "predetermined", 1, (0, 1)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       12     ("fod_diff_predet_x_twostep", "predetermined", 2, (0, 1)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       34         "systemgmmkit estimator call used in your System GMM parity scripts.\n\…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       36         "1. system=False, transformation='fod', collapse=True, x=endogenous, st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       37         "2. system=False, transformation='fod', collapse=True, x=endogenous, st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       38         "3. system=False, transformation='fod', collapse=True, x=predetermined,…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_fod_diff_parity.py                                       39         "4. system=False, transformation='fod', collapse=True, x=predetermined,…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                   8 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                   9 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  12 SPEC_OUT = BASE_OUT / "specs" / "system_gmm_baseline_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  13 DATA = BASE_OUT / "system_gmm_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  34         system=os.getenv("SYSTEMGMMKIT_NATIVE_SYSTEM", "1").strip().lower() not…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  36         transformation=os.getenv("SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "fd").st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  37         steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  38         name="system_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  41     use_windmeijer = os.getenv("SYSTEMGMMKIT_NATIVE_WINDMEIJER", "1").strip().l…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  66     if os.getenv("SYSTEMGMMKIT_DROP_NATIVE_CON_FOR_PARITY") == "1":
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_benchmark.py                                  74                 "spec": "system_gmm_baseline_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                      8 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                      9 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     11 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_decomposition_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     12 DATA = OUT / "system_gmm_decomposition_controls_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     21             "Run scripts/parity/build_xtabond2_system_gmm_decomposition_control…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     45         system=True,
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     47         transformation="fod",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     48         steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     49         name="system_gmm_decomposition_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     52     use_windmeijer = os.getenv("SYSTEMGMMKIT_NATIVE_WINDMEIJER", "1").strip().l…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_decomposition_controls.py                     79                 "spec": "system_gmm_decomposition_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                 8 from systemgmmkit import DynamicPanelSpec, GMMStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                 9 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                11 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_no_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                12 DATA = OUT / "system_gmm_no_controls_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                21             "Run scripts/parity/build_xtabond2_system_gmm_no_controls_do.py fir…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                35         system=True,
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                37         transformation="fod",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                38         steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                39         name="system_gmm_no_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                42     use_windmeijer = os.getenv("SYSTEMGMMKIT_NATIVE_WINDMEIJER", "1").strip().l…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_no_controls.py                                69                 "spec": "system_gmm_no_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                          8 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                          9 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         11 OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_three_way_controls")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         12 DATA = OUT / "system_gmm_three_way_controls_benchmark.csv"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         21             "Run scripts/parity/build_xtabond2_system_gmm_three_way_controls_do…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         53         system=True,
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         55         transformation="fod",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         56         steps="twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         57         name="system_gmm_three_way_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         60     use_windmeijer = os.getenv("SYSTEMGMMKIT_NATIVE_WINDMEIJER", "1").strip().l…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_native_system_gmm_three_way_controls.py                         87                 "spec": "system_gmm_three_way_controls",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_system_gmm_certification.ps1                                     5 python -m pytest tests/parity/gmm/test_system_gmm_certification.py -q
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_decomposition_controls_parity.ps1            3 python .\scripts\parity\build_xtabond2_system_gmm_decomposition_controls_do.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_decomposition_controls_parity.ps1            4 python .\scripts\parity\run_native_system_gmm_decomposition_controls.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_decomposition_controls_parity.ps1            5 python .\scripts\parity\compare_xtabond2_system_gmm_decomposition_controls.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_decomposition_controls_parity.ps1            9 Write-Host "artifacts\parity\xtabond2\specs\system_gmm_decomposition_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_decomposition_controls_parity.ps1           12 Write-Host "do artifacts/parity/xtabond2/specs/system_gmm_decomposition_control…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_decomposition_controls_parity.ps1           15 Write-Host "python .\scripts\parity\compare_xtabond2_system_gmm_decomposition_c…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_no_controls_parity.ps1                       3 python .\scripts\parity\build_xtabond2_system_gmm_no_controls_do.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_no_controls_parity.ps1                       4 python .\scripts\parity\run_native_system_gmm_no_controls.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_no_controls_parity.ps1                       5 python .\scripts\parity\compare_xtabond2_system_gmm_no_controls.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_no_controls_parity.ps1                       9 Write-Host "artifacts\parity\xtabond2\specs\system_gmm_no_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_no_controls_parity.ps1                      12 Write-Host "do artifacts/parity/xtabond2/specs/system_gmm_no_controls/system_gm…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_no_controls_parity.ps1                      15 Write-Host "python .\scripts\parity\compare_xtabond2_system_gmm_no_controls.py"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_parity.ps1                                   5 python .\scripts\parity\build_xtabond2_system_gmm_do.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_parity.ps1                                   6 python .\scripts\parity\run_native_system_gmm_benchmark.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_parity.ps1                                   7 python .\scripts\parity\compare_xtabond2_native_system_gmm.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_parity.ps1                                  15 Write-Host "do artifacts/parity/xtabond2/system_gmm_xtabond2_parity.do"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_parity.ps1                                  18 Write-Host ".\scripts\parity\run_xtabond2_system_gmm_parity.ps1"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_three_way_controls_parity.ps1                3 python .\scripts\parity\build_xtabond2_system_gmm_three_way_controls_do.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_three_way_controls_parity.ps1                4 python .\scripts\parity\run_native_system_gmm_three_way_controls.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_three_way_controls_parity.ps1                5 python .\scripts\parity\compare_xtabond2_system_gmm_three_way_controls.py
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_three_way_controls_parity.ps1                9 Write-Host "artifacts\parity\xtabond2\specs\system_gmm_three_way_controls"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_three_way_controls_parity.ps1               12 Write-Host "do artifacts/parity/xtabond2/specs/system_gmm_three_way_controls/sy…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtabond2_system_gmm_three_way_controls_parity.ps1               15 Write-Host "python .\scripts\parity\compare_xtabond2_system_gmm_three_way_contr…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtdpdgmm_fod_diff_parity.ps1                                     3     [string]$DataCsv = "artifacts/parity/xtabond2/system_gmm_benchmark.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtdpdgmm_fod_diff_parity.ps1                                   145 export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("$stataOutDir/sta…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtdpdgmm_fod_diff_parity.ps1                                   152 export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("$stataOutDir/sta…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtdpdgmm_fod_diff_parity.ps1                                   159 export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("$stataOutDir/st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\run_xtdpdgmm_fod_diff_parity.ps1                                   166 export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("$stataOutDir/st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                   9 backup = Path("artifacts/parity/xtabond2/README_before_system_gmm_parity_update…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  69         "`systemgmmkit` is the user-facing package for dynamic-panel GMM workfl…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  74         "from systemgmmkit import run_system_gmm, run_difference_gmm",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  81         "| `backend=\"auto\"`      | Uses the validated native `systemgmmkit` D…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  82         "| `backend=\"validated\"` | Uses the validated native `systemgmmkit` D…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  83         "| `backend=\"native\"`    | Uses the native `systemgmmkit` engine.    …
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  86         "This design keeps `systemgmmkit` as the stable public interface while …
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                  91         "result = run_system_gmm(",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\update_readme_system_gmm_parity.py                                 100         "For strict native replication of the current `xtabond2` parity benchma…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_clean_xtdpdgmm_fod_do.py                                       5 data_csv = repo / "artifacts" / "parity" / "xtabond2" / "system_gmm_benchmark.c…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_clean_xtdpdgmm_fod_do.py                                     128 export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("__OUT_DIR__/stat…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_clean_xtdpdgmm_fod_do.py                                     147 export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("__OUT_DIR__/stat…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_clean_xtdpdgmm_fod_do.py                                     166 export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("__OUT_DIR__/sta…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_clean_xtdpdgmm_fod_do.py                                     185 export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("__OUT_DIR__/sta…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                       9     [string]$DataCsv = "artifacts/parity/xtabond2/system_gmm_benchmark.csv",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     151 export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("$stataOutDir/sta…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     158 export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("$stataOutDir/sta…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     165 export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("$stataOutDir/st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     172 export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("$stataOutDir/st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     210     ("fod_diff_endog_x_onestep", "endogenous", 1, (1, 2)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     211     ("fod_diff_endog_x_twostep", "endogenous", 2, (1, 2)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     212     ("fod_diff_predet_x_onestep", "predetermined", 1, (0, 1)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     213     ("fod_diff_predet_x_twostep", "predetermined", 2, (0, 1)),
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     235         "systemgmmkit estimator call used in your System GMM parity scripts.\n\…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     237         "1. system=False, transformation='fod', collapse=True, x=endogenous, st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     238         "2. system=False, transformation='fod', collapse=True, x=endogenous, st…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     239         "3. system=False, transformation='fod', collapse=True, x=predetermined,…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     240         "4. system=False, transformation='fod', collapse=True, x=predetermined,…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     261     "fod_diff_endog_x_onestep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     262     "fod_diff_endog_x_twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     263     "fod_diff_predet_x_onestep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     264     "fod_diff_predet_x_twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     268 fod_diff_predet_x_onestep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\write_fod_xtdpdgmm_scaffold.py                                     269     "fod_diff_predet_x_twostep",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\fix_hansen_group_scale_df_name.py                       5 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\fix_hansen_group_scale_df_name.py                      50         print(r'rg -n -C 25 -e "_n_groups_for_hansen" .\src\systemgmmkit\native…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\fix_hansen_group_scale_nameerror.py                     3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\fix_hansen_group_scale_nameerror.py                    21     print(r'rg -n -C 20 -e "_n_groups_for_hansen" .\src\systemgmmkit\native_gmm…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\inject_level_dep_offset_before_assignment.py            3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\inject_level_dep_offset_before_assignment.py           10 if "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET" in text:
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\inject_level_dep_offset_before_assignment.py           28                                 "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\inject_level_dep_offset_before_assignment.py           62     print(r'Run: rg -n -C 45 -e "z_dict\[f\"L:diff" .\src\systemgmmkit\native_g…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\make_xtabond2_parity_defaults.py                        6 PATH = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\make_xtabond2_parity_defaults.py                       15     "SYSTEMGMMKIT_SYSTEM_IV_Z_MODE": "level_only",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\make_xtabond2_parity_defaults.py                       16     "SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET": "1",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\make_xtabond2_parity_defaults.py                       17     "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET": "1",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\make_xtabond2_parity_defaults.py                       18     "SYSTEMGMMKIT_HANSEN_GROUP_SCALE": "1",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_diff_gmm_lagged_dep_offset.py                     3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_diff_gmm_lagged_dep_offset.py                     6 if "SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET" in text:
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_diff_gmm_lagged_dep_offset.py                    32                 #   SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET=1
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_diff_gmm_lagged_dep_offset.py                    37                         "SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_hansen_group_scaling.py                           3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_hansen_group_scaling.py                          10 if "SYSTEMGMMKIT_HANSEN_GROUP_SCALE" in text:
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_hansen_group_scaling.py                          29             "SYSTEMGMMKIT_HANSEN_GROUP_SCALE",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_hansen_group_scaling.py                          47     print(r'rg -n -C 30 -e "_j_stat" .\src\systemgmmkit\native_gmm.py')
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset_regex.py              4 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset_regex.py             11 if "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET" in text:
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset_regex.py             27     print(r'rg -n -C 35 -e "_level_diff_mode" .\src\systemgmmkit\native_gmm.py')
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset_regex.py             41                         #   SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET=1
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset_regex.py             46                                 "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset.py                    3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset.py                    6 if "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET" in text:
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset.py                   29                         #   SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET=1
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset.py                   34                                 "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_level_gmm_lagged_dep_offset.py                   70     print('rg -n -C 25 -e "_level_diff_mode == \\"lag1\\"" src/systemgmmkit/nat…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_gmm_debug_export.py                        3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_gmm_debug_export.py                        6 if "SYSTEMGMMKIT_EXPORT_GMM_DEBUG" in text and "native_Z.csv" in text:
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_gmm_debug_export.py                       27     #   $env:SYSTEMGMMKIT_EXPORT_GMM_DEBUG = "1"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_gmm_debug_export.py                       28     #   $env:SYSTEMGMMKIT_GMM_DEBUG_DIR = "artifacts/parity/xtabond2"
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_gmm_debug_export.py                       29     if __import__("os").environ.get("SYSTEMGMMKIT_EXPORT_GMM_DEBUG") == "1":
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_gmm_debug_export.py                       34                 "SYSTEMGMMKIT_GMM_DEBUG_DIR",
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\_diagnostics\patch_native_iv_scope.py                                3 path = Path("src/systemgmmkit/native_gmm.py")
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\compare_native_se_to_stata_v.cpython-313.pyc             6  jrSSS jjrS S jrS!S jrS!S jrS"S jrS#S jr    …
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc          9 S jr\S	:X  a  \" 5         gg)�    )�annotationsN)�Path)�Dynami…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc         15    r   )r   F�fod�twostep�system_gmm_baseline_controls)
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc         17 regressors�gmm�iv�time_dummies�system�collapse�transformation�steps�nam…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc         18 windmeijer)�dtype)�param�native_coef�native_std_err�native_z�native_p_v…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc         20 native_j_stat�native_has_constant_paramz!native_system_gmm_diagnostics.csvz)Wr…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc         21 std_errors�reindex�zstats�pvaluesr,   �os�getenv�copy�to_csv�getattr�j…
+C:\Users\omoko\OneDrive\Python packages\systemgmmkit\scripts\parity\__pycache__\run_native_system_gmm_benchmark.cpython-313.pyc         44 __future__r   rS   �pathlibr   �pandasrG   �systemgmmkitr   r   r   �s…
+

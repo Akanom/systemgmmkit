@@ -1,0 +1,6 @@
+spec,command,kind,name,value_num,value_text
+fod_diff_predet_x_twostep,estat_overid,scalar,chi2_J,9.28671138428686,
+fod_diff_predet_x_twostep,estat_overid,scalar,df_J,2,
+fod_diff_predet_x_twostep,estat_overid,scalar,p_J,.0096253436827851,
+fod_diff_predet_x_twostep,estat_overid,scalar,chi2_J_u,9.297059993492999,
+fod_diff_predet_x_twostep,estat_overid,scalar,p_J_u,.0095756678524326,

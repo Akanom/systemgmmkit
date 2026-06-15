@@ -6,6 +6,9 @@
 [![CI](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml)
 [![Publish](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml)
 [![Downloads](https://img.shields.io/pepy/dm/systemgmmkit)](https://pepy.tech/project/systemgmmkit)
+
+---
+
 `systemgmmkit` is a Python workflow package for panel-data econometrics.
 
 It supports reusable model specification, panel validation, static panel estimation, dynamic-panel GMM estimation, backend routing, diagnostics interpretation, reproducible reporting, and regression-table export.
@@ -735,30 +738,25 @@ For dynamic-panel GMM, users should record at minimum:
 
 ## Validation roadmap
 
-Before claiming broader production certification across panel designs, the package should continue to be tested on:
+## Validation roadmap
 
-* balanced panels;
-* unbalanced panels;
-* short-`T` panels;
-* longer-`T` panels;
-* high-`N`, low-`T` panels;
-* panels with missing observations;
-* different lag windows;
-* models with no controls;
-* models with many controls;
-* interaction-heavy specifications;
-* decomposition specifications;
-* alternative instrument classifications;
-* Stata `xtabond2` replication benchmarks.
+The current validation suite establishes benchmark-specific certification for the maintained native Difference GMM and native System GMM paths.
 
-High-priority remaining validation items:
+Native System GMM is certified against Stata `xtabond2` for the maintained collapsed two-step benchmark suite, including the baseline, no-controls, three-way interaction, and decomposition specifications. Certified quantities include sample size, group count, instrument count, coefficient estimates, Hansen diagnostics, Windmeijer-corrected two-step standard errors, and signed Arellano-Bond AR(1)/AR(2) diagnostics with p-values.
 
-* broader System GMM parity across additional empirical specifications;
-* broader Windmeijer-corrected standard-error parity across additional empirical specifications;
-* broader robustness of Sargan, Hansen, and AR diagnostics across additional panel structures;
-* documentation of exact Stata-compatible options and known non-equivalence cases.
+This should be interpreted as a strong benchmark-specific validation result, not as a universal claim of bit-for-bit equivalence across every possible Stata configuration, missing-data pattern, lag window, instrument classification, covariance assumption, or finite-sample correction.
 
-This roadmap protects the package from overclaiming and supports academically defensible validation.
+Future validation-extension priorities include:
+
+* testing additional unbalanced-panel and missing-data designs beyond the maintained benchmark suite;
+* expanding documented examples for short-`T`, longer-`T`, and high-`N`, low-`T` panels;
+* validating additional lag-window choices and alternative instrument classifications;
+* documenting exact Stata-compatible option combinations and known non-equivalence cases;
+* maintaining clear separation between certified `xtabond2` parity paths and experimental or implementation-dependent paths;
+* further investigating FOD-specific validation, especially FOD Windmeijer covariance and FOD AR diagnostic parity against `xtdpdgmm`;
+* extending reviewer-facing artifacts as new benchmark specifications are added.
+
+This roadmap protects the package from overclaiming while making clear that the core native System GMM parity milestone has already been reached for the maintained benchmark suite.
 
 ---
 

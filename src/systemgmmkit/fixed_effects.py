@@ -119,7 +119,17 @@ def _build_lsdv_design(
     X_parts: list[pd.DataFrame] = []
     notes: list[str] = []
 
-    # Structural regressors first; output is restricted to these coefficients.
+    # Include an intercept before fixed-effect dummies. With drop_first=True
+    # for dummy variables, constant + N-1 dummies is the standard LSDV
+    # parameterisation and is slope-equivalent to the within estimator used by
+    # Stata xtreg, fe. Omitting the constant while also dropping a dummy
+    # incorrectly constrains the base group intercept to zero and changes slopes.
+    X_parts.append(
+        pd.DataFrame({"const": np.ones(len(work), dtype=float)}, index=work.index)
+    )
+
+    # Structural regressors follow; output is restricted to these coefficients
+    # plus the constant when it survives collinearity checks.
     X_reg = work[spec.regressors].astype(float)
     X_parts.append(X_reg)
 
@@ -138,13 +148,6 @@ def _build_lsdv_design(
         if d_time.shape[1] > 0:
             X_parts.append(d_time)
         notes.append("Time fixed effects included via LSDV dummies.")
-
-    # Constant is included only when no FE are requested. With FE dummies, a
-    # constant plus dropped categories yields the same slopes but adds clutter.
-    if not spec.entity_effects and not spec.time_effects:
-        X_parts.insert(
-            0, pd.DataFrame({"const": np.ones(len(work), dtype=float)}, index=work.index)
-        )
 
     X = pd.concat(X_parts, axis=1)
 

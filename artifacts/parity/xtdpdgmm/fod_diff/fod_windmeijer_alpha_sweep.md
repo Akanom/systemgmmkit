@@ -1,0 +1,26 @@
+|   alpha | spec                      |   max_abs_coef_diff |   max_abs_se_diff |   mean_abs_se_diff |
+|--------:|:--------------------------|--------------------:|------------------:|-------------------:|
+|    0    | fod_diff_endog_x_onestep  |         6.23289e-08 |       0.00247358  |        0.000948032 |
+|    0.25 | fod_diff_endog_x_onestep  |         6.23289e-08 |       0.00247358  |        0.000948032 |
+|    0.5  | fod_diff_endog_x_onestep  |         6.23289e-08 |       0.00247358  |        0.000948032 |
+|    0.75 | fod_diff_endog_x_onestep  |         6.23289e-08 |       0.00247358  |        0.000948032 |
+|    1    | fod_diff_endog_x_onestep  |         6.23289e-08 |       0.00247358  |        0.000948032 |
+|    1.25 | fod_diff_endog_x_onestep  |         6.23289e-08 |       0.00247358  |        0.000948032 |
+|    0    | fod_diff_endog_x_twostep  |         1.1819e-07  |       0.0734502   |        0.032786    |
+|    0.25 | fod_diff_endog_x_twostep  |         1.1819e-07  |       0.0468242   |        0.0213494   |
+|    0.5  | fod_diff_endog_x_twostep  |         1.1819e-07  |       0.0199514   |        0.00974169  |
+|    0.75 | fod_diff_endog_x_twostep  |         1.1819e-07  |       0.0071296   |        0.0040611   |
+|    1    | fod_diff_endog_x_twostep  |         1.1819e-07  |       0.0343877   |        0.0138437   |
+|    1.25 | fod_diff_endog_x_twostep  |         1.1819e-07  |       0.0617975   |        0.0257747   |
+|    0    | fod_diff_predet_x_onestep |         4.69298e-09 |       0.000100256 |        8.96907e-05 |
+|    0.25 | fod_diff_predet_x_onestep |         4.69298e-09 |       0.000100256 |        8.96907e-05 |
+|    0.5  | fod_diff_predet_x_onestep |         4.69298e-09 |       0.000100256 |        8.96907e-05 |
+|    0.75 | fod_diff_predet_x_onestep |         4.69298e-09 |       0.000100256 |        8.96907e-05 |
+|    1    | fod_diff_predet_x_onestep |         4.69298e-09 |       0.000100256 |        8.96907e-05 |
+|    1.25 | fod_diff_predet_x_onestep |         4.69298e-09 |       0.000100256 |        8.96907e-05 |
+|    0    | fod_diff_predet_x_twostep |         4.50738e-09 |       0.00219863  |        0.00171256  |
+|    0.25 | fod_diff_predet_x_twostep |         4.50738e-09 |       0.00163255  |        0.00126777  |
+|    0.5  | fod_diff_predet_x_twostep |         4.50738e-09 |       0.00106597  |        0.000821871 |
+|    0.75 | fod_diff_predet_x_twostep |         4.50738e-09 |       0.000498957 |        0.000374957 |
+|    1    | fod_diff_predet_x_twostep |         4.50738e-09 |       0.000120335 |        7.29019e-05 |
+|    1.25 | fod_diff_predet_x_twostep |         4.50738e-09 |       0.000636245 |        0.000521638 |

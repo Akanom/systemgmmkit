@@ -1,0 +1,15 @@
+pos,time,y_fod_available,error_terms_available,x_L1.y_available,x_x_available,x_w_available,z_y_L1_available,z_y_L2_available,z_x_L0_available,z_x_L1_available,native_equation_row_available,any_gmm_instrument_available
+0,0,True,True,False,True,True,False,False,True,False,False,True
+1,1,True,True,True,True,True,True,False,True,True,True,True
+2,2,True,True,True,True,True,True,True,True,True,True,True
+3,3,True,True,True,True,True,True,True,True,True,True,True
+4,4,True,True,True,True,True,True,True,True,True,True,True
+5,5,True,True,True,True,True,True,True,True,True,True,True
+6,6,True,True,True,True,True,True,True,True,True,True,True
+7,7,True,True,True,True,True,True,True,True,True,True,True
+8,8,True,True,True,True,True,True,True,True,True,True,True
+9,9,True,True,True,True,True,True,True,True,True,True,True
+10,10,True,True,True,True,True,True,True,True,True,True,True
+11,11,True,True,True,True,True,True,True,True,True,True,True
+12,12,True,True,True,True,True,True,True,True,True,True,True
+13,13,False,False,False,False,False,True,True,True,True,False,True
