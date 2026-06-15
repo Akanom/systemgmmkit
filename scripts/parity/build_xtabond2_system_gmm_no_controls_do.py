@@ -54,7 +54,7 @@ if _rc {{
 }}
 
 xtabond2 y L.y x, ///
-    gmm(L.y x, lag(2 3) collapse) ///
+    gmm(L.y x, lag(2 3) collapse eq(both)) ///
     twostep robust small ///
 
 matrix b = e(b)

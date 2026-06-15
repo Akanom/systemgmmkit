@@ -29,6 +29,17 @@ def _read_csv_if_exists(path: Path | None) -> pd.DataFrame | None:
     return pd.read_csv(path)
 
 
+
+def _normalise_param_name(name: object) -> str:
+    """Normalize equivalent native/Stata parameter names before parity merge."""
+    value = str(name)
+    mapping = {
+        "L.y": "L1.y",
+        "_cons": "_con",
+    }
+    return mapping.get(value, value)
+
+
 def _normalise_stata_params(stata_params: pd.DataFrame) -> pd.DataFrame:
     """Return Stata parameters with stable column names for comparison."""
     if stata_params.empty:
@@ -50,6 +61,8 @@ def _normalise_stata_params(stata_params: pd.DataFrame) -> pd.DataFrame:
 
     if "param" not in renamed.columns:
         raise KeyError(f"Could not find Stata parameter-name column in {list(stata_params.columns)}")
+
+    renamed["param"] = renamed["param"].map(_normalise_param_name)
 
     if "stata_coef" not in renamed.columns:
         possible_coef_cols = [c for c in renamed.columns if c.lower() in {"coef", "b", "estimate"}]
@@ -88,6 +101,8 @@ def main() -> None:
     )
 
     native_params = pd.read_csv(native_params_path)
+    native_params["param"] = native_params["param"].map(_normalise_param_name)
+
     stata_params = _read_csv_if_exists(stata_params_path)
 
     if stata_params is not None and not stata_params.empty:

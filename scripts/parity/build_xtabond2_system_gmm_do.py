@@ -49,10 +49,10 @@ if _rc {{
 }}
 
 xtabond2 y L.y x w, ///
-    gmm(L.y x, lag(2 3) collapse) ///
+    gmm(L.y x, lag(2 3) collapse eq(both)) ///
     iv(w, eq(level)) ///
     twostep robust small ///
-    noleveleq
+
 
 matrix b = e(b)
 matrix V = e(V)
