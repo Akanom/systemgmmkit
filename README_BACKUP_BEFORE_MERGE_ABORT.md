@@ -8,7 +8,7 @@
 
 ---
 
-# systemgmmkit 0.5.8.dev0
+# systemgmmkit 0.5.8
 
 `systemgmmkit` is a Python package for panel-data econometrics that provides a unified workflow from baseline linear models to advanced dynamic-panel GMM estimation.
 

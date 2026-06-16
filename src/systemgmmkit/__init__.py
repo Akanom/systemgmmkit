@@ -93,6 +93,18 @@ with contextlib.suppress(Exception):
     from .reporting import ParityReport, ParityResult, classify_parity_result
 
 from .estimators.first_difference import FirstDifferenceResult, first_difference
+# Public OLS and post-estimation API
+from .linear import LinearModelResult, OLSSpec, PooledOLSSpec, run_ols, run_pooled_ols
+from .postestimation import (
+    confint,
+    fitted_values,
+    lincom,
+    marginal_effects,
+    predict,
+    residuals,
+    vcov,
+    wald_test,
+)
 
 
 
