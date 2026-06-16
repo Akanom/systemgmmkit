@@ -75,7 +75,7 @@ __all__ = [
     "first_difference",
 ]
 
-__version__ = "0.5.8"
+__version__ = "0.5.9"
 
 import contextlib
 
@@ -105,6 +105,7 @@ from .postestimation import (
     vcov,
     wald_test,
 )
+
 
 
 
