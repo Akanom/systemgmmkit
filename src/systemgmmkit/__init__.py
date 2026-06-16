@@ -75,7 +75,7 @@ __all__ = [
     "first_difference",
 ]
 
-__version__ = "0.5.3"
+__version__ = "0.5.8"
 
 import contextlib
 
@@ -93,4 +93,6 @@ with contextlib.suppress(Exception):
     from .reporting import ParityReport, ParityResult, classify_parity_result
 
 from .estimators.first_difference import FirstDifferenceResult, first_difference
+
+
 
