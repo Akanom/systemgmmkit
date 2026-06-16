@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systemgmmkit"
-version = "0.5.6"
+version = "0.5.8"
 description = "Generic panel-data econometrics workflow helpers for FE, RE, IV/2SLS, and Difference/System GMM in Python."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -65,5 +65,6 @@ testpaths = ["tests"]
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
+
 
 

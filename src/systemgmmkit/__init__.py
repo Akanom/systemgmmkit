@@ -93,3 +93,4 @@ with contextlib.suppress(Exception):
     from .reporting import ParityReport, ParityResult, classify_parity_result
 
 from .estimators.first_difference import FirstDifferenceResult, first_difference
+
