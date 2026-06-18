@@ -96,24 +96,44 @@ def main() -> None:
             "stata": diag_value(sd, ["stata_n_instruments", "n_instruments"]),
         },
         {
-            "metric": "native_j_vs_stata_sargan",
-            "native": diag_value(nd, ["native_j_stat", "j_stat"]),
+            "metric": "sargan_j_stat",
+            "native": diag_value(nd, ["native_sargan_j_stat", "sargan_j_stat"]),
             "stata": diag_value(sd, ["stata_sargan", "sargan"]),
+        },
+        {
+            "metric": "sargan_p",
+            "native": diag_value(nd, ["native_sargan_p", "sargan_p"]),
+            "stata": diag_value(sd, ["stata_sargan_p", "sarganp"]),
+        },
+        {
+            "metric": "hansen_j_stat",
+            "native": diag_value(nd, ["native_hansen_j_stat", "hansen_j_stat"]),
+            "stata": diag_value(sd, ["stata_hansen", "hansen"]),
         },
         {
             "metric": "hansen_p",
             "native": diag_value(nd, ["native_hansen_p", "hansen_p"]),
-            "stata": diag_value(sd, ["stata_hansen_p", "hansen_p"]),
+            "stata": diag_value(sd, ["stata_hansen_p", "hansenp"]),
+        },
+        {
+            "metric": "ar1_z",
+            "native": diag_value(nd, ["native_ar1_z", "ar1_z"]),
+            "stata": diag_value(sd, ["stata_ar1_z", "stata_ar1", "ar1"]),
         },
         {
             "metric": "ar1_p",
             "native": diag_value(nd, ["native_ar1_p", "ar1_p"]),
-            "stata": diag_value(sd, ["stata_ar1_p", "ar1_p"]),
+            "stata": diag_value(sd, ["stata_ar1_p", "ar1p", "ar1_p"]),
+        },
+        {
+            "metric": "ar2_z",
+            "native": diag_value(nd, ["native_ar2_z", "ar2_z"]),
+            "stata": diag_value(sd, ["stata_ar2_z", "stata_ar2", "ar2"]),
         },
         {
             "metric": "ar2_p",
             "native": diag_value(nd, ["native_ar2_p", "ar2_p"]),
-            "stata": diag_value(sd, ["stata_ar2_p", "ar2_p"]),
+            "stata": diag_value(sd, ["stata_ar2_p", "ar2p", "ar2_p"]),
         },
     ])
 

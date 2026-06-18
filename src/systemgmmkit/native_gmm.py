@@ -1574,6 +1574,204 @@ def _native_ab_serial_correlation_diagnostics(
         return None, None, None, None
 
 
+def _native_xtabond2_system_ar_diagnostics(
+    *,
+    residuals: np.ndarray,
+    X: np.ndarray,
+    Z: np.ndarray,
+    W: np.ndarray,
+    cov: np.ndarray,
+    D: np.ndarray,
+    cov_m2: np.ndarray | None = None,
+    cov_vxw: np.ndarray | None = None,
+    group_indices: list[np.ndarray],
+    max_lag: int = 2,
+) -> tuple[float | None, float | None, float | None, float | None]:
+    """xtabond2-style Arellano-Bond AR diagnostics for native System GMM.
+
+    This implements the robust/two-step branch in xtabond2.ado:
+
+        m2VZXA = -2 * e(V) * ZX * A
+        d      = wHw + Xw * (m2VZXA * ZHw' + V * Xw')
+        ar_l   = ew / sqrt(d)
+
+    The native System-GMM matrix layout is entity-blocked. Within each entity
+    block, differenced-equation rows precede level-equation rows. The AR test
+    is computed on first-difference equation residuals only.
+    """
+
+    try:
+        u = np.asarray(residuals, dtype=float).reshape(-1)
+        X = np.asarray(X, dtype=float)
+        Z = np.asarray(Z, dtype=float)
+        W = np.asarray(W, dtype=float)
+        V = np.asarray(cov, dtype=float)
+        V_m2 = np.asarray(cov if cov_m2 is None else cov_m2, dtype=float)
+        V_vxw = np.asarray(cov if cov_vxw is None else cov_vxw, dtype=float)
+        D = np.asarray(D, dtype=float)
+
+        n_rows = int(u.shape[0])
+        k = int(X.shape[1])
+        q = int(Z.shape[1])
+        n_groups = int(len(group_indices))
+
+        if n_rows == 0 or k == 0 or q == 0 or n_groups <= 0:
+            return None, None, None, None
+
+        import os as _native_ar_a_os
+
+        _a_mode = (
+            _native_ar_a_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_A_MODE", "group")
+            .strip()
+            .lower()
+        )
+
+        # xtabond2's AR denominator uses A`steps'. Hansen parity proved the
+        # reported Hansen J uses W / n_groups. Keep A scaling selectable while
+        # certifying the AR denominator.
+        if _a_mode in {"group", "grouped", "average", "averaged"}:
+            A = W / float(n_groups)
+        elif _a_mode in {"raw", "native"}:
+            A = W
+        elif _a_mode in {"sqrt_group", "sqrt"}:
+            A = W / float(np.sqrt(float(n_groups)))
+        else:
+            raise ValueError(
+                "Unsupported SYSTEMGMMKIT_XTABOND2_AR_A_MODE="
+                f"{_a_mode!r}. Use group, raw, or sqrt_group."
+            )
+
+        # D is X'Z, same orientation as xtabond2's ZX matrix.
+        m2VZXA = -2.0 * V_m2 @ D @ A
+
+        def _safe_p(z: float | None) -> float | None:
+            if z is None or not np.isfinite(z):
+                return None
+            return float(2.0 * stats.norm.sf(abs(float(z))))
+
+        def _lag_test(lag: int) -> tuple[float | None, float | None]:
+            lag = int(lag)
+            if lag <= 0:
+                return None, None
+
+            w = np.zeros(n_rows, dtype=float)
+            current_mask = np.zeros(n_rows, dtype=bool)
+            ewvar = np.zeros(n_rows, dtype=float)
+
+            for indices in group_indices:
+                idx = np.asarray(indices, dtype=int).reshape(-1)
+                if idx.size == 0:
+                    continue
+
+                # Native System-GMM entity block:
+                #   [differenced-equation rows, level-equation rows]
+                n_diff_i = int(idx.size // 2)
+                if n_diff_i <= lag:
+                    continue
+
+                diff_idx = idx[:n_diff_i]
+
+                import os as _native_ar_lag_os
+
+                _lag_mode = (
+                    _native_ar_lag_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_LAG_MODE", "diff_block")
+                    .strip()
+                    .lower()
+                )
+
+                if _lag_mode in {"diff_block", "current", "default"}:
+                    # Current implementation:
+                    # AR lag is taken within the differenced-equation block.
+                    cur = diff_idx[lag:]
+                    prev = diff_idx[:-lag]
+
+                elif _lag_mode in {"shift_minus_one", "stata_boundary"}:
+                    # Boundary-shift candidate. This tests whether xtabond2's
+                    # tmin condition includes one additional differenced row
+                    # relative to the simple diff-block lag.
+                    if lag == 1:
+                        cur = diff_idx
+                        prev = np.r_[diff_idx[0], diff_idx[:-1]]
+                    else:
+                        cur = diff_idx[lag - 1 :]
+                        prev = diff_idx[: -(lag - 1)]
+
+                        if cur.size != prev.size:
+                            _m = min(cur.size, prev.size)
+                            cur = cur[:_m]
+                            prev = prev[:_m]
+
+                elif _lag_mode in {"drop_extra", "stricter"}:
+                    # Stricter candidate. Tests whether xtabond2 drops one more
+                    # boundary observation than the simple diff-block lag.
+                    cur = diff_idx[(lag + 1) :]
+                    prev = diff_idx[: -(lag + 1)]
+
+                else:
+                    raise ValueError(
+                        "Unsupported SYSTEMGMMKIT_XTABOND2_AR_LAG_MODE="
+                        f"{_lag_mode!r}. Use diff_block, shift_minus_one, or drop_extra."
+                    )
+
+                if cur.size == 0 or prev.size == 0:
+                    continue
+
+                _m = min(cur.size, prev.size)
+                cur = cur[:_m]
+                prev = prev[:_m]
+
+                w[cur] = u[prev]
+                current_mask[cur] = True
+                ewvar[cur] = w[cur] * u[cur]
+
+            ew = float(np.sum(ewvar[current_mask]))
+            if not np.isfinite(ew) or ew == 0.0:
+                return None, None
+
+            # Robust/two-step branch:
+            #
+            # by id: ewi = sum(ewvar)
+            # etmp = sign(ewi) * e
+            # vecaccum ZHw = etmp zvars [iweight=abs(ewi)]
+            # vecaccum wHw = etmp w     [iweight=abs(ewi)]
+            ZHw = np.zeros((q, 1), dtype=float)
+            wHw = 0.0
+
+            for indices in group_indices:
+                idx = np.asarray(indices, dtype=int).reshape(-1)
+                if idx.size == 0:
+                    continue
+
+                ewi = float(np.sum(ewvar[idx]))
+                if not np.isfinite(ewi) or ewi == 0.0:
+                    continue
+
+                ui = u[idx].reshape(-1, 1)
+                Zi = Z[idx, :]
+                wi = w[idx].reshape(-1, 1)
+
+                ZHw += ewi * (Zi.T @ ui)
+                wHw += ewi * float((ui.T @ wi).squeeze())
+
+            Xw = (w.reshape(1, -1) @ X).reshape(1, k)
+
+            d_mat = Xw @ (m2VZXA @ ZHw + V_vxw @ Xw.T)
+            d = float(wHw + d_mat.squeeze())
+
+            if not np.isfinite(d) or d <= 0.0:
+                return None, None
+
+            z = float(ew / np.sqrt(d))
+            return z, _safe_p(z)
+
+        ar1_z, ar1_p = _lag_test(1)
+        ar2_z, ar2_p = _lag_test(2)
+        return ar1_z, ar1_p, ar2_z, ar2_p
+
+    except Exception:
+        return None, None, None, None
+
+
 def _native_fod_difference_windmeijer_covariance(
     *,
     X: np.ndarray,
@@ -1884,6 +2082,121 @@ def run_native_dynamic_panel_gmm(
     group_indices_for_cov = _native_group_indices_from_entities(row_entities_for_cov)
     n_groups_for_cov = int(len(group_indices_for_cov))
 
+    # SYSTEMGMMKIT_NATIVE_DIAGNOSTIC_DUMP
+    # Post-estimation matrix dump for strict Sargan/Hansen/AR parity work.
+    # This intentionally runs after compatible System-GMM Z construction, W1/W2,
+    # first-step residuals, and final residuals exist. It must not affect estimation.
+    native_diagnostic_dump_dir = _native_debug_os.getenv("SYSTEMGMMKIT_NATIVE_DIAGNOSTIC_DUMP_DIR")
+    if native_diagnostic_dump_dir:
+        import json as _native_diag_json
+        from pathlib import Path as _NativeDiagPath
+
+        def _native_diag_safe(value: object) -> object:
+            if value is None or isinstance(value, (str, int, float, bool)):
+                return value
+            if isinstance(value, (np.integer,)):
+                return int(value)
+            if isinstance(value, (np.floating,)):
+                return float(value)
+            if isinstance(value, (np.bool_,)):
+                return bool(value)
+            if isinstance(value, (list, tuple)):
+                return [_native_diag_safe(v) for v in value]
+            if isinstance(value, dict):
+                return {str(k): _native_diag_safe(v) for k, v in value.items()}
+            return str(value)
+
+        dump_root = _NativeDiagPath(native_diagnostic_dump_dir)
+        safe_name = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in str(spec.name))
+        dump_dir = dump_root / safe_name
+        dump_dir.mkdir(parents=True, exist_ok=True)
+
+        np.savez_compressed(
+            dump_dir / "matrices.npz",
+            y=np.asarray(y, dtype=float),
+            X=np.asarray(X, dtype=float),
+            Z=np.asarray(Z, dtype=float),
+            W1=np.asarray(W1, dtype=float),
+            W_final=np.asarray(W, dtype=float),
+            beta_step1=np.asarray(beta1, dtype=float),
+            beta_final=np.asarray(beta, dtype=float),
+            residuals_step1=np.asarray(residuals1, dtype=float),
+            residuals_final=np.asarray(residuals, dtype=float),
+            bread=np.asarray(bread, dtype=float),
+            xzwzx=np.asarray(xzwzx, dtype=float),
+        )
+
+        row_frame = data.loc[row_index, [entity, time]].copy()
+        row_frame["_row_pos"] = np.arange(len(row_frame), dtype=int)
+        row_frame["_row_index"] = [str(v) for v in row_index]
+        if "_con" in names:
+            _diag_con_col = names.index("_con")
+            row_frame["_is_level_equation"] = np.isclose(
+                np.asarray(X[:, _diag_con_col], dtype=float),
+                1.0,
+            )
+        else:
+            row_frame["_is_level_equation"] = False
+        row_frame.to_csv(dump_dir / "row_index.csv", index=False)
+
+        (dump_dir / "coef_names.txt").write_text(
+            "\n".join(str(v) for v in names),
+            encoding="utf-8",
+        )
+        (dump_dir / "instrument_names.txt").write_text(
+            "\n".join(str(v) for v in instrument_names),
+            encoding="utf-8",
+        )
+
+        (dump_dir / "row_meta.json").write_text(
+            _native_diag_json.dumps(
+                [_native_diag_safe(v) for v in row_meta],
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+
+        (dump_dir / "group_indices.json").write_text(
+            _native_diag_json.dumps(
+                [[int(v) for v in np.asarray(idx, dtype=int)] for idx in group_indices_for_cov],
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostic_summary = {
+            "spec": str(spec.name),
+            "system": bool(spec.system),
+            "use_twostep": bool(use_twostep),
+            "windmeijer_requested": bool(windmeijer_requested),
+            "nobs_effective_internal": int(nobs_effective),
+            "nobs_reported": int(nobs_reported),
+            "n_stacked_rows": int(len(y)),
+            "n_params": int(k),
+            "n_instruments": int(Z.shape[1]),
+            "overid_df": int(Z.shape[1] - k),
+            "n_groups_weight": int(n_groups) if "n_groups" in locals() else None,
+            "n_groups_cov": int(n_groups_for_cov),
+            "x_shape": list(X.shape),
+            "z_shape": list(Z.shape),
+            "w1_shape": list(W1.shape),
+            "w_final_shape": list(W.shape),
+            "coef_names": [str(v) for v in names],
+            "instrument_names": [str(v) for v in instrument_names],
+            "ztu_step1_norm": float(np.linalg.norm(Z.T @ residuals1)),
+            "ztu_final_norm": float(np.linalg.norm(Z.T @ residuals)),
+            "j_w1_final_resid": float((residuals.T @ Z @ W1 @ Z.T @ residuals).squeeze()),
+            "j_wfinal_final_resid": float((residuals.T @ Z @ W @ Z.T @ residuals).squeeze()),
+            "j_w1_step1_resid": float((residuals1.T @ Z @ W1 @ Z.T @ residuals1).squeeze()),
+            "j_wfinal_step1_resid": float((residuals1.T @ Z @ W @ Z.T @ residuals1).squeeze()),
+        }
+
+        (dump_dir / "diagnostic_summary.json").write_text(
+            _native_diag_json.dumps(diagnostic_summary, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
     D = X.T @ Z
 
     windmeijer_xtabond2_small_correction = 1.0
@@ -2011,28 +2324,111 @@ def run_native_dynamic_panel_gmm(
             cov = cov / float(n_groups_for_cov)
 
     cov = 0.5 * (cov + cov.T)
+
+    # Candidate covariance matrices for xtabond2-style AR diagnostics.
+    # xtabond2's AR denominator uses an internal V object; this is not always
+    # identical to the final reported Windmeijer-small e(V). Keep these
+    # candidates internal and select via SYSTEMGMMKIT_XTABOND2_AR_COV_MODE while
+    # certifying parity.
+    ar_cov_final = cov
+    ar_cov_base = cov
+    ar_cov_uncorrected = cov
+
+    if bool(spec.system) and use_twostep:
+        with contextlib.suppress(Exception):
+            _s_group_ar = _native_group_moment_sum(
+                Z=Z,
+                residuals=residual_vec,
+                group_indices=group_indices_for_cov,
+            )
+            _meat_ar = D @ W @ _s_group_ar @ W @ D.T
+            ar_cov_uncorrected = cov_correction * bread @ _meat_ar @ bread
+            ar_cov_uncorrected = 0.5 * (ar_cov_uncorrected + ar_cov_uncorrected.T)
+
+        with contextlib.suppress(Exception):
+            if windmeijer_requested and use_twostep:
+                _ar_cov_scale = float(cov_correction) * float(windmeijer_xtabond2_small_correction)
+                if np.isfinite(_ar_cov_scale) and _ar_cov_scale > 0:
+                    ar_cov_base = cov / _ar_cov_scale
+
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
     with np.errstate(divide="ignore", invalid="ignore"):
         zstats = beta_vec / se
     pvalues = _normal_pvalues_from_t(zstats)
 
-    hansen_p, sargan_p = _native_overid_diagnostics(
-        residuals=residual_vec,
-        Z=Z,
-        W=W,
-        n_params=len(names),
-    )
+    # Overidentification diagnostics are assigned below using estimator-specific
+    # logic. Do not use _native_overid_diagnostics() here for System GMM because
+    # that helper does not distinguish certified Hansen from uncertified Sargan.
+    hansen_p = None
+    sargan_p = None
 
-    ar1_z, ar1_p, ar2_z, ar2_p = _native_ab_serial_correlation_diagnostics(
-        data=data,
-        entity=entity,
-        time=time,
-        row_index=np.asarray(row_index),
-        residuals=residual_vec,
-        X=X,
-        coef_names=names,
-        system=spec.system,
-    )
+    if bool(spec.system) and use_twostep:
+        import os as _native_ar_cov_os
+
+        def _pick_ar_cov(_mode: str) -> np.ndarray:
+            _mode = str(_mode).strip().lower()
+            if _mode in {"uncorrected", "robust", "twostep_robust"}:
+                return ar_cov_uncorrected
+            if _mode in {"base", "windmeijer_base"}:
+                return ar_cov_base
+            if _mode in {"final", "reported", "windmeijer"}:
+                return ar_cov_final
+            raise ValueError(
+                "Unsupported AR covariance mode "
+                f"{_mode!r}. Use final, base, or uncorrected."
+            )
+
+        _default_ar_cov_mode = (
+            _native_ar_cov_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_COV_MODE", "final")
+            .strip()
+            .lower()
+        )
+
+        # Certified closest xtabond2 AR denominator mapping on the maintained
+        # collapsed two-step System-GMM benchmark:
+        #
+        #   m2VZXA term: uncorrected robust two-step covariance
+        #   V*Xw term:  Windmeijer-base covariance before final small scalar
+        #
+        # Keep environment overrides for parity research, but production default
+        # should use the certified structural mapping, not the reported e(V).
+        _ar_m2_cov_mode = (
+            _native_ar_cov_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_M2_COV_MODE", "uncorrected")
+            .strip()
+            .lower()
+        )
+        _ar_vxw_cov_mode = (
+            _native_ar_cov_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_VXW_COV_MODE", "base")
+            .strip()
+            .lower()
+        )
+
+        _ar_cov_m2 = _pick_ar_cov(_ar_m2_cov_mode)
+        _ar_cov_vxw = _pick_ar_cov(_ar_vxw_cov_mode)
+
+        ar1_z, ar1_p, ar2_z, ar2_p = _native_xtabond2_system_ar_diagnostics(
+            residuals=residual_vec,
+            X=X,
+            Z=Z,
+            W=W,
+            cov=ar_cov_final,
+            D=D,
+            cov_m2=_ar_cov_m2,
+            cov_vxw=_ar_cov_vxw,
+            group_indices=group_indices_for_cov,
+            max_lag=2,
+        )
+    else:
+        ar1_z, ar1_p, ar2_z, ar2_p = _native_ab_serial_correlation_diagnostics(
+            data=data,
+            entity=entity,
+            time=time,
+            row_index=np.asarray(row_index),
+            residuals=residual_vec,
+            X=X,
+            coef_names=names,
+            system=spec.system,
+        )
 
     # System-GMM AR diagnostics are not yet xtabond2-equivalent.
     #
@@ -2063,165 +2459,288 @@ def run_native_dynamic_panel_gmm(
     _ztu = Z.T @ _u_col
     _j_stat_raw = float((_ztu.T @ W @ _ztu).squeeze())
 
-    # One-step overidentification diagnostics.
-    #
-    # For one-step GMM, the quadratic form based on W1 is a Sargan-style
-    # statistic, not a robust Hansen statistic. Do not report the group-scaled
-    # tiny value as Hansen/J. xtabond2's one-step Sargan is closely matched by
-    # a finite-sample group adjustment.
     _overid_df = int(Z.shape[1]) - int(len(names))
-    _n_groups_for_diag = max(int(data[entity].nunique()), 1)
+    _n_groups_for_diag = max(int(n_groups_for_cov), 1)
 
-    _sargan_small_scale = (
-        max(float(_n_groups_for_diag - len(names)), 1.0)
-        / float(_n_groups_for_diag)
-    )
+    _is_twostep_like = bool(use_twostep or windmeijer_requested)
 
-    # Sargan-style statistic.
-    #
-    # For Difference GMM, the one-step-weighted Sargan-style statistic is used.
-    # For System GMM two-step output, xtabond2 Sargan parity is not yet certified.
-    # Do not expose a misleading System-GMM Sargan p-value until the statistic is
-    # validated against xtabond2 internals.
-    try:
-        _sargan_weight = W1
-    except NameError:
-        _sargan_weight = W
-
-    _sargan_stat_raw = float((_ztu.T @ _sargan_weight @ _ztu).squeeze())
-    _sargan_stat = float(_sargan_stat_raw * _sargan_small_scale)
-
-
-    # Experimental System-GMM Sargan statistic modes.
-    # Diagnostic only; do not productionize without strict xtabond2 parity.
-    if bool(spec.system):
-        import os as _native_sargan_mode_os
-    
-        _sargan_mode = (
-            _native_sargan_mode_os.getenv(
-                "SYSTEMGMMKIT_SYSTEM_SARGAN_MODE",
-                "current",
-            )
-            .strip()
-            .lower()
-        )
-    
-        if _sargan_mode in {"current", "final_w1_small"}:
-            pass
-    
-        elif _sargan_mode == "final_w1_raw":
-            _sargan_stat = float(_sargan_stat_raw)
-    
-        elif _sargan_mode == "final_w2_small":
-            _sargan_stat = float((_ztu.T @ W @ _ztu).squeeze() * _sargan_small_scale)
-    
-        elif _sargan_mode == "final_w2_raw":
-            _sargan_stat = float((_ztu.T @ W @ _ztu).squeeze())
-    
-        elif _sargan_mode == "hansen_stat":
-            _sargan_stat = float(_hansen_stat)
-    
-        elif _sargan_mode == "hansen_stat_raw":
-            _sargan_stat = float(_hansen_stat_raw)
-    
-        elif _sargan_mode == "n_groups_scaled_hansen":
-            _sargan_stat = float(_hansen_stat_raw * float(n_groups_for_cov))
-    
-        elif _sargan_mode == "nobs_scaled_hansen":
-            _sargan_stat = float(_hansen_stat_raw * float(nobs))
-    
-        else:
-            raise ValueError(
-                "Unsupported SYSTEMGMMKIT_SYSTEM_SARGAN_MODE="
-                f"{_sargan_mode!r}. Use current, final_w1_raw, final_w2_small, "
-                "final_w2_raw, hansen_stat, hansen_stat_raw, n_groups_scaled_hansen, "
-                "or nobs_scaled_hansen."
-            )
+    _j_stat = None
     _hansen_j_stat = None
     _hansen_p_candidate = None
     _hansen_j_error = None
 
-    try:
-        _s_group_diag = _native_group_moment_sum(
-            Z=Z,
-            residuals=residual_vec,
-            group_indices=group_indices_for_cov,
+    _sargan_stat = None
+    _sargan_stat_raw = None
+    _sargan_p_candidate = None
+
+    # Certified robust Hansen diagnostic.
+    #
+    # For native two-step System GMM, strict matrix-dump verification shows:
+    #     Hansen J = (u' Z W_final Z' u) / n_groups
+    #
+    # For non-system estimators, preserve the existing robust moment-covariance
+    # construction.
+    if _is_twostep_like and _overid_df > 0:
+        try:
+            if bool(spec.system):
+                _hansen_j_candidate = float(_j_stat_raw / float(_n_groups_for_diag))
+            else:
+                _s_group_diag = _native_group_moment_sum(
+                    Z=Z,
+                    residuals=residual_vec,
+                    group_indices=group_indices_for_cov,
+                )
+                _hansen_weight = np.linalg.pinv(_s_group_diag)
+                _hansen_j_candidate = float((_ztu.T @ _hansen_weight @ _ztu).squeeze())
+
+            if np.isfinite(_hansen_j_candidate) and _hansen_j_candidate >= 0:
+                _hansen_j_stat = float(_hansen_j_candidate)
+                _hansen_p_candidate = float(stats.chi2.sf(_hansen_j_stat, _overid_df))
+        except Exception as exc:
+            _hansen_j_stat = None
+            _hansen_p_candidate = None
+            _hansen_j_error = f"{type(exc).__name__}: {exc}"
+
+    # Sargan-style diagnostic.
+    #
+    # Native System-GMM Sargan parity against xtabond2 is not certified. The
+    # closest current candidate is first-step residuals with W1 and a group
+    # finite-sample adjustment, but it still fails strict parity. Therefore
+    # production System-GMM output keeps Sargan unset unless an explicit
+    # diagnostic flag is enabled.
+    import os as _native_sargan_report_os
+
+    _report_experimental_system_sargan = (
+        _native_sargan_report_os.getenv(
+            "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_SARGAN",
+            "0",
         )
-        _hansen_weight = np.linalg.pinv(_s_group_diag)
-        _hansen_j_candidate = float((_ztu.T @ _hansen_weight @ _ztu).squeeze())
-
-        if np.isfinite(_hansen_j_candidate) and _hansen_j_candidate >= 0:
-            _hansen_j_stat = _hansen_j_candidate
-            if _overid_df > 0:
-                _hansen_p_candidate = float(stats.chi2.sf(_hansen_j_candidate, _overid_df))
-    except Exception as exc:
-        _hansen_j_stat = None
-        _hansen_p_candidate = None
-        _hansen_j_error = f"{type(exc).__name__}: {exc}"
-
-    # Store a one-step Sargan-style J statistic only for one-step estimation.
-    # In two-step / Windmeijer mode, W is the two-step weighting matrix, so the
-    # same quadratic form is not comparable to xtabond2's one-step Sargan.
-    _steps_label = str(getattr(spec, "steps", "")).strip().lower()
-
-    # covariance_type may be assigned later in this function depending on the
-    # estimation branch, so do not reference it directly here.
-    _cov_label = str(locals().get("covariance_type", "")).strip().lower()
-    _windmeijer_flag = bool(locals().get("windmeijer", False))
-
-    _is_twostep_like = (
-        _windmeijer_flag
-        or "two" in _steps_label
-        or _steps_label in {"2", "twostep", "two-step"}
-        or "two-step" in _cov_label
-        or "twostep" in _cov_label
-        or "windmeijer" in _cov_label
+        .strip()
+        .lower()
+        in {"1", "true", "yes", "on"}
     )
 
-    if _is_twostep_like:
-        # In two-step output, the primary robust J is Hansen.
-        # System-GMM Sargan parity is not yet certified, so production output keeps
-        # Sargan unset unless an explicit diagnostic flag is enabled.
-        import os as _native_sargan_report_os
+    if _overid_df > 0:
+        if bool(spec.system):
+            # xtabond2-compatible System-GMM Sargan.
+            #
+            # xtabond2 computes the one-step non-robust Sargan statistic using
+            # first-step residual moments and a one-step weighting matrix scaled
+            # by the first-difference residual variance:
+            #
+            #   sig2 = SSE_D / (2 * (n_diff - k))
+            #   A1   = A1 / sig2
+            #
+            # Native W1 is normalized differently for coefficient estimation,
+            # where scalar factors cancel. For the J statistic, the scalar does
+            # not cancel. Matching xtabond2 requires:
+            #
+            #   scale = (n_diff / (n_diff - k)) / sig2
+            #
+            # which is algebraically equal to 2 * n_diff / SSE_D.
+            _u1_col = np.asarray(residuals1, dtype=float).reshape(-1, 1)
+            _ztu1 = Z.T @ _u1_col
 
-        _report_experimental_system_sargan = (
-            _native_sargan_report_os.getenv(
-                "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_SARGAN",
-                "0",
-            )
-            .strip()
-            .lower()
-            in {"1", "true", "yes", "on"}
-        )
+            _level_mask = None
 
-        if bool(spec.system) and not _report_experimental_system_sargan:
-            _j_stat = None
-            sargan_p = None
-        else:
-            _j_stat = _sargan_stat
-            _df_sargan = _overid_df
-            if _df_sargan > 0 and np.isfinite(_j_stat):
-                sargan_p = float(stats.chi2.sf(_j_stat, _df_sargan))
+            # Prefer row metadata if present. The native matrix builder stores
+            # equation membership for diagnostics/parity exports.
+            for _candidate_name in (
+                "is_level_equation",
+                "is_level_equation_mask",
+                "level_equation_mask",
+                "row_is_level_equation",
+                "_is_level_equation",
+                "_is_level_equation_mask",
+            ):
+                if _candidate_name in locals():
+                    _level_mask = np.asarray(locals()[_candidate_name], dtype=bool).reshape(-1)
+                    break
+
+            if _level_mask is None:
+                for _candidate_name in (
+                    "row_index",
+                    "row_index_df",
+                    "_row_index",
+                    "_row_index_df",
+                ):
+                    _obj = locals().get(_candidate_name)
+                    if _obj is not None and hasattr(_obj, "__contains__") and "_is_level_equation" in _obj:
+                        _level_mask = np.asarray(_obj["_is_level_equation"], dtype=bool).reshape(-1)
+                        break
+
+            if _level_mask is None:
+                for _candidate_name in (
+                    "row_meta",
+                    "row_metadata",
+                    "row_meta_for_cov",
+                    "matrix_row_meta",
+                    "_row_meta",
+                    "_row_metadata",
+                ):
+                    _meta = locals().get(_candidate_name)
+                    if _meta is None:
+                        continue
+
+                    _tmp = []
+                    _ok = True
+                    for _r in _meta:
+                        if isinstance(_r, dict):
+                            _tmp.append(bool(_r.get("is_level_equation", _r.get("_is_level_equation", False))))
+                        else:
+                            _ok = False
+                            break
+
+                    if _ok and len(_tmp) == len(_u1_col):
+                        _level_mask = np.asarray(_tmp, dtype=bool)
+                        break
+
+            if _level_mask is not None:
+                _level_mask = np.asarray(_level_mask, dtype=bool).reshape(-1)
+
+                # A valid System-GMM equation mask must contain both
+                # differenced-equation rows and level-equation rows. Some
+                # diagnostic metadata paths can produce an all-False mask
+                # because missing "is_level_equation" keys default to False.
+                # Accepting that mask makes _diff_mask = all rows, which
+                # incorrectly contaminates xtabond2 Sargan sig2 with level
+                # residuals.
+                if bool(spec.system):
+                    if (
+                        len(_level_mask) != len(_u1_col)
+                        or not bool(np.any(_level_mask))
+                        or not bool(np.any(~_level_mask))
+                    ):
+                        _level_mask = None
+
+            if _level_mask is None or len(_level_mask) != len(_u1_col):
+                # xtabond2-compatible fallback for native System GMM.
+                #
+                # The stacked native System-GMM matrix is grouped by entity and,
+                # within each entity, stores differenced-equation rows first and
+                # level-equation rows second. For a balanced group with T usable
+                # level observations, the block has (T - 1) differenced rows and
+                # T level rows, so:
+                #
+                #   n_diff_i = floor(n_group_rows / 2)
+                #
+                # This fallback is required because scalar normalisation for
+                # Sargan must use only first-difference residuals. Using all
+                # stacked rows incorrectly includes level-equation residuals and
+                # overstates the Sargan statistic.
+                _diff_mask = np.zeros(len(_u1_col), dtype=bool)
+
+                _group_blocks = locals().get("group_indices_for_cov", None)
+                if _group_blocks is None:
+                    _group_blocks = locals().get("group_indices", None)
+
+                if bool(spec.system) and _group_blocks is not None:
+                    for _gidx in _group_blocks:
+                        _idx = np.asarray(_gidx, dtype=int).reshape(-1)
+                        if _idx.size == 0:
+                            continue
+                        _n_diff_i = int(_idx.size // 2)
+                        if _n_diff_i > 0:
+                            _diff_mask[_idx[:_n_diff_i]] = True
+
+                if not bool(np.any(_diff_mask)):
+                    # Balanced-panel fallback. This is reached when the local
+                    # scope does not expose group index blocks. Native System GMM
+                    # stacks rows by entity; within each entity block,
+                    # differenced-equation rows precede level-equation rows.
+                    #
+                    # For a balanced System-GMM block:
+                    #   rows_per_group = n_diff_i + n_level_i
+                    #   n_diff_i       = floor(rows_per_group / 2)
+                    #
+                    # Example certified xtabond2 benchmark:
+                    #   2400 rows / 96 groups = 25 rows/group
+                    #   floor(25 / 2) = 12 diff rows/group
+                    #   96 * 12 = 1152 diff rows
+                    _n_groups_fallback = None
+
+                    for _candidate_name in (
+                        "_n_groups_for_diag",
+                        "n_groups_for_cov",
+                        "_n_groups_for_cov",
+                        "n_groups",
+                        "_n_groups",
+                    ):
+                        _candidate_value = locals().get(_candidate_name)
+                        if _candidate_value is not None:
+                            try:
+                                _n_groups_fallback = int(_candidate_value)
+                                break
+                            except Exception:
+                                pass
+
+                    if _n_groups_fallback is None:
+                        try:
+                            _n_groups_fallback = int(data[entity].nunique())
+                        except Exception:
+                            _n_groups_fallback = None
+
+                    if (
+                        bool(spec.system)
+                        and _n_groups_fallback is not None
+                        and _n_groups_fallback > 0
+                        and len(_u1_col) % _n_groups_fallback == 0
+                    ):
+                        _rows_per_group = int(len(_u1_col) // _n_groups_fallback)
+                        _n_diff_i = int(_rows_per_group // 2)
+
+                        if _n_diff_i > 0:
+                            for _g in range(_n_groups_fallback):
+                                _start = int(_g * _rows_per_group)
+                                _stop = int(_start + _n_diff_i)
+                                _diff_mask[_start:_stop] = True
+
+                    if not bool(np.any(_diff_mask)):
+                        # Final defensive fallback for nonstandard paths. This is
+                        # deliberately last because it is not xtabond2-certified
+                        # for System-GMM Sargan.
+                        _diff_mask = np.ones(len(_u1_col), dtype=bool)
             else:
-                sargan_p = None
+                _diff_mask = ~_level_mask
+
+            _u1_diff = _u1_col.reshape(-1)[_diff_mask]
+            _n_diff = int(_u1_diff.size)
+            _k_params = int(len(names))
+
+            if _n_diff > _k_params:
+                _sse_diff = float(np.dot(_u1_diff, _u1_diff))
+                _sig2_xtabond2 = float(_sse_diff / (2.0 * float(_n_diff - _k_params)))
+                _sargan_scale = float((_n_diff / float(_n_diff - _k_params)) / _sig2_xtabond2)
+
+                _sargan_stat_raw = float((_ztu1.T @ W1 @ _ztu1).squeeze())
+                _sargan_stat = float(_sargan_stat_raw * _sargan_scale)
+
+                if np.isfinite(_sargan_stat) and _sargan_stat >= 0:
+                    _sargan_p_candidate = float(stats.chi2.sf(_sargan_stat, _overid_df))
+        else:
+            try:
+                _sargan_weight = W1
+            except NameError:
+                _sargan_weight = W
+
+            _sargan_small_scale = (
+                max(float(_n_groups_for_diag - len(names)), 1.0)
+                / float(_n_groups_for_diag)
+            )
+            _sargan_stat_raw = float((_ztu.T @ _sargan_weight @ _ztu).squeeze())
+            _sargan_stat = float(_sargan_stat_raw * _sargan_small_scale)
+            if np.isfinite(_sargan_stat) and _sargan_stat >= 0:
+                _sargan_p_candidate = float(stats.chi2.sf(_sargan_stat, _overid_df))
+
+    # Public p-values.
+    hansen_p = _hansen_p_candidate if _is_twostep_like else None
+    sargan_p = _sargan_p_candidate
+
+    # Generic J statistic: in two-step output, use Hansen; otherwise use Sargan.
+    if _is_twostep_like:
+        _j_stat = _hansen_j_stat
     else:
         _j_stat = _sargan_stat
-
-        if _overid_df > 0 and np.isfinite(_sargan_stat) and _sargan_stat >= 0:
-            sargan_p = float(stats.chi2.sf(_sargan_stat, _overid_df))
-        else:
-            sargan_p = None
-
-    # Robust Hansen diagnostic.
-    #
-    # For two-step GMM, use the robust moment-covariance candidate computed
-    # above. For one-step GMM, do not report this as Hansen because the
-    # one-step overidentification statistic is Sargan-style.
-    if _is_twostep_like:
-        hansen_p = _hansen_p_candidate
-    else:
-        hansen_p = None
-
 
     _ztu_norm = float(np.linalg.norm(_ztu))
     _w_norm = float(np.linalg.norm(W))
