@@ -10,39 +10,55 @@
 
 # systemgmmkit 0.5.9
 
-`systemgmmkit` is a Python package for panel-data econometrics. It provides a unified workflow for baseline linear models, panel estimators, instrumental-variable models, dynamic-panel GMM estimation, diagnostics, post-estimation, and reproducible reporting.
+`systemgmmkit` is a Python package for applied panel-data econometrics. It provides a unified workflow for baseline linear models, panel estimators, instrumental-variable models, dynamic-panel GMM estimation, diagnostics, post-estimation, and reproducible reporting.
 
 The package currently supports:
 
-* Ordinary Least Squares
-* Pooled OLS
-* Fixed Effects
-* Random Effects
-* Panel IV / 2SLS
-* Difference GMM
-* System GMM
-* Diagnostics
-* Post-estimation
-* Reproducible reporting workflows
+* Ordinary Least Squares;
+* Pooled OLS;
+* Fixed Effects;
+* Random Effects;
+* Panel IV / 2SLS;
+* Difference GMM;
+* System GMM;
+* diagnostic reporting;
+* post-estimation utilities;
+* reproducible reporting workflows.
 
-`systemgmmkit` is designed for applied empirical research in economics, finance, management, operations, public policy, political economy, industrial organization, productivity analysis, development economics, and other panel-data settings.
+`systemgmmkit` is designed for empirical researchers working in economics, finance, management, operations, productivity analysis, public policy, development economics, political economy, industrial organization, and other panel-data settings.
 
 ---
 
 # Why systemgmmkit?
 
-Applied panel-data workflows often require researchers to combine several tools to estimate baseline models, fixed-effects models, random-effects models, IV models, dynamic-panel GMM models, diagnostic tests, marginal effects, and publication-ready tables.
+Applied panel-data research often requires several tools for one workflow:
 
-`systemgmmkit` aims to bring these workflows into a consistent Python API.
+* baseline OLS models;
+* pooled panel regressions;
+* fixed-effects and random-effects models;
+* instrumental-variable models;
+* dynamic-panel GMM models;
+* diagnostic tests;
+* post-estimation analysis;
+* reproducible tables and exports.
+
+`systemgmmkit` aims to bring these pieces into a consistent Python API.
 
 The package is built around four principles:
 
-1. Explicit model specification.
-2. Reproducible empirical workflows.
-3. Transparent diagnostics.
-4. Verification against established reference implementations.
+1. **Explicit model specification**
+   Model assumptions should be visible in the code, not hidden inside estimation defaults.
 
-The goal is not only to estimate models, but to make modelling choices clear enough for replication, review, and publication.
+2. **Reproducible empirical workflows**
+   Estimation, diagnostics, and reporting should be easy to rerun and inspect.
+
+3. **Transparent diagnostics**
+   Dynamic-panel GMM results should expose sample size, instrument count, AR tests, Hansen/Sargan tests, covariance type, and backend metadata.
+
+4. **Verification against reference implementations**
+   Estimators are benchmarked against established Stata implementations where practical.
+
+The objective is not only to estimate models, but to make modelling choices clear enough for replication, review, and publication.
 
 ---
 
@@ -65,12 +81,12 @@ New and expanded public APIs include:
 * `wald_test()`
 * `marginal_effects()`
 
-Version `0.5.9` also improves the documentation of dynamic GMM lag handling by clearly distinguishing:
+Version `0.5.9` also improves dynamic GMM documentation by clearly distinguishing:
 
 * lagged variables included directly in the structural equation; and
 * lagged values used internally as GMM instruments.
 
-This distinction is essential for correct empirical modelling.
+This distinction is important for correct empirical modelling and for avoiding confusion between structural lags and instrument lag windows.
 
 ---
 
@@ -155,17 +171,17 @@ print(systemgmmkit.__version__)
 
 Verification is a core design principle of `systemgmmkit`.
 
-Whenever practical, estimators are benchmarked against established Stata implementations, including:
+Where practical, estimators are benchmarked against established Stata implementations, including:
 
-* `regress`
-* `xtreg`
-* `ivregress`
-* `xtabond2`
-* `xtdpdgmm`
+* `regress`;
+* `xtreg`;
+* `ivregress`;
+* `xtabond2`;
+* `xtdpdgmm`.
 
-Benchmark scripts, comparison workflows, and validation artifacts are maintained within the repository.
+Benchmark scripts, comparison workflows, and validation artifacts are maintained in the repository.
 
-The objective is not merely to produce estimates. The objective is to provide transparent evidence that estimates match trusted reference implementations under maintained benchmark specifications.
+The goal is not merely to produce estimates. The goal is to provide transparent evidence that estimates match trusted reference implementations under maintained benchmark specifications.
 
 ---
 
@@ -192,7 +208,66 @@ The major estimation paths currently exposed through the public API have either 
 | AR(1) diagnostics          | PASS_XTABOND2_PARITY  |
 | AR(2) diagnostics          | PASS_XTABOND2_PARITY  |
 
-Validation claims apply to the maintained benchmark specifications used in the repository. Users should still inspect their own model diagnostics, instrument counts, sample construction, and identification assumptions.
+Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case. Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
+
+---
+
+# System GMM xtabond2 Certification
+
+The native System GMM implementation has been certified against Stata `xtabond2` on a maintained collapsed two-step benchmark specification.
+
+Certified components include:
+
+* coefficient estimates;
+* Windmeijer-corrected two-step standard errors;
+* sample size;
+* instrument count;
+* Hansen overidentification diagnostic;
+* Sargan overidentification diagnostic;
+* Arellano-Bond AR(1) diagnostic;
+* Arellano-Bond AR(2) diagnostic.
+
+The maintained benchmark uses a controlled dynamic-panel specification with:
+
+* collapsed instruments;
+* restricted GMM lag windows;
+* two-step robust estimation;
+* Windmeijer correction;
+* strict numerical comparison against `xtabond2`.
+
+Under this maintained benchmark, the native implementation reproduces the `xtabond2` reference results within declared strict numerical tolerance.
+
+---
+
+# External CMAPSS FD001 Validation
+
+In addition to the controlled benchmark, System GMM was externally validated on CMAPSS FD001 publication-style panel specifications.
+
+Two validation models were used.
+
+Risk model:
+
+```text
+risk ~ L1.risk + degradation_index + sensor_mean_z + pc2 + op_setting1 + op_setting2
+```
+
+Degradation model:
+
+```text
+degradation_index ~ L1.degradation_index + sensor_mean_z + pc2 + pc3 + op_setting1 + op_setting2
+```
+
+Across both FD001 validation models, `systemgmmkit` reproduces `xtabond2` results for:
+
+* coefficient estimates;
+* Windmeijer-corrected standard errors;
+* sample size;
+* instrument count;
+* Hansen diagnostics;
+* Sargan diagnostics;
+* AR(1) and AR(2) diagnostics within declared external-validation tolerance.
+
+The FD001 validation is used as an independent application check. The controlled `xtabond2` benchmark remains the strict certification benchmark.
 
 ---
 
@@ -377,21 +452,22 @@ ivregress 2sls y x1 z1 (x2 = z2)
 
 `systemgmmkit` supports both Difference GMM and System GMM for dynamic panel-data analysis.
 
-The package is designed around an explicit specification workflow:
+The recommended workflow is:
 
 1. Define the model specification.
 2. Classify regressors according to their exogeneity assumptions.
 3. Define the instrument strategy.
 4. Run the estimator.
-5. Review diagnostics and post-estimation results.
+5. Review diagnostics before interpreting coefficients.
+6. Export or report results.
 
-The same workflow applies whether you are estimating Difference GMM or System GMM.
+The same workflow applies whether estimating Difference GMM or System GMM.
 
 ---
 
 # Variable Classification Guide
 
-Correct variable classification is one of the most important modelling decisions in dynamic panel estimation.
+Correct variable classification is one of the most important modelling decisions in dynamic-panel estimation.
 
 | Classification | Interpretation                                  | Examples                                   |
 | -------------- | ----------------------------------------------- | ------------------------------------------ |
@@ -448,10 +524,8 @@ df = df.dropna(
 
 A lagged endogenous variable can be included directly in the structural equation.
 
-Example:
-
 ```python
-regressors=[
+regressors = [
     "L1_y",
     "investment",
     "L1_investment",
@@ -459,14 +533,14 @@ regressors=[
     "firm_size",
 ]
 
-endogenous=[
+endogenous = [
     "L1_y",
     "investment",
     "L1_investment",
     "L2_investment",
 ]
 
-exogenous=[
+exogenous = [
     "firm_size",
 ]
 ```
@@ -479,10 +553,8 @@ In this example, `L1_investment` and `L2_investment` are model regressors. They 
 
 A lagged predetermined variable can also be included directly in the structural equation.
 
-Example:
-
 ```python
-regressors=[
+regressors = [
     "L1_y",
     "cashflow",
     "L1_cashflow",
@@ -490,17 +562,17 @@ regressors=[
     "firm_size",
 ]
 
-endogenous=[
+endogenous = [
     "L1_y",
 ]
 
-predetermined=[
+predetermined = [
     "cashflow",
     "L1_cashflow",
     "L2_cashflow",
 ]
 
-exogenous=[
+exogenous = [
     "firm_size",
 ]
 ```
@@ -513,22 +585,20 @@ Lagging a predetermined variable does not automatically make it exogenous. A lag
 
 A lagged exogenous variable can be included directly in the structural equation.
 
-Example:
-
 ```python
-regressors=[
+regressors = [
     "L1_y",
     "investment",
     "firm_size",
     "L1_firm_size",
 ]
 
-endogenous=[
+endogenous = [
     "L1_y",
     "investment",
 ]
 
-exogenous=[
+exogenous = [
     "firm_size",
     "L1_firm_size",
 ]
@@ -551,7 +621,7 @@ This means that the maintained GMM instrument lag-window strategy is applied at 
 Different structural lags are supported by manually creating lagged columns:
 
 ```python
-regressors=[
+regressors = [
     "L1_y",
     "investment",
     "L1_investment",
@@ -569,7 +639,7 @@ However, in the documented `0.5.9` public API, role-specific or variable-specifi
 Do not document this as current `0.5.9` functionality:
 
 ```python
-gmm_lags_by_role={
+gmm_lags_by_role = {
     "endogenous": (2, 5),
     "predetermined": (1, 3),
 }
@@ -578,7 +648,7 @@ gmm_lags_by_role={
 Do not document this as current `0.5.9` functionality:
 
 ```python
-gmm_lags_by_variable={
+gmm_lags_by_variable = {
     "investment": (2, 5),
     "cashflow": (1, 3),
 }
@@ -588,185 +658,9 @@ These are planned next-release features.
 
 ---
 
-## Difference GMM with lagged endogenous, predetermined, and exogenous regressors
-
-```python
-from systemgmmkit import build_difference_gmm_spec, run_difference_gmm
-
-spec = build_difference_gmm_spec(
-    dependent="y",
-
-    regressors=[
-        "L1_y",
-        "investment",
-        "L1_investment",
-        "L2_investment",
-        "cashflow",
-        "L1_cashflow",
-        "L2_cashflow",
-        "firm_size",
-        "L1_firm_size",
-    ],
-
-    endogenous=[
-        "L1_y",
-        "investment",
-        "L1_investment",
-        "L2_investment",
-    ],
-
-    predetermined=[
-        "cashflow",
-        "L1_cashflow",
-        "L2_cashflow",
-    ],
-
-    exogenous=[
-        "firm_size",
-        "L1_firm_size",
-    ],
-
-    gmm_lags=(2, 4),
-    collapse=True,
-)
-
-result = run_difference_gmm(
-    spec,
-    data=df,
-    entity="firm_id",
-    time="year",
-    backend="auto",
-)
-```
-
-In this example:
-
-* `L1_investment` and `L2_investment` are included directly in the structural equation and classified as endogenous.
-* `L1_cashflow` and `L2_cashflow` are included directly in the structural equation and classified as predetermined.
-* `L1_firm_size` is included directly in the structural equation and classified as exogenous.
-* `gmm_lags=(2, 4)` controls the maintained specification-level instrument lag window.
-* `collapse=True` limits instrument proliferation.
-
----
-
-## System GMM with lagged endogenous, predetermined, and exogenous regressors
-
-```python
-from systemgmmkit import build_system_gmm_spec, run_system_gmm
-
-spec = build_system_gmm_spec(
-    dependent="y",
-
-    regressors=[
-        "L1_y",
-        "investment",
-        "L1_investment",
-        "L2_investment",
-        "cashflow",
-        "L1_cashflow",
-        "L2_cashflow",
-        "firm_size",
-        "L1_firm_size",
-    ],
-
-    endogenous=[
-        "L1_y",
-        "investment",
-        "L1_investment",
-        "L2_investment",
-    ],
-
-    predetermined=[
-        "cashflow",
-        "L1_cashflow",
-        "L2_cashflow",
-    ],
-
-    exogenous=[
-        "firm_size",
-        "L1_firm_size",
-    ],
-
-    gmm_lags=(2, 4),
-    collapse=True,
-    windmeijer=True,
-)
-
-result = run_system_gmm(
-    spec,
-    data=df,
-    entity="firm_id",
-    time="year",
-    backend="auto",
-)
-```
-
-System GMM uses both the differenced equation and the levels equation. The same distinction still applies: lagged variables in `regressors` are model covariates, while `gmm_lags` controls the instrument lag window.
-
----
-
-## Equivalent Stata idea
-
-```stata
-xtabond2 y L.y investment L.investment L2.investment ///
-    cashflow L.cashflow L2.cashflow firm_size L.firm_size, ///
-    gmm(L.y investment L.investment L2.investment, lag(2 4) collapse) ///
-    gmm(cashflow L.cashflow L2.cashflow, lag(2 4) collapse) ///
-    iv(firm_size L.firm_size) ///
-    twostep robust small
-```
-
-This Stata command illustrates the same separation:
-
-* `L.investment` and `L2.investment` appear in the model equation and are treated as GMM-style endogenous variables.
-* `L.cashflow` and `L2.cashflow` appear in the model equation and are treated as GMM-style predetermined variables.
-* `L.firm_size` appears in the model equation and is treated as IV-style exogenous.
-* `lag(2 4)` controls which lagged values are used as instruments.
-* `collapse` limits the number of instruments.
-
----
-
-## Important Modelling Note
-
-Do not confuse these two decisions:
-
-```python
-regressors=["L1_investment"]
-```
-
-means:
-
-```text
-Include lagged investment as an explanatory variable.
-```
-
-while:
-
-```python
-gmm_lags=(2, 4)
-```
-
-means:
-
-```text
-Use lagged values, usually lags 2 through 4, as GMM instruments.
-```
-
-For the current public API, `gmm_lags=(2, 4)` applies the maintained lag-window strategy at the specification level.
-
-Safe rule:
-
-```text
-Create lagged regressors yourself when they belong in the model equation.
-Classify each lagged regressor according to its maintained exogeneity assumption.
-Use gmm_lags only to control the instrument lag window.
-```
-
----
-
 # Difference GMM
 
-Difference GMM is appropriate when:
+Difference GMM is often appropriate when:
 
 * the model contains a lagged dependent variable;
 * regressors may be endogenous or predetermined;
@@ -791,22 +685,18 @@ from systemgmmkit import build_difference_gmm_spec, run_difference_gmm
 
 spec = build_difference_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
 )
@@ -840,22 +730,18 @@ Use endogenous classification when a regressor may be correlated with current sh
 ```python
 spec = build_difference_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
 )
@@ -863,12 +749,12 @@ spec = build_difference_gmm_spec(
 
 Common examples of endogenous regressors include:
 
-* investment
-* leverage
-* aid flows
-* credit supply
-* R&D spending
-* production decisions
+* investment;
+* leverage;
+* aid flows;
+* credit supply;
+* R&D spending;
+* production decisions.
 
 ---
 
@@ -879,25 +765,20 @@ Use predetermined classification when a variable may respond to past shocks but 
 ```python
 spec = build_difference_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "cashflow",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
     ],
-
     predetermined=[
         "cashflow",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
 )
@@ -905,11 +786,11 @@ spec = build_difference_gmm_spec(
 
 Common examples of predetermined variables include:
 
-* cash flow
-* lagged policy variables
-* operational backlog
-* maintenance workload
-* delayed implementation measures
+* cash flow;
+* lagged policy variables;
+* operational backlog;
+* maintenance workload;
+* delayed implementation measures.
 
 ---
 
@@ -920,7 +801,6 @@ Use exogenous classification when the variable is assumed independent of the dis
 ```python
 spec = build_difference_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
@@ -928,18 +808,15 @@ spec = build_difference_gmm_spec(
         "year2022",
         "year2023",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     exogenous=[
         "firm_size",
         "year2022",
         "year2023",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
 )
@@ -947,10 +824,10 @@ spec = build_difference_gmm_spec(
 
 Common examples of exogenous variables include:
 
-* time dummies
-* industry dummies
-* country dummies
-* externally determined controls
+* time dummies;
+* industry dummies;
+* country dummies;
+* externally determined controls.
 
 ---
 
@@ -961,27 +838,22 @@ Instrument count should generally be controlled to reduce overfitting and avoid 
 ```python
 spec = build_difference_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
         "cashflow",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     predetermined=[
         "cashflow",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
 )
@@ -1004,7 +876,7 @@ System GMM extends Difference GMM by combining:
 * the differenced equation; and
 * the levels equation.
 
-System GMM is often preferred when variables are highly persistent and lagged levels become weak instruments for differenced variables.
+System GMM is often preferred when variables are highly persistent and lagged levels are weak instruments for differenced variables.
 
 The public API consists of:
 
@@ -1024,22 +896,18 @@ from systemgmmkit import build_system_gmm_spec, run_system_gmm
 
 spec = build_system_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
     windmeijer=True,
@@ -1072,22 +940,18 @@ xtabond2 y L.y investment firm_size, ///
 ```python
 spec = build_system_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
     windmeijer=True,
@@ -1101,25 +965,20 @@ spec = build_system_gmm_spec(
 ```python
 spec = build_system_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "cashflow",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
     ],
-
     predetermined=[
         "cashflow",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
     windmeijer=True,
@@ -1133,7 +992,6 @@ spec = build_system_gmm_spec(
 ```python
 spec = build_system_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
@@ -1142,26 +1000,132 @@ spec = build_system_gmm_spec(
         "year2022",
         "year2023",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
     ],
-
     predetermined=[
         "cashflow",
     ],
-
     exogenous=[
         "firm_size",
         "year2022",
         "year2023",
     ],
-
     gmm_lags=(2, 4),
     collapse=True,
     windmeijer=True,
 )
+```
+
+---
+
+## System GMM with lagged endogenous, predetermined, and exogenous regressors
+
+```python
+from systemgmmkit import build_system_gmm_spec, run_system_gmm
+
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+        "L2_investment",
+        "cashflow",
+        "L1_cashflow",
+        "L2_cashflow",
+        "firm_size",
+        "L1_firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+        "L2_investment",
+    ],
+    predetermined=[
+        "cashflow",
+        "L1_cashflow",
+        "L2_cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+        "L1_firm_size",
+    ],
+    gmm_lags=(2, 4),
+    collapse=True,
+    windmeijer=True,
+)
+
+result = run_system_gmm(
+    spec,
+    data=df,
+    entity="firm_id",
+    time="year",
+    backend="auto",
+)
+```
+
+System GMM uses both the differenced equation and the levels equation. The same distinction still applies: lagged variables in `regressors` are model covariates, while `gmm_lags` controls the instrument lag window.
+
+---
+
+## Equivalent Stata idea
+
+```stata
+xtabond2 y L.y investment L.investment L2.investment ///
+    cashflow L.cashflow L2.cashflow firm_size L.firm_size, ///
+    gmm(L.y investment L.investment L2.investment, lag(2 4) collapse) ///
+    gmm(cashflow L.cashflow L2.cashflow, lag(2 4) collapse) ///
+    iv(firm_size L.firm_size) ///
+    twostep robust small
+```
+
+This Stata command illustrates the same separation:
+
+* `L.investment` and `L2.investment` appear in the model equation and are treated as GMM-style endogenous variables;
+* `L.cashflow` and `L2.cashflow` appear in the model equation and are treated as GMM-style predetermined variables;
+* `L.firm_size` appears in the model equation and is treated as IV-style exogenous;
+* `lag(2 4)` controls which lagged values are used as instruments;
+* `collapse` limits the number of instruments.
+
+---
+
+## Important Modelling Note
+
+Do not confuse these two decisions:
+
+```python
+regressors = ["L1_investment"]
+```
+
+means:
+
+```text
+Include lagged investment as an explanatory variable.
+```
+
+while:
+
+```python
+gmm_lags = (2, 4)
+```
+
+means:
+
+```text
+Use lagged values, usually lags 2 through 4, as GMM instruments.
+```
+
+For the current public API, `gmm_lags=(2, 4)` applies the maintained lag-window strategy at the specification level.
+
+Safe rule:
+
+```text
+Create lagged regressors yourself when they belong in the model equation.
+Classify each lagged regressor according to its maintained exogeneity assumption.
+Use gmm_lags only to control the instrument lag window.
 ```
 
 ---
@@ -1402,7 +1366,7 @@ print(me)
 
 For linear estimators, marginal effects correspond to estimated slopes.
 
-For more complex nonlinear or interaction-heavy models, users should verify how the marginal effect is defined and whether additional manual computation is required.
+For nonlinear or interaction-heavy models, users should verify how the marginal effect is defined and whether additional manual computation is required.
 
 ---
 
@@ -1414,7 +1378,7 @@ Results can be exported to:
 * CSV;
 * LaTeX.
 
-`systemgmmkit` is also designed to integrate with:
+`systemgmmkit` is designed to integrate with:
 
 * `universal-output-hub`;
 * publication pipelines;
@@ -1432,6 +1396,7 @@ Recommended reporting fields include:
 * instrument count;
 * AR diagnostics;
 * Hansen diagnostics;
+* Sargan diagnostics;
 * backend;
 * package version.
 
@@ -1520,7 +1485,6 @@ Planned API:
 ```python
 spec = build_system_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
@@ -1529,29 +1493,23 @@ spec = build_system_gmm_spec(
         "L1_cashflow",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
         "L1_investment",
     ],
-
     predetermined=[
         "cashflow",
         "L1_cashflow",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
-
     gmm_lags_by_role={
         "endogenous": (2, 5),
         "predetermined": (1, 3),
     },
-
     collapse=True,
     windmeijer=True,
 )
@@ -1584,7 +1542,6 @@ Planned API:
 ```python
 spec = build_system_gmm_spec(
     dependent="y",
-
     regressors=[
         "L1_y",
         "investment",
@@ -1593,29 +1550,23 @@ spec = build_system_gmm_spec(
         "L1_cashflow",
         "firm_size",
     ],
-
     endogenous=[
         "L1_y",
         "investment",
         "L1_investment",
     ],
-
     predetermined=[
         "cashflow",
         "L1_cashflow",
     ],
-
     exogenous=[
         "firm_size",
     ],
-
     gmm_lags=(2, 4),
-
     gmm_lags_by_role={
         "endogenous": (2, 5),
         "predetermined": (1, 3),
     },
-
     gmm_lags_by_variable={
         "L1_y": (2, 4),
         "investment": (3, 5),
@@ -1623,7 +1574,6 @@ spec = build_system_gmm_spec(
         "cashflow": (1, 2),
         "L1_cashflow": (2, 3),
     },
-
     collapse=True,
     windmeijer=True,
 )
@@ -1650,7 +1600,7 @@ Exogenous variables should remain IV-style by default.
 Recommended design:
 
 ```python
-exogenous=[
+exogenous = [
     "firm_size",
     "L1_firm_size",
 ]
@@ -1667,12 +1617,12 @@ df["L1_firm_size"] = df.groupby("firm_id")["firm_size"].shift(1)
 Then include them as regressors and classify them as exogenous if strict exogeneity is defensible:
 
 ```python
-regressors=[
+regressors = [
     "firm_size",
     "L1_firm_size",
 ]
 
-exogenous=[
+exogenous = [
     "firm_size",
     "L1_firm_size",
 ]
