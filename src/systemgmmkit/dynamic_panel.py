@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import os
 import warnings
 from contextlib import suppress
 from typing import Any, Literal
@@ -18,6 +19,18 @@ class DynamicPanelBackendError(RuntimeError):
 
 def _is_system_gmm(spec: Any) -> bool:
     return bool(getattr(spec, "system", False))
+
+
+def _is_twostep_like(spec: Any) -> bool:
+    """Return True when the spec requests two-step/iterated GMM."""
+    steps = (
+        str(getattr(spec, "steps", "twostep"))
+        .lower()
+        .replace("-", "")
+        .replace("_", "")
+        .replace(" ", "")
+    )
+    return steps in {"twostep", "two", "2", "iterated"}
 
 
 def _append_result_note(result: Any, note: str) -> Any:
@@ -99,12 +112,34 @@ def _call_pydynpd_backend(
     )
 
 
+def _resolve_native_windmeijer(spec: Any, windmeijer: bool | None) -> bool:
+    """Resolve native Windmeijer behavior.
+
+    Policy:
+    - Explicit windmeijer=True/False wins.
+    - Environment flag is retained only as a development override.
+    - Native System GMM two-step defaults to Windmeijer because the maintained
+      xtabond2 benchmark uses two-step robust Windmeijer-style inference.
+    - Difference GMM keeps its previous behavior unless explicitly requested.
+    """
+
+    if windmeijer is not None:
+        return bool(windmeijer)
+
+    env_value = os.getenv("SYSTEMGMMKIT_NATIVE_WINDMEIJER")
+    if env_value is not None:
+        return env_value.strip().lower() in {"1", "true", "yes", "on"}
+
+    return bool(_is_system_gmm(spec) and _is_twostep_like(spec))
+
+
 def _call_native_backend(
     spec: Any,
     data: pd.DataFrame,
     *,
     entity: str,
     time: str,
+    windmeijer: bool | None = None,
 ) -> Any:
     try:
         from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
@@ -113,11 +148,14 @@ def _call_native_backend(
             "The native GMM backend could not be imported."
         ) from exc
 
+    native_windmeijer = _resolve_native_windmeijer(spec, windmeijer)
+
     return run_native_dynamic_panel_gmm(
         spec,
         data,
         entity=entity,
         time=time,
+        windmeijer=native_windmeijer,
     )
 
 
@@ -128,6 +166,7 @@ def run_dynamic_panel_gmm(
     entity: str,
     time: str,
     backend: DynamicGMMBackend = "auto",
+    windmeijer: bool | None = None,
 ) -> Any:
     """Run Difference or System GMM through the systemgmmkit public API.
 
@@ -141,14 +180,17 @@ def run_dynamic_panel_gmm(
         Same as "auto", but explicit.
 
     backend="native"
-        Uses the native systemgmmkit backend. Native System GMM remains
-        experimental until coefficient-level parity is certified.
+        Uses the native systemgmmkit backend. For native System GMM two-step
+        estimation, Windmeijer-style inference is enabled by default because
+        this is the maintained xtabond2 parity target.
 
     backend="pydynpd"
         Explicitly routes through the pydynpd adapter.
 
-    This keeps systemgmmkit as the user-facing package while allowing a validated
-    third-party backend internally where appropriate.
+    windmeijer
+        Applies to the native backend. If None, native System GMM two-step uses
+        Windmeijer by default; Difference GMM keeps its previous behavior unless
+        windmeijer=True is explicitly requested.
     """
 
     if backend not in {"auto", "validated", "native", "pydynpd"}:
@@ -170,7 +212,13 @@ def run_dynamic_panel_gmm(
             )
             return result
 
-        result = _call_native_backend(spec, data, entity=entity, time=time)
+        result = _call_native_backend(
+            spec,
+            data,
+            entity=entity,
+            time=time,
+            windmeijer=windmeijer,
+        )
         _set_result_attr(result, "backend", "native-validated-via-systemgmmkit")
         _set_result_attr(result, "systemgmmkit_backend_policy", backend)
         _append_result_note(
@@ -186,20 +234,30 @@ def run_dynamic_panel_gmm(
         _set_result_attr(result, "systemgmmkit_backend_policy", backend)
         return result
 
-    result = _call_native_backend(spec, data, entity=entity, time=time)
+    result = _call_native_backend(
+        spec,
+        data,
+        entity=entity,
+        time=time,
+        windmeijer=windmeijer,
+    )
     _set_result_attr(result, "backend", "native-via-systemgmmkit")
     _set_result_attr(result, "systemgmmkit_backend_policy", backend)
 
     if is_system:
         warnings.warn(
-            "Native System GMM is experimental and not yet xtabond2-certified. "
-            "Use backend='auto' or backend='validated' for empirical System GMM.",
+            "Native System GMM has coefficient and Windmeijer-SE parity on the "
+            "maintained xtabond2 benchmark, but Sargan/AR diagnostic parity remains "
+            "uncertified. Use backend='auto' or backend='validated' when full "
+            "external-backend validation is required.",
             RuntimeWarning,
             stacklevel=2,
         )
         _append_result_note(
             result,
-            "Native System GMM is experimental and not yet xtabond2-certified.",
+            "Native System GMM coefficient and Windmeijer-SE parity are certified "
+            "on the maintained xtabond2 benchmark; Sargan/AR diagnostic parity "
+            "remains uncertified.",
         )
 
     return result
@@ -212,6 +270,7 @@ def run_system_gmm(
     entity: str,
     time: str,
     backend: DynamicGMMBackend = "auto",
+    windmeijer: bool | None = None,
 ) -> Any:
     """Run a System GMM specification through systemgmmkit."""
 
@@ -226,6 +285,7 @@ def run_system_gmm(
         entity=entity,
         time=time,
         backend=backend,
+        windmeijer=windmeijer,
     )
 
 
@@ -236,6 +296,7 @@ def run_difference_gmm(
     entity: str,
     time: str,
     backend: DynamicGMMBackend = "auto",
+    windmeijer: bool | None = None,
 ) -> Any:
     """Run a Difference GMM specification through systemgmmkit."""
 
@@ -250,4 +311,5 @@ def run_difference_gmm(
         entity=entity,
         time=time,
         backend=backend,
+        windmeijer=windmeijer,
     )

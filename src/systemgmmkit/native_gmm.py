@@ -35,6 +35,7 @@ class NativeGMMResult:
     backend: str
     notes: list[str]
     instrument_names: list[str] | None = None
+    n_groups: int | None = None
     hansen_p: float | None = None
     sargan_p: float | None = None
     ar1_p: float | None = None
@@ -1965,6 +1966,16 @@ def run_native_dynamic_panel_gmm(
         system=spec.system,
     )
 
+    # System-GMM AR diagnostics are not yet xtabond2-equivalent.
+    #
+    # The current native helper is a residual-autocorrelation approximation.
+    # xtabond2's AR(1)/AR(2) tests are Arellano-Bond m-tests based on transformed
+    # residual moments and their appropriate variance. Until strict parity is
+    # certified, do not expose misleading System-GMM AR p-values.
+    if bool(spec.system):
+        ar1_p = None
+        ar2_p = None
+
     _u_col = residual_vec.reshape(-1, 1)
     _ztu = Z.T @ _u_col
     _j_stat_raw = float((_ztu.T @ W @ _ztu).squeeze())
@@ -1982,7 +1993,20 @@ def run_native_dynamic_panel_gmm(
         max(float(_n_groups_for_diag - len(names)), 1.0)
         / float(_n_groups_for_diag)
     )
-    _sargan_stat = float(_j_stat_raw * _sargan_small_scale)
+
+    # Sargan-style statistic.
+    #
+    # For Difference GMM, the one-step-weighted Sargan-style statistic is used.
+    # For System GMM two-step output, xtabond2 Sargan parity is not yet certified.
+    # Do not expose a misleading System-GMM Sargan p-value until the statistic is
+    # validated against xtabond2 internals.
+    try:
+        _sargan_weight = W1
+    except NameError:
+        _sargan_weight = W
+
+    _sargan_stat_raw = float((_ztu.T @ _sargan_weight @ _ztu).squeeze())
+    _sargan_stat = float(_sargan_stat_raw * _sargan_small_scale)
 
     _hansen_j_stat = None
     _hansen_p_candidate = None
@@ -2026,6 +2050,9 @@ def run_native_dynamic_panel_gmm(
     )
 
     if _is_twostep_like:
+        # In two-step output, keep j_stat unset because the primary robust J is Hansen.
+        # System-GMM Sargan parity is not yet certified, so do not report a misleading
+        # non-robust Sargan p-value here.
         _j_stat = None
         sargan_p = None
     else:
@@ -2036,10 +2063,15 @@ def run_native_dynamic_panel_gmm(
         else:
             sargan_p = None
 
-    # Robust Hansen parity requires the robust moment covariance, not the
-    # one-step Sargan quadratic form. Leave it undefined here rather than
-    # reporting a misleading pseudo-Hansen p-value.
-    hansen_p = None
+    # Robust Hansen diagnostic.
+    #
+    # For two-step GMM, use the robust moment-covariance candidate computed
+    # above. For one-step GMM, do not report this as Hansen because the
+    # one-step overidentification statistic is Sargan-style.
+    if _is_twostep_like:
+        hansen_p = _hansen_p_candidate
+    else:
+        hansen_p = None
 
 
     _ztu_norm = float(np.linalg.norm(_ztu))
@@ -2163,7 +2195,7 @@ def run_native_dynamic_panel_gmm(
         backend="native-gmm",
         notes=[
             "Native dynamic-panel GMM engine.",
-            "Native System GMM baseline parity with xtabond2 is verified for coefficients, raw moments, group-scaled A2, and Hansen J on the current collapsed two-step benchmark.",
+            "Native System GMM parity with xtabond2 is verified for coefficients, N, groups, instruments, and close Hansen diagnostics on the maintained collapsed benchmark; Sargan and AR diagnostics remain unset for System GMM until strict parity is certified.",
             (
                 "Windmeijer-corrected two-step standard errors are enabled via windmeijer=True "
                 "using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked."
@@ -2172,6 +2204,7 @@ def run_native_dynamic_panel_gmm(
             ),
         ],
         instrument_names=list(instrument_names),
+        n_groups=int(n_groups_for_cov) if int(n_groups_for_cov) > 0 else None,
         hansen_p=hansen_p,
         sargan_p=sargan_p,
         ar1_p=ar1_p,

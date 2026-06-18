@@ -118,6 +118,7 @@ native_diags = []
 
 for model, spec in specs.items():
     print(f"Running native: {model}")
+    windmeijer=True,
     res = run_system_gmm(spec, df, entity="id", time="t", backend="native")
 
     p = extract_params(res)
