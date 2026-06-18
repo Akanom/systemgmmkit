@@ -1,43 +1,52 @@
-# systemgmmkit 0.5.8.dev0 Release Notes
+# systemgmmkit 0.5.9 Release Notes
 
 ## Overview
 
-`systemgmmkit 0.5.8.dev0` is the current GitHub development branch following the publication of `systemgmmkit 0.5.7`.
+`systemgmmkit 0.5.9` expands the package from a dynamic-panel GMM implementation into a broader panel-data econometrics workflow package.
 
-Version `0.5.7` established benchmark-specific Stata `xtabond2` parity for the maintained native Difference GMM and System GMM validation paths.
+This release adds and documents:
 
-Version `0.5.8.dev0` extends the package beyond estimation and introduces the first public post-estimation framework together with verified Ordinary Least Squares (OLS) and Pooled OLS workflows.
+* Ordinary Least Squares;
+* Pooled OLS;
+* post-estimation utilities;
+* Stata-verified linear-model workflows;
+* Stata-verified post-estimation procedures;
+* strengthened Difference GMM and System GMM validation;
+* System GMM `xtabond2` diagnostic certification;
+* CMAPSS FD001 external validation for publication-style dynamic-panel workflows.
 
-The primary focus of this development cycle is:
+Earlier releases established the native Difference GMM and System GMM estimation paths. Version `0.5.9` strengthens those foundations and extends the package toward a fuller empirical workflow: baseline estimation, panel estimation, dynamic GMM, diagnostics, post-estimation, and reproducible reporting.
 
-* OLS support
-* Pooled OLS support
-* Post-estimation infrastructure
-* Stata parity verification for linear models
-* Stata parity verification for post-estimation procedures
+The main focus of this release is:
 
-This release continues the package's emphasis on reproducibility, transparent econometric workflows, and benchmark validation against established reference implementations.
+* OLS support;
+* Pooled OLS support;
+* post-estimation infrastructure;
+* Stata parity verification for linear models;
+* Stata parity verification for selected post-estimation procedures;
+* strict `xtabond2` certification for the maintained System GMM benchmark;
+* external validation on CMAPSS FD001 publication-style panel specifications.
 
 ---
 
 # Major Additions
 
-## Ordinary Least Squares (OLS)
+## Ordinary Least Squares
 
-Version 0.5.8 introduces a dedicated OLS estimation workflow.
+Version `0.5.9` introduces a dedicated OLS estimation workflow.
 
-New components:
+New public components include:
 
-* `OLSSpec`
-* `run_ols()`
-* `LinearModelResult`
+* `OLSSpec`;
+* `run_ols()`;
+* `LinearModelResult`.
 
-Supported covariance estimators:
+Supported covariance estimators include:
 
-* Nonrobust
-* HC0
-* Robust / HC1
-* Clustered
+* nonrobust;
+* HC0;
+* robust / HC1;
+* clustered.
 
 OLS provides a natural baseline model before moving to panel-specific estimators such as Fixed Effects, Random Effects, Panel IV, Difference GMM, or System GMM.
 
@@ -45,28 +54,30 @@ OLS provides a natural baseline model before moving to panel-specific estimators
 
 ## Pooled OLS
 
-Version 0.5.8 introduces pooled OLS support for panel-shaped datasets.
+Version `0.5.9` introduces pooled OLS support for panel-shaped datasets.
 
-New components:
+New public components include:
 
-* `PooledOLSSpec`
-* `run_pooled_ols()`
+* `PooledOLSSpec`;
+* `run_pooled_ols()`.
 
-Supported features:
+Supported features include:
 
-* Panel-shaped data
-* Clustered standard errors
-* Entity-level clustering
-* Consistent result objects
-* Stata-style comparison workflows
+* panel-shaped data;
+* clustered standard errors;
+* entity-level clustering;
+* consistent result objects;
+* Stata-style comparison workflows.
+
+Pooled OLS is useful as a baseline estimator before applying within-transformation, random-effects, IV, or dynamic-panel estimators.
 
 ---
 
 # Post-Estimation Framework
 
-Version 0.5.8 introduces the first public post-estimation foundation.
+Version `0.5.9` introduces the first public post-estimation framework.
 
-New public APIs:
+New public APIs include:
 
 ```python
 predict()
@@ -81,13 +92,26 @@ marginal_effects()
 
 These APIs provide functionality similar to common Stata post-estimation workflows and establish the foundation for future advanced post-estimation capabilities.
 
+The first public post-estimation layer focuses on linear estimators and common applied workflows:
+
+* predictions;
+* fitted values;
+* residual extraction;
+* variance-covariance matrix extraction;
+* confidence intervals;
+* linear combinations;
+* Wald tests;
+* marginal effects for linear models.
+
 ---
 
 # Stata Verification Milestone
 
-A major objective of this development cycle was verification against Stata.
+A major objective of this release was verification against Stata reference implementations.
 
-The following components were benchmarked against Stata using a real FD001 panel-data benchmark.
+The following components were benchmarked against Stata using maintained FD001 panel-data workflows.
+
+---
 
 ## Verified OLS Components
 
@@ -97,20 +121,20 @@ Verified against:
 regress ..., vce(robust)
 ```
 
-Validated quantities:
+Validated quantities include:
 
-* coefficients
-* robust standard errors
-* t-statistics
-* p-values
-* confidence intervals
+* coefficients;
+* robust standard errors;
+* t-statistics;
+* p-values;
+* confidence intervals.
 
-Observed differences:
+Observed agreement under the maintained FD001 benchmark:
 
 | Metric                            | Result   |
 | --------------------------------- | -------- |
 | Maximum coefficient difference    | 4.64e-14 |
-| Maximum standard error difference | 2.04e-14 |
+| Maximum standard-error difference | 2.04e-14 |
 
 These differences are effectively machine precision.
 
@@ -124,19 +148,19 @@ Verified against:
 regress ..., vce(cluster entity)
 ```
 
-Validated quantities:
+Validated quantities include:
 
-* coefficients
-* clustered standard errors
-* t-statistics
-* p-values
-* confidence intervals
+* coefficients;
+* clustered standard errors;
+* t-statistics;
+* p-values;
+* confidence intervals.
 
-Observed differences remain at machine precision.
+Observed differences remain at machine precision under the maintained benchmark workflow.
 
 ---
 
-## Verified lincom Parity
+## Verified `lincom` Parity
 
 Verified against:
 
@@ -144,19 +168,19 @@ Verified against:
 lincom variable1 + variable2
 ```
 
-Validated quantities:
+Validated quantities include:
 
-* estimate
-* standard error
-* test statistic
-* p-value
-* confidence interval
+* estimate;
+* standard error;
+* test statistic;
+* p-value;
+* confidence interval.
 
-FD001 benchmark comparison showed numerical agreement between Stata and `systemgmmkit`.
+The maintained FD001 benchmark comparison shows numerical agreement between Stata and `systemgmmkit`.
 
 ---
 
-## Verified Wald Test Parity
+## Verified Wald-Test Parity
 
 Verified against:
 
@@ -164,86 +188,164 @@ Verified against:
 test variable1 variable2 ...
 ```
 
-Validated quantities:
+Validated quantities include:
 
-* F statistic
-* numerator degrees of freedom
-* denominator degrees of freedom
-* p-value
+* F statistic;
+* numerator degrees of freedom;
+* denominator degrees of freedom;
+* p-value.
 
-FD001 benchmark comparison showed numerical agreement between Stata and `systemgmmkit`.
+The maintained FD001 benchmark comparison shows numerical agreement between Stata and `systemgmmkit`.
 
 ---
 
-# Inherited GMM Capability from 0.5.7
+# Dynamic GMM Validation
 
-Version 0.5.8 continues to include all validated native GMM functionality introduced during the 0.5.7 certification cycle.
+Version `0.5.9` continues to include native Difference GMM and System GMM functionality and strengthens the validation language around those estimators.
+
+The package supports:
+
+* Arellano-Bond Difference GMM;
+* Blundell-Bond System GMM;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* restricted GMM lag windows;
+* collapsed instruments;
+* one-step estimation;
+* two-step estimation;
+* Windmeijer-corrected standard errors;
+* diagnostic reporting.
 
 ---
 
 ## Native Difference GMM
 
-Supported features:
+Supported features include:
 
-* Arellano-Bond Difference GMM
-* Endogenous variables
-* Predetermined variables
-* Exogenous variables
-* Lag-window control
-* Collapsed instruments
-* One-step estimation
-* Two-step estimation
-* Diagnostic reporting
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* lag-window control;
+* collapsed instruments;
+* one-step estimation;
+* two-step estimation;
+* AR diagnostics;
+* Hansen diagnostics;
+* Sargan diagnostics;
+* observation, group, and instrument counts.
 
 Maintained benchmark status:
 
 ```text
-PASS_XTABOND2_FD001_DIAGNOSTIC_PARITY
+PASS_XTABOND2_PARITY
 ```
 
 Validated diagnostics include:
 
-* AR(1)
-* AR(2)
-* Hansen
-* Sargan
-* Observation counts
-* Group counts
-* Instrument counts
-* Degrees of freedom
+* AR(1);
+* AR(2);
+* Hansen;
+* Sargan;
+* observation counts;
+* group counts;
+* instrument counts;
+* degrees of freedom.
 
 ---
 
 ## Native System GMM
 
-Supported features:
+Supported features include:
 
-* Blundell-Bond System GMM
-* Difference equation moments
-* Level equation moments
-* Collapsed instruments
-* Restricted lag windows
-* One-step estimation
-* Two-step estimation
-* Windmeijer correction
+* Blundell-Bond System GMM;
+* differenced-equation moments;
+* levels-equation moments;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* collapsed instruments;
+* restricted lag windows;
+* one-step estimation;
+* two-step estimation;
+* Windmeijer correction.
 
 Maintained benchmark status:
 
 ```text
-PASS_XTABOND2_FD001_DIAGNOSTIC_PARITY
+PASS_XTABOND2_PARITY
 ```
 
 Validated quantities include:
 
-* coefficients
-* Windmeijer-corrected standard errors
-* Hansen statistics
-* Sargan statistics
-* AR(1)
-* AR(2)
-* instrument counts
-* observation counts
-* group counts
+* coefficients;
+* Windmeijer-corrected two-step standard errors;
+* Hansen statistics and p-values;
+* Sargan statistics and p-values;
+* AR(1) diagnostics;
+* AR(2) diagnostics;
+* instrument counts;
+* observation counts;
+* group counts.
+
+---
+
+# System GMM `xtabond2` Certification
+
+The native System GMM implementation has been certified against Stata `xtabond2` on the maintained collapsed two-step benchmark specification.
+
+Certified components include:
+
+* coefficient estimates;
+* Windmeijer-corrected two-step standard errors;
+* sample size;
+* instrument count;
+* Hansen overidentification diagnostic;
+* Sargan overidentification diagnostic;
+* Arellano-Bond AR(1) diagnostic;
+* Arellano-Bond AR(2) diagnostic.
+
+The maintained certification benchmark uses:
+
+* collapsed instruments;
+* restricted GMM lag windows;
+* two-step robust estimation;
+* Windmeijer correction;
+* strict numerical comparison against `xtabond2`.
+
+Under this benchmark, the native System GMM implementation reproduces the `xtabond2` reference results within declared strict numerical tolerance.
+
+---
+
+# CMAPSS FD001 External Validation
+
+In addition to the controlled `xtabond2` certification benchmark, System GMM was externally validated on CMAPSS FD001 publication-style panel specifications.
+
+Two validation models were used.
+
+Risk model:
+
+```text
+risk ~ L1.risk + degradation_index + sensor_mean_z + pc2 + op_setting1 + op_setting2
+```
+
+Degradation model:
+
+```text
+degradation_index ~ L1.degradation_index + sensor_mean_z + pc2 + pc3 + op_setting1 + op_setting2
+```
+
+Across both FD001 validation models, `systemgmmkit` reproduces `xtabond2` results for:
+
+* coefficient estimates;
+* Windmeijer-corrected standard errors;
+* sample size;
+* instrument count;
+* Hansen diagnostics;
+* Sargan diagnostics;
+* AR(1) and AR(2) diagnostics within declared external-validation tolerance.
+
+The CMAPSS FD001 exercise is an independent application validation. The controlled `xtabond2` benchmark remains the strict certification benchmark.
 
 ---
 
@@ -256,64 +358,141 @@ Current benchmark validation status:
 | OLS                        | PASS_STATA_PARITY     |
 | Robust OLS                 | PASS_STATA_PARITY     |
 | Clustered OLS              | PASS_STATA_PARITY     |
-| Confidence Intervals       | PASS_STATA_PARITY     |
-| lincom                     | PASS_STATA_PARITY     |
-| Wald Test                  | PASS_STATA_PARITY     |
+| Confidence intervals       | PASS_STATA_PARITY     |
+| `lincom`                   | PASS_STATA_PARITY     |
+| Wald / F tests             | PASS_STATA_PARITY     |
 | Fixed Effects              | PASS_STATA_COMPARISON |
 | Random Effects             | PASS_STATA_COMPARISON |
 | Panel IV / 2SLS            | PASS_STATA_COMPARISON |
 | Difference GMM             | PASS_XTABOND2_PARITY  |
 | System GMM                 | PASS_XTABOND2_PARITY  |
-| Windmeijer Standard Errors | PASS_XTABOND2_PARITY  |
+| Windmeijer standard errors | PASS_XTABOND2_PARITY  |
+| Hansen diagnostics         | PASS_XTABOND2_PARITY  |
+| Sargan diagnostics         | PASS_XTABOND2_PARITY  |
+| AR(1) diagnostics          | PASS_XTABOND2_PARITY  |
+| AR(2) diagnostics          | PASS_XTABOND2_PARITY  |
+
+Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case.
+
+Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
 
 ---
 
 # Reporting and Export
 
-The package continues to support:
+The package supports:
 
-* structured result objects
-* model summaries
-* Markdown export
-* CSV export
-* LaTeX export
-* integration with universal-output-hub
+* structured result objects;
+* model summaries;
+* Markdown export;
+* CSV export;
+* LaTeX export;
+* integration with `universal-output-hub`.
 
 Supported exported diagnostics include:
 
-* coefficient tables
-* covariance matrices
-* confidence intervals
-* Hansen diagnostics
-* Sargan diagnostics
-* AR diagnostics
-* instrument counts
-* observation counts
-* group counts
+* coefficient tables;
+* covariance matrices;
+* confidence intervals;
+* Hansen diagnostics;
+* Sargan diagnostics;
+* AR diagnostics;
+* instrument counts;
+* observation counts;
+* group counts.
+
+---
+
+# Dynamic GMM Modelling Notes
+
+Version `0.5.9` clarifies an important modelling distinction in dynamic GMM:
+
+```text
+Structural lags are model regressors.
+Instrument lags define the GMM instrument window.
+```
+
+For example:
+
+```python
+regressors=["L1_y", "investment", "L1_investment"]
+```
+
+means that `L1_y` and `L1_investment` are included directly in the model equation.
+
+By contrast:
+
+```python
+gmm_lags=(2, 4)
+```
+
+means that lagged values, usually lags 2 through 4, are used internally as GMM instruments.
+
+In the current public API, users should manually create lagged structural regressors before estimation and then classify them according to the maintained exogeneity assumption.
+
+Example:
+
+```python
+df = df.sort_values(["firm_id", "year"]).copy()
+df["L1_y"] = df.groupby("firm_id")["y"].shift(1)
+df["L1_investment"] = df.groupby("firm_id")["investment"].shift(1)
+```
+
+Then include the lagged variables in the model:
+
+```python
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    collapse=True,
+    windmeijer=True,
+)
+```
+
+Lagging an endogenous or predetermined regressor does not automatically make it exogenous. Users should classify lagged variables according to the maintained economic or causal assumption.
 
 ---
 
 # Validation Boundary
 
-Version 0.5.8 provides benchmark-specific validation evidence.
+Version `0.5.9` provides benchmark-specific validation evidence.
 
 Certified and validated:
 
-* OLS parity on maintained FD001 benchmark workflows
-* Clustered OLS parity on maintained FD001 benchmark workflows
-* lincom parity on maintained FD001 benchmark workflows
-* Wald-test parity on maintained FD001 benchmark workflows
-* Difference GMM parity on maintained FD001 benchmark workflows
-* System GMM parity on maintained FD001 benchmark workflows
-* Windmeijer standard-error parity on maintained benchmark specifications
+* OLS parity on maintained FD001 benchmark workflows;
+* robust OLS parity on maintained FD001 benchmark workflows;
+* clustered OLS parity on maintained FD001 benchmark workflows;
+* confidence-interval parity on maintained FD001 benchmark workflows;
+* `lincom` parity on maintained FD001 benchmark workflows;
+* Wald-test parity on maintained FD001 benchmark workflows;
+* Difference GMM parity on maintained benchmark workflows;
+* System GMM parity on the maintained `xtabond2` benchmark;
+* Windmeijer standard-error parity on maintained benchmark specifications;
+* Hansen and Sargan diagnostic parity on maintained benchmark specifications;
+* AR diagnostic parity on the maintained benchmark and external-validation workflows.
 
 Not claimed:
 
-* universal identity with every possible Stata configuration
-* universal identity across every lag window
-* universal identity across every missing-data pattern
-* universal identity across every covariance estimator
-* universal identity across every instrument specification
+* universal identity with every possible Stata configuration;
+* universal identity across every lag window;
+* universal identity across every missing-data pattern;
+* universal identity across every covariance estimator;
+* universal identity across every instrument specification;
+* universal bit-for-bit equivalence across all empirical datasets.
 
 The correct interpretation is:
 
@@ -328,13 +507,19 @@ systemgmmkit provides benchmark-specific parity evidence for maintained validati
 Latest published release:
 
 ```bash
-python -m pip install systemgmmkit==0.5.7
+python -m pip install systemgmmkit
+```
+
+Install a specific release:
+
+```bash
+python -m pip install systemgmmkit==0.5.9
 ```
 
 Development branch:
 
 ```bash
-pip install git+https://github.com/Akanom/systemgmmkit.git
+python -m pip install git+https://github.com/Akanom/systemgmmkit.git
 ```
 
 Local development installation:
@@ -343,42 +528,73 @@ Local development installation:
 python -m pip install -e ".[dev,all]"
 ```
 
+Check the installed version:
+
+```python
+import systemgmmkit
+
+print(systemgmmkit.__version__)
+```
+
 ---
 
 # Recommended Reporting Statement
 
 For empirical research, report:
 
-* package version
-* estimator
-* specification
-* covariance estimator
-* instrument count
-* backend
-* AR diagnostics
-* Hansen diagnostics
-* Sargan diagnostics
+* package version;
+* estimator;
+* specification;
+* covariance estimator;
+* instrument count;
+* backend;
+* AR diagnostics;
+* Hansen diagnostics;
+* Sargan diagnostics.
 
 Suggested wording:
 
 ```text
-Estimation was performed using systemgmmkit 0.5.8.dev0. Linear-model and post-estimation workflows were benchmarked against Stata reference implementations. Dynamic-panel GMM models used the documented systemgmmkit backend and specification settings. For maintained validation benchmarks, systemgmmkit includes benchmark-specific parity evidence against Stata for OLS, clustered OLS, lincom, Wald tests, Difference GMM, System GMM, Windmeijer-corrected standard errors, and associated diagnostics.
+Estimation was performed using systemgmmkit 0.5.9. Linear-model and post-estimation workflows were benchmarked against Stata reference implementations. Dynamic-panel GMM models used the documented systemgmmkit backend and specification settings. For maintained validation benchmarks, systemgmmkit includes benchmark-specific parity evidence against Stata for OLS, clustered OLS, confidence intervals, lincom, Wald tests, Difference GMM, System GMM, Windmeijer-corrected standard errors, overidentification diagnostics, and AR diagnostics.
+```
+
+For System GMM specifically:
+
+```text
+The System GMM implementation was certified against Stata xtabond2 on a maintained collapsed two-step benchmark and externally validated on CMAPSS FD001 publication-style panel specifications. Certification and validation claims apply to the maintained benchmark workflows and declared numerical tolerances.
 ```
 
 ---
 
 # Release Policy
 
-`systemgmmkit 0.5.7` remains the latest published PyPI release.
+`systemgmmkit 0.5.9` should be released only after:
 
-`0.5.8.dev0` is a GitHub development version and should not be considered a stable published release.
+* development work is complete;
+* documentation has been reviewed;
+* parity verification artifacts have been regenerated;
+* the test suite passes;
+* version metadata is consistent;
+* release notes are updated;
+* the GitHub release tag is intentionally created;
+* PyPI publication is intentionally triggered.
 
-Publication of `v0.5.8` should occur only after:
+No PyPI publication should occur from an unreviewed development state.
 
-* completion of development work
-* documentation review
-* parity verification review
-* test-suite completion
-* intentional release tagging
+---
 
-No PyPI publication should occur directly from the current development state.
+# Summary
+
+`systemgmmkit 0.5.9` is a major validation and workflow release.
+
+It extends the package beyond dynamic-panel GMM by adding OLS, pooled OLS, and post-estimation tools, while also strengthening the evidence base for the native GMM implementation.
+
+The release provides:
+
+* broader estimator coverage;
+* first public post-estimation support;
+* Stata-verified linear-model workflows;
+* strict System GMM `xtabond2` certification;
+* CMAPSS FD001 external validation;
+* clearer documentation of structural lags versus instrument lag windows;
+* stronger reporting guidance for applied empirical research.
