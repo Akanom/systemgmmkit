@@ -118,28 +118,62 @@ def _fd_at(series: pd.Series, pos: int) -> float | None:
 
 
 def _fod_at(series: pd.Series, pos: int) -> float | None:
-    """Forward orthogonal deviation at positional index pos.
+    """Forward orthogonal deviation at positional index ``pos``.
 
-    v*_it = sqrt(k / (k + 1)) * (v_it - mean(v_i,t+1...T))
+    Diagnostic scaling modes are controlled by SYSTEMGMMKIT_FOD_SCALE_MODE:
 
-    where k is the number of valid future observations for the entity.
+        canonical: sqrt(m / (m + 1)) * deviation
+        unscaled:  deviation
+        inverse:   sqrt((m + 1) / m) * deviation
+        negative:  -canonical
+
+    where m is the number of usable future observations.
     """
-    current = _safe_get(series, pos)
-    if current is None:
+
+    import math
+    import os
+
+    n = len(series)
+    if pos < 0 or pos >= n - 1:
+        return None
+
+    now = _safe_get(series, pos)
+    if now is None:
         return None
 
     future_values: list[float] = []
-    for j in range(pos + 1, len(series)):
-        value = _safe_get(series, j)
-        if value is not None:
-            future_values.append(value)
+    for j in range(pos + 1, n):
+        val = _safe_get(series, j)
+        if val is not None:
+            future_values.append(float(val))
 
-    if not future_values:
+    m = len(future_values)
+    if m <= 0:
         return None
 
-    future = np.asarray(future_values, dtype=float)
-    k = float(future.size)
-    return float(np.sqrt(k / (k + 1.0)) * (current - float(future.mean())))
+    deviation = float(now) - (sum(future_values) / float(m))
+
+    mode = (
+        os.getenv("SYSTEMGMMKIT_FOD_SCALE_MODE", "canonical")
+        .strip()
+        .lower()
+    )
+
+    if mode in {"canonical", "default", ""}:
+        scale = math.sqrt(float(m) / float(m + 1))
+    elif mode in {"unscaled", "none", "raw"}:
+        scale = 1.0
+    elif mode in {"inverse", "reverse"}:
+        scale = math.sqrt(float(m + 1) / float(m))
+    elif mode in {"negative", "neg"}:
+        scale = -math.sqrt(float(m) / float(m + 1))
+    else:
+        raise ValueError(
+            "Unsupported SYSTEMGMMKIT_FOD_SCALE_MODE="
+            f"{mode!r}. Use canonical, unscaled, inverse, or negative."
+        )
+
+    return scale * deviation
 
 
 def _transform_at(series: pd.Series, pos: int, transformation: str) -> float | None:
@@ -202,17 +236,60 @@ def _transformed_regressor_at(
     pos: int,
     transformation: str,
 ) -> float | None:
-    """Return the transformed-equation value for a structural regressor."""
+    """Return the transformed-equation value for a structural regressor.
+
+    Diagnostic FOD lagged-regressor modes are controlled by:
+
+        SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE=transform_lagged
+            Current/default: A(L^k y)
+
+        SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE=lag_transformed
+            Alternative: L^k(Ay)
+
+    FD is left unchanged.
+    """
+
+    import os
+
+    transformation_normalized = str(transformation).strip().lower()
     parsed = _parse_lagged_regressor(regressor)
 
-    if parsed:
-        lag, variable = parsed
-        base = group[variable].astype(float)
-        series = _lagged_series(base, lag)
-    else:
-        series = group[regressor].astype(float)
+    if parsed is None:
+        return _transform_at(group[regressor], pos, transformation)
 
-    return _transform_at(series, pos, transformation)
+    lag, base = parsed
+    base_series = group[base]
+
+    if transformation_normalized in {
+        "fod",
+        "orthogonal",
+        "orthogonal_deviations",
+        "forward_orthogonal_deviations",
+    }:
+        mode = (
+            os.getenv("SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE", "transform_lagged")
+            .strip()
+            .lower()
+        )
+
+        if mode in {"transform_lagged", "current", "default", ""}:
+            lagged = _lagged_series(base_series, lag)
+            return _transform_at(lagged, pos, transformation)
+
+        if mode in {"lag_transformed", "lag_of_transformed", "alternative"}:
+            transformed_base_values = []
+            for j in range(len(base_series)):
+                transformed_base_values.append(_transform_at(base_series, j, transformation))
+            transformed_base = pd.Series(transformed_base_values, index=base_series.index)
+            return _safe_get(transformed_base, pos - lag)
+
+        raise ValueError(
+            "Unsupported SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE="
+            f"{mode!r}. Use transform_lagged or lag_transformed."
+        )
+
+    lagged = _lagged_series(base_series, lag)
+    return _transform_at(lagged, pos, transformation)
 
 
 def _lagged_level_instrument_at(series: pd.Series, pos: int, lag: int) -> float | None:
@@ -239,40 +316,71 @@ def _transformed_error_terms(
     index: pd.Index,
     pos: int,
     transformation: str,
-) -> dict[object, float] | None:
-    """Return raw-error coefficients for a transformed-equation row.
+) -> dict[object, float]:
+    """Return underlying level-error weights for a transformed equation row.
 
-    This metadata is used to build the one-step weighting matrix. It must match
-    the actual transformation used for Y and X.
+    Uses the same FOD scaling mode as _fod_at so first-step weighting remains
+    internally consistent during diagnostics.
     """
-    transformation_normalized = str(transformation).strip().lower()
 
-    if transformation_normalized == "fd":
-        if pos - 1 < 0:
-            return None
+    import math
+    import os
+
+    transformation_normalized = str(transformation).strip().lower()
+    n = len(index)
+
+    if transformation_normalized in {"fd", "first_difference", "difference"}:
+        if pos <= 0 or pos >= n:
+            return {}
         return {
             index[pos]: 1.0,
             index[pos - 1]: -1.0,
         }
 
-    if transformation_normalized == "fod":
-        future_positions = list(range(pos + 1, len(index)))
-        if not future_positions:
-            return None
+    if transformation_normalized in {
+        "fod",
+        "orthogonal",
+        "orthogonal_deviations",
+        "forward_orthogonal_deviations",
+    }:
+        if pos < 0 or pos >= n - 1:
+            return {}
 
-        k = float(len(future_positions))
-        scale = float(np.sqrt(k / (k + 1.0)))
+        future_positions = list(range(pos + 1, n))
+        m = len(future_positions)
+        if m <= 0:
+            return {}
 
-        terms: dict[object, float] = {index[pos]: scale}
-        future_weight = -scale / k
+        mode = (
+            os.getenv("SYSTEMGMMKIT_FOD_SCALE_MODE", "canonical")
+            .strip()
+            .lower()
+        )
 
-        for future_pos in future_positions:
-            terms[index[future_pos]] = future_weight
+        if mode in {"canonical", "default", ""}:
+            scale = math.sqrt(float(m) / float(m + 1))
+        elif mode in {"unscaled", "none", "raw"}:
+            scale = 1.0
+        elif mode in {"inverse", "reverse"}:
+            scale = math.sqrt(float(m + 1) / float(m))
+        elif mode in {"negative", "neg"}:
+            scale = -math.sqrt(float(m) / float(m + 1))
+        else:
+            raise ValueError(
+                "Unsupported SYSTEMGMMKIT_FOD_SCALE_MODE="
+                f"{mode!r}. Use canonical, unscaled, inverse, or negative."
+            )
 
-        return terms
+        future_weight = -scale / float(m)
+
+        weights: dict[object, float] = {index[pos]: scale}
+        for j in future_positions:
+            weights[index[j]] = weights.get(index[j], 0.0) + future_weight
+
+        return weights
 
     raise ValueError(
-        f"Unsupported transformation={transformation!r}. Expected 'fd' or 'fod'."
+        "transformation must be one of 'fd', 'difference', 'fod', or 'orthogonal'."
     )
 
 
@@ -336,7 +444,27 @@ def _build_native_matrices(
                 z_dict[f"T:{name}"] = 1.0
 
         transformation_normalized = str(spec.transformation).strip().lower()
-        transformed_start_pos = 0 if transformation_normalized == "fod" else 2
+
+        if transformation_normalized == "fod":
+            import os as _native_fod_start_os
+
+            _fod_start_raw = (
+                _native_fod_start_os.getenv("SYSTEMGMMKIT_FOD_START_POS", "0")
+                .strip()
+                .lower()
+            )
+
+            if _fod_start_raw in {"default", ""}:
+                transformed_start_pos = 0
+            else:
+                try:
+                    transformed_start_pos = int(_fod_start_raw)
+                except ValueError as exc:
+                    raise ValueError(
+                        "SYSTEMGMMKIT_FOD_START_POS must be an integer, 'default', or empty."
+                    ) from exc
+        else:
+            transformed_start_pos = 2
 
         for pos in range(transformed_start_pos, len(group)):
             y_val = _transform_at(dep, pos, spec.transformation)
@@ -374,8 +502,33 @@ def _build_native_matrices(
                 s = _style_source_series(group, block.variable)
                 block_label = _style_label(block.variable)
 
+                instrument_pos = pos
+                if transformation_normalized == "fod" and bool(spec.system):
+                    import os as _native_fod_instr_os
+
+                    _offset_raw = (
+                        _native_fod_instr_os.getenv(
+                            "SYSTEMGMMKIT_FOD_GMM_INSTRUMENT_POS_OFFSET",
+                            "1",
+                        )
+                        .strip()
+                        .lower()
+                    )
+
+                    if _offset_raw in {"default", ""}:
+                        _offset = 1
+                    else:
+                        try:
+                            _offset = int(_offset_raw)
+                        except ValueError as exc:
+                            raise ValueError(
+                                "SYSTEMGMMKIT_FOD_GMM_INSTRUMENT_POS_OFFSET must be an integer, 'default', or empty."
+                            ) from exc
+
+                    instrument_pos = pos + _offset
+
                 for lag in range(block.min_lag, block.max_lag + 1):
-                    val = _lagged_level_instrument_at(s, pos, lag)
+                    val = _lagged_level_instrument_at(s, instrument_pos, lag)
 
                     if val is not None:
                         z_dict[f"D:{block_label}:L{lag}"] = val
@@ -393,7 +546,25 @@ def _build_native_matrices(
                 # IV-style instruments in the FOD transformed equation are entered
                 # as current level values, not as FOD-transformed instruments.
                 if str(spec.transformation).strip().lower() == "fod":
-                    val = _safe_get(s, pos)
+                    import os as _native_fod_iv_os
+                    _iv_offset_raw = (
+                        _native_fod_iv_os.getenv(
+                            "SYSTEMGMMKIT_FOD_IV_INSTRUMENT_POS_OFFSET",
+                            "0",
+                        )
+                        .strip()
+                        .lower()
+                    )
+                    if _iv_offset_raw in {"default", ""}:
+                        _iv_offset = 0
+                    else:
+                        try:
+                            _iv_offset = int(_iv_offset_raw)
+                        except ValueError as exc:
+                            raise ValueError(
+                                "SYSTEMGMMKIT_FOD_IV_INSTRUMENT_POS_OFFSET must be an integer, default, or empty."
+                            ) from exc
+                    val = _safe_get(s, pos + _iv_offset)
                 else:
                     val = _transform_at(s, pos, spec.transformation)
 
@@ -458,10 +629,11 @@ def _build_native_matrices(
                 for block in spec.gmm:
                     s = _style_source_series(group, block.variable)
                     block_label = _style_label(block.variable)
-                    val = _lagged_difference_instrument_at(s, pos, lag=1)
+                    level_lag = _native_system_level_diff_lag(block)
+                    val = _lagged_difference_instrument_at(s, pos, lag=level_lag)
 
                     if val is not None:
-                        z_dict[f"L:diff:{block_label}:L1"] = val
+                        z_dict[f"L:diff:{block_label}:L{level_lag}"] = val
 
                 # IV-style / exogenous instruments for the level equation.
                 for block in spec.iv:
@@ -670,6 +842,23 @@ def _native_style_max_lag(style: object) -> int:
     return int(value)
 
 
+def _native_system_level_diff_lag(style: object) -> int:
+    """Return xtabond2-style System-GMM level-equation diff-instrument lag.
+
+    For a GMM-style block with difference-equation lag window (a, b),
+    xtabond2 uses a single collapsed level-equation difference instrument
+    whose lag is effectively a - 1:
+
+        lag(2 .) -> D.var / Δvar_{t-1}
+        lag(3 .) -> DL2.var / Δvar_{t-2}
+        lag(1 .) -> D.var at the current level row / Δvar_t
+
+    The max(..., 0) guard is needed for predetermined lag(1 .) blocks.
+    """
+
+    return max(_native_style_min_lag(style) - 1, 0)
+
+
 def _native_pydynpd_compat_instrument_order(spec: DynamicPanelSpec) -> list[str]:
     """Return pydynpd-compatible collapsed instrument order.
 
@@ -693,7 +882,8 @@ def _native_pydynpd_compat_instrument_order(spec: DynamicPanelSpec) -> list[str]
     if spec.system:
         for block in spec.gmm:
             var = _style_label(_native_style_variable(block))
-            labels.append(f"L:diff:{var}:L1")
+            level_lag = _native_system_level_diff_lag(block)
+            labels.append(f"L:diff:{var}:L{level_lag}")
         # SYSTEMGMMKIT_SYSTEM_IV_LAYOUT diagnostic:
         #
         # xtabond2 ivstyle(..., equation(both)) appears to use one standard-IV
@@ -786,7 +976,7 @@ def _native_make_pydynpd_compat_z(
                 _iv_mode = (
                     _native_iv_z_mode_os.getenv(
                         "SYSTEMGMMKIT_SYSTEM_IV_Z_MODE",
-                        "stacked_x",
+                        "level_only",
                     )
                     .strip()
                     .lower()
@@ -969,18 +1159,32 @@ def _native_h1_from_row_meta(
 ) -> np.ndarray:
     """Build entity-specific first-step H1 from stacked error metadata.
 
-    Each row stores the underlying error composition:
+    Diagnostic modes:
+        SYSTEMGMMKIT_ROW_META_H1_MODE=dot_product  -> current metadata covariance
+        SYSTEMGMMKIT_ROW_META_H1_MODE=identity     -> identity covariance
 
-        diff row:  error_terms = {t: +1, t-1: -1}
-        level row: error_terms = {t: +1}
-
-    Assuming serially uncorrelated level errors with unit variance,
-    Cov(row_a, row_b) is the dot product of their error-term coefficient maps.
-
-    This is general for balanced and unbalanced panels and does not assume a
-    fixed D/L block width.
+    The identity mode is used to test FOD / orthogonal System-GMM parity, where
+    properly scaled transformed errors should have identity covariance.
     """
+    import os as _row_meta_h1_os
+
     n = len(row_meta_i)
+
+    mode = (
+        _row_meta_h1_os.getenv("SYSTEMGMMKIT_ROW_META_H1_MODE", "dot_product")
+        .strip()
+        .lower()
+    )
+
+    if mode in {"identity", "eye"}:
+        return np.eye(n, dtype=float)
+
+    if mode not in {"dot_product", "metadata", "default", ""}:
+        raise ValueError(
+            "Unsupported SYSTEMGMMKIT_ROW_META_H1_MODE="
+            f"{mode!r}. Use dot_product or identity."
+        )
+
     h = np.zeros((n, n), dtype=float)
 
     maps: list[dict[object, float]] = []
