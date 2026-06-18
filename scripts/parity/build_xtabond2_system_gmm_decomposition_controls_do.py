@@ -97,11 +97,15 @@ gen spec = "system_gmm_decomposition_controls"
 gen stata_nobs = e(N)
 gen stata_n_groups = e(N_g)
 gen stata_n_instruments = e(j)
+gen stata_hansen = e(hansen)
 gen stata_hansen_p = e(hansenp)
+gen stata_hansen_df = e(hansen_df)
+gen stata_sargan = e(sargan)
 gen stata_sargan_p = e(sarganp)
-gen stata_ar1 = e(ar1)
+gen stata_sargan_df = e(sar_df)
+gen stata_ar1_z = e(ar1)
 gen stata_ar1_p = e(ar1p)
-gen stata_ar2 = e(ar2)
+gen stata_ar2_z = e(ar2)
 gen stata_ar2_p = e(ar2p)
 
 export delimited using "{(OUT / "stata_diagnostics.csv").as_posix()}", replace
