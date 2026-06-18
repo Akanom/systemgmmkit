@@ -87,11 +87,24 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
     assert int(debug["W_rows"]) == 8
     assert int(debug["W_cols"]) == 8
 
-    # Exact robust Hansen/J parity is not certified in the current native
-    # diagnostic layer. The two-step/Windmeijer benchmark intentionally leaves
-    # native_j_stat blank rather than reporting a misleading pseudo-Hansen value.
-    native_j = debug["native_j_stat"]
-    assert pd.isna(native_j)
+    # Exact robust Hansen/J parity is now certified for the maintained
+    # collapsed two-step System GMM xtabond2 benchmark.
+    native_j = float(debug["native_j_stat"])
+    assert pd.notna(native_j)
+
+    stata_diag_path = ART / "xtabond2_system_gmm_diagnostics.csv"
+    if stata_diag_path.exists():
+        stata_diag = pd.read_csv(stata_diag_path).iloc[0]
+        if "stata_hansen" in stata_diag.index:
+            stata_hansen = float(stata_diag["stata_hansen"])
+        elif "hansen" in stata_diag.index:
+            stata_hansen = float(stata_diag["hansen"])
+        else:
+            stata_hansen = 6.577371156435732
+    else:
+        stata_hansen = 6.577371156435732
+
+    assert abs(native_j - stata_hansen) <= 1e-5
 
     native_ze = _read_vector(ART / "native_Ze.csv")
     stata_ze = _read_vector(ART / "stata_Ze.csv")
