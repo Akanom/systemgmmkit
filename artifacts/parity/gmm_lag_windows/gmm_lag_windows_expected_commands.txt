@@ -1,0 +1,14 @@
+baseline_backward_compatibility
+===============================
+xtset id t
+xtabond2 y L1.y x, gmmstyle(y, lag(2 3) collapse) gmmstyle(x, lag(2 2) collapse) ivstyle(i.t, equation(level)) twostep robust small orthogonal
+
+role_specific_lag_windows
+=========================
+xtset id t
+xtabond2 y L1.y x cashflow, gmmstyle(y, lag(2 5) collapse) gmmstyle(x, lag(2 5) collapse) gmmstyle(cashflow, lag(1 3) collapse) ivstyle(i.t, equation(level)) twostep robust small orthogonal
+
+variable_specific_overrides
+===========================
+xtset id t
+xtabond2 y L1.y x cashflow, gmmstyle(y, lag(2 4) collapse) gmmstyle(x, lag(3 5) collapse) gmmstyle(cashflow, lag(1 2) collapse) ivstyle(i.t, equation(level)) twostep robust small orthogonal

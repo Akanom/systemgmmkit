@@ -1,0 +1,444 @@
+---------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\omoko\OneDrive\Python packages\systemgmmkit\artifacts/parity/gmm_lag_windows_
+> realdata_notime/xtabond2_notime.log
+  log type:  text
+ opened on:  17 Jun 2021, 22:52:04
+
+. 
+. import delimited "artifacts/parity/xtabond2/system_gmm_benchmark.csv", clear varnames(1)
+(encoding automatically selected: ISO-8859-1)
+(5 vars, 1,344 obs)
+
+. 
+. confirm variable id
+
+. confirm variable t
+
+. confirm variable y
+
+. confirm variable x
+
+. confirm variable w
+
+. 
+. xtset id t
+
+Panel variable: id (strongly balanced)
+ Time variable: t, 0 to 13
+         Delta: 1 unit
+
+. 
+. capture which xtabond2
+
+. if _rc {
+.     display as error "BLOCKED: xtabond2 not installed."
+.     exit 499
+. }
+
+. 
+. capture program drop export_model
+
+. program define export_model
+  1.     syntax, MODEL(name)
+  2. 
+.     estimates store `model'
+  3. 
+.     scalar __overid_df = .
+  4.     scalar __overid_source = 0
+  5. 
+.     capture scalar __overid_df = e(j_df)
+  6.     if !missing(__overid_df) {
+  7.         scalar __overid_source = 1
+  8.     }
+  9. 
+.     if missing(__overid_df) {
+ 10.         capture scalar __overid_df = e(hansen_df)
+ 11.         if !_rc & !missing(__overid_df) {
+ 12.             scalar __overid_source = 2
+ 13.         }
+ 14.     }
+ 15. 
+.     if missing(__overid_df) {
+ 16.         capture scalar __overid_df = e(df_hansen)
+ 17.         if !_rc & !missing(__overid_df) {
+ 18.             scalar __overid_source = 3
+ 19.         }
+ 20.     }
+ 21. 
+.     if missing(__overid_df) {
+ 22.         capture scalar __overid_df = e(j) - colsof(e(b))
+ 23.         if !_rc & !missing(__overid_df) {
+ 24.             scalar __overid_source = 4
+ 25.         }
+ 26.     }
+ 27. 
+.     if missing(__overid_df) | __overid_df < 0 {
+ 28.         display as error "BLOCKED: overidentification df could not be recovered."
+ 29.         ereturn list
+ 30.         exit 459
+ 31.     }
+ 32. 
+.     display "MODEL=`model'"
+ 33.     display "N=" e(N)
+ 34.     display "N_g=" e(N_g)
+ 35.     display "j=" e(j)
+ 36.     display "j_df_effective=" __overid_df
+ 37.     display "j_df_source=" __overid_source
+ 38.     display "hansenp=" e(hansenp)
+ 39.     display "sarganp=" e(sarganp)
+ 40.     display "ar1p=" e(ar1p)
+ 41.     display "ar2p=" e(ar2p)
+ 42. 
+.     matrix b = e(b)
+ 43.     matrix V = e(V)
+ 44.     local names : colnames b
+ 45.     local k = colsof(b)
+ 46. 
+.     preserve
+ 47.         clear
+ 48.         set obs `k'
+ 49.         gen str32 model = "`model'"
+ 50.         gen str32 param = ""
+ 51.         gen coef = .
+ 52.         gen std_err = .
+ 53. 
+.         local i = 1
+ 54.         foreach nm of local names {
+ 55.             replace param = "`nm'" in `i'
+ 56.             replace coef = b[1, `i'] in `i'
+ 57.             replace std_err = sqrt(V[`i', `i']) in `i'
+ 58.             local ++i
+ 59.         }
+ 60. 
+.         export delimited using "artifacts/parity/gmm_lag_windows_realdata_notime/`model'_params.c
+> sv", replace
+ 61.     restore
+ 62. 
+.     preserve
+ 63.         clear
+ 64.         set obs 1
+ 65.         gen str32 model = "`model'"
+ 66.         gen N = e(N)
+ 67.         gen N_g = e(N_g)
+ 68.         gen k_instruments = e(j)
+ 69.         gen k_params = colsof(e(b))
+ 70.         gen overid_df = __overid_df
+ 71.         gen overid_df_source = __overid_source
+ 72.         gen hansen_p = e(hansenp)
+ 73.         gen sargan_p = e(sarganp)
+ 74.         gen ar1_p = e(ar1p)
+ 75.         gen ar2_p = e(ar2p)
+ 76. 
+.         export delimited using "artifacts/parity/gmm_lag_windows_realdata_notime/`model'_diagnost
+> ics.csv", replace
+ 77.     restore
+ 78. end
+
+. 
+. ********************************************************************************
+. * m_base: backward-compatible default
+. ********************************************************************************
+. 
+. xtabond2 y L1.y x w, ///
+>     gmmstyle(y, lag(2 3) collapse) ///
+>     gmmstyle(x, lag(2 2) collapse) ///
+>     ivstyle(w, equation(level)) ///
+>     twostep robust small orthogonal
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =      1248
+Time variable : t                               Number of groups   =        96
+Number of instruments = 7                       Obs per group: min =        13
+F(3, 95)      =     97.33                                      avg =     13.00
+Prob > F      =     0.000                                      max =        13
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .5824792   .0392844    14.83   0.000     .5044899    .6604686
+             |
+           x |   2.076525   .5624862     3.69   0.000     .9598488    3.193201
+           w |  -.4266154   .0431984    -9.88   0.000    -.5123752   -.3408557
+       _cons |   .0557228   .0892144     0.62   0.534    -.1213902    .2328358
+------------------------------------------------------------------------------
+Instruments for orthogonal deviations equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L2.x collapsed
+    L(2/3).y collapsed
+Instruments for levels equation
+  Standard
+    w
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    DL.x collapsed
+    DL.y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -2.34  Pr > z =  0.019
+Arellano-Bond test for AR(2) in first differences: z =  -0.05  Pr > z =  0.960
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(3)    =   2.41  Prob > chi2 =  0.492
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(3)    =   2.19  Prob > chi2 =  0.533
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(1)    =   0.63  Prob > chi2 =  0.427
+    Difference (null H = exogenous): chi2(2)    =   1.56  Prob > chi2 =  0.457
+  gmm(y, collapse lag(2 3))
+    Hansen test excluding group:     chi2(0)    =   0.00  Prob > chi2 =      .
+    Difference (null H = exogenous): chi2(3)    =   2.19  Prob > chi2 =  0.533
+  gmm(x, collapse lag(2 2))
+    Hansen test excluding group:     chi2(1)    =   0.85  Prob > chi2 =  0.358
+    Difference (null H = exogenous): chi2(2)    =   1.35  Prob > chi2 =  0.510
+  iv(w, eq(level))
+    Hansen test excluding group:     chi2(2)    =   1.98  Prob > chi2 =  0.372
+    Difference (null H = exogenous): chi2(1)    =   0.22  Prob > chi2 =  0.641
+
+
+. 
+. export_model, model(m_base)
+MODEL=m_base
+N=1248
+N_g=96
+j=7
+j_df_effective=3
+j_df_source=2
+hansenp=.53316898
+sarganp=.49190947
+ar1p=.01918423
+ar2p=.9600029
+Number of observations (_N) was 0, now 4.
+(4 missing values generated)
+(4 missing values generated)
+(4 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(file artifacts/parity/gmm_lag_windows_realdata_notime/m_base_params.csv not found)
+file artifacts/parity/gmm_lag_windows_realdata_notime/m_base_params.csv saved
+Number of observations (_N) was 0, now 1.
+(file artifacts/parity/gmm_lag_windows_realdata_notime/m_base_diagnostics.csv not found)
+file artifacts/parity/gmm_lag_windows_realdata_notime/m_base_diagnostics.csv saved
+
+. 
+. ********************************************************************************
+. * m_role: role-specific lag windows
+. ********************************************************************************
+. 
+. xtabond2 y L1.y x w, ///
+>     gmmstyle(y, lag(2 5) collapse) ///
+>     gmmstyle(x, lag(2 5) collapse) ///
+>     gmmstyle(w, lag(1 3) collapse) ///
+>     twostep robust small orthogonal
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =      1248
+Time variable : t                               Number of groups   =        96
+Number of instruments = 15                      Obs per group: min =        13
+F(3, 95)      =    143.86                                      avg =     13.00
+Prob > F      =     0.000                                      max =        13
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .6020154   .0323124    18.63   0.000     .5378671    .6661637
+             |
+           x |    1.65521   .2862371     5.78   0.000     1.086957    2.223462
+           w |  -.3944671   .0302408   -13.04   0.000    -.4545027   -.3344315
+       _cons |   .0390197   .0980798     0.40   0.692    -.1556934    .2337328
+------------------------------------------------------------------------------
+Instruments for orthogonal deviations equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L(1/3).w collapsed
+    L(2/5).x collapsed
+    L(2/5).y collapsed
+Instruments for levels equation
+  Standard
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    D.w collapsed
+    DL.x collapsed
+    DL.y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -3.14  Pr > z =  0.002
+Arellano-Bond test for AR(2) in first differences: z =  -0.13  Pr > z =  0.894
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(11)   =  17.06  Prob > chi2 =  0.106
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(11)   =  15.03  Prob > chi2 =  0.181
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(8)    =   4.12  Prob > chi2 =  0.846
+    Difference (null H = exogenous): chi2(3)    =  10.91  Prob > chi2 =  0.012
+  gmm(y, collapse lag(2 5))
+    Hansen test excluding group:     chi2(6)    =   2.78  Prob > chi2 =  0.836
+    Difference (null H = exogenous): chi2(5)    =  12.24  Prob > chi2 =  0.032
+  gmm(x, collapse lag(2 5))
+    Hansen test excluding group:     chi2(6)    =  13.32  Prob > chi2 =  0.038
+    Difference (null H = exogenous): chi2(5)    =   1.71  Prob > chi2 =  0.887
+  gmm(w, collapse lag(1 3))
+    Hansen test excluding group:     chi2(7)    =   7.21  Prob > chi2 =  0.407
+    Difference (null H = exogenous): chi2(4)    =   7.82  Prob > chi2 =  0.099
+
+
+. 
+. export_model, model(m_role)
+MODEL=m_role
+N=1248
+N_g=96
+j=15
+j_df_effective=11
+j_df_source=2
+hansenp=.18122964
+sarganp=.10614401
+ar1p=.00169128
+ar2p=.89404702
+Number of observations (_N) was 0, now 4.
+(4 missing values generated)
+(4 missing values generated)
+(4 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(file artifacts/parity/gmm_lag_windows_realdata_notime/m_role_params.csv not found)
+file artifacts/parity/gmm_lag_windows_realdata_notime/m_role_params.csv saved
+Number of observations (_N) was 0, now 1.
+(file artifacts/parity/gmm_lag_windows_realdata_notime/m_role_diagnostics.csv not found)
+file artifacts/parity/gmm_lag_windows_realdata_notime/m_role_diagnostics.csv saved
+
+. 
+. ********************************************************************************
+. * m_var: variable-specific overrides
+. ********************************************************************************
+. 
+. xtabond2 y L1.y x w, ///
+>     gmmstyle(y, lag(2 4) collapse) ///
+>     gmmstyle(x, lag(3 5) collapse) ///
+>     gmmstyle(w, lag(1 2) collapse) ///
+>     twostep robust small orthogonal
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =      1248
+Time variable : t                               Number of groups   =        96
+Number of instruments = 12                      Obs per group: min =        13
+F(3, 95)      =     79.34                                      avg =     13.00
+Prob > F      =     0.000                                      max =        13
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .5850692   .0438451    13.34   0.000     .4980256    .6721128
+             |
+           x |   1.447331   .3402487     4.25   0.000     .7718518     2.12281
+           w |  -.3793851   .0319471   -11.88   0.000    -.4428081   -.3159621
+       _cons |   .0347051   .1030074     0.34   0.737    -.1697906    .2392007
+------------------------------------------------------------------------------
+Instruments for orthogonal deviations equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L(1/2).w collapsed
+    L(3/5).x collapsed
+    L(2/4).y collapsed
+Instruments for levels equation
+  Standard
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    D.w collapsed
+    DL2.x collapsed
+    DL.y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -2.36  Pr > z =  0.018
+Arellano-Bond test for AR(2) in first differences: z =  -0.02  Pr > z =  0.983
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(8)    =  20.30  Prob > chi2 =  0.009
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(8)    =  18.94  Prob > chi2 =  0.015
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(5)    =   2.29  Prob > chi2 =  0.808
+    Difference (null H = exogenous): chi2(3)    =  16.65  Prob > chi2 =  0.001
+  gmm(y, collapse lag(2 4))
+    Hansen test excluding group:     chi2(4)    =   3.39  Prob > chi2 =  0.495
+    Difference (null H = exogenous): chi2(4)    =  15.55  Prob > chi2 =  0.004
+  gmm(x, collapse lag(3 5))
+    Hansen test excluding group:     chi2(4)    =  15.50  Prob > chi2 =  0.004
+    Difference (null H = exogenous): chi2(4)    =   3.44  Prob > chi2 =  0.488
+  gmm(w, collapse lag(1 2))
+    Hansen test excluding group:     chi2(5)    =  12.70  Prob > chi2 =  0.026
+    Difference (null H = exogenous): chi2(3)    =   6.24  Prob > chi2 =  0.101
+
+
+. 
+. export_model, model(m_var)
+MODEL=m_var
+N=1248
+N_g=96
+j=12
+j_df_effective=8
+j_df_source=2
+hansenp=.01520311
+sarganp=.00925005
+ar1p=.01810681
+ar2p=.98312754
+Number of observations (_N) was 0, now 4.
+(4 missing values generated)
+(4 missing values generated)
+(4 missing values generated)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(1 real change made)
+(file artifacts/parity/gmm_lag_windows_realdata_notime/m_var_params.csv not found)
+file artifacts/parity/gmm_lag_windows_realdata_notime/m_var_params.csv saved
+Number of observations (_N) was 0, now 1.
+(file artifacts/parity/gmm_lag_windows_realdata_notime/m_var_diagnostics.csv not found)
+file artifacts/parity/gmm_lag_windows_realdata_notime/m_var_diagnostics.csv saved
+
+. 
+. log close
+      name:  <unnamed>
+       log:  C:\Users\omoko\OneDrive\Python packages\systemgmmkit\artifacts/parity/gmm_lag_windows_
+> realdata_notime/xtabond2_notime.log
+  log type:  text
+ closed on:  17 Jun 2021, 22:52:05
+---------------------------------------------------------------------------------------------------

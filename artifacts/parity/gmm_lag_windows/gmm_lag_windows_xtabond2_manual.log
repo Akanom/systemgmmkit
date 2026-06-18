@@ -1,0 +1,554 @@
+---------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\omoko\OneDrive\Python packages\systemgmmkit\artifacts/parity/gmm_lag_windows/
+> gmm_lag_windows_xtabond2_manual.log
+  log type:  text
+ opened on:  17 Jun 2021, 22:52:01
+
+. 
+. * Example if using a Stata dataset:
+. * use "path/to/your/parity_dataset.dta", clear
+. 
+. clear all
+
+. set more off
+
+. set seed 12345
+
+. 
+. set obs 960
+Number of observations (_N) was 0, now 960.
+
+. gen id = ceil(_n / 10)
+
+. bysort id: gen t = _n
+
+. 
+. gen x = rnormal()
+
+. gen cashflow = rnormal()
+
+. gen firm_size = rnormal()
+
+. 
+. gen y = .
+(960 missing values generated)
+
+. bysort id (t): replace y = rnormal() if t == 1
+(96 real changes made)
+
+. bysort id (t): replace y = 0.55 * y[_n-1] + 0.80 * x + 0.35 * cashflow + rnormal() if t > 1
+(864 real changes made)
+
+. 
+. drop if missing(y, x, cashflow)
+(0 observations deleted)
+
+. 
+. 
+. 
+. ********************************************************************************
+. * m_base
+. ********************************************************************************
+. xtset id t
+
+Panel variable: id (strongly balanced)
+ Time variable: t, 1 to 10
+         Delta: 1 unit
+
+. xtabond2 y L1.y x, gmmstyle(y, lag(2 3) collapse) gmmstyle(x, lag(2 2) collapse) ivstyle(i.t, equ
+> ation(level)) twostep robust small orthogonal
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+Warning: Two-step estimated covariance matrix of moments is singular.
+  Using a generalized inverse to calculate optimal weighting matrix for two-step estimation.
+  Difference-in-Sargan/Hansen statistics may be negative.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =       864
+Time variable : t                               Number of groups   =        96
+Number of instruments = 14                      Obs per group: min =         9
+F(2, 95)      =    176.30                                      avg =      9.00
+Prob > F      =     0.000                                      max =         9
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .5750489    .030835    18.65   0.000     .5138337     .636264
+             |
+           x |   .7397928   .3490559     2.12   0.037     .0468293    1.432756
+       _cons |  -.0025045   .0309446    -0.08   0.936    -.0639372    .0589282
+------------------------------------------------------------------------------
+Instruments for orthogonal deviations equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L2.x collapsed
+    L(2/3).y collapsed
+Instruments for levels equation
+  Standard
+    1b.t 2.t 3.t 4.t 5.t 6.t 7.t 8.t 9.t 10.t
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    DL.x collapsed
+    DL.y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -7.34  Pr > z =  0.000
+Arellano-Bond test for AR(2) in first differences: z =  -1.26  Pr > z =  0.206
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(11)   =   9.87  Prob > chi2 =  0.542
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(11)   =   8.84  Prob > chi2 =  0.637
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(9)    =   8.84  Prob > chi2 =  0.452
+    Difference (null H = exogenous): chi2(2)    =   0.00  Prob > chi2 =  0.999
+  gmm(y, collapse lag(2 3))
+    Hansen test excluding group:     chi2(8)    =   8.76  Prob > chi2 =  0.363
+    Difference (null H = exogenous): chi2(3)    =   0.08  Prob > chi2 =  0.994
+  gmm(x, collapse lag(2 2))
+    Hansen test excluding group:     chi2(9)    =   8.83  Prob > chi2 =  0.453
+    Difference (null H = exogenous): chi2(2)    =   0.01  Prob > chi2 =  0.993
+  iv(1b.t 2.t 3.t 4.t 5.t 6.t 7.t 8.t 9.t 10.t, eq(level))
+    Hansen test excluding group:     chi2(3)    =   0.57  Prob > chi2 =  0.902
+    Difference (null H = exogenous): chi2(8)    =   8.27  Prob > chi2 =  0.408
+
+
+. estimates store m_base
+
+. 
+. matrix b_m_base = e(b)
+
+. matrix V_m_base = e(V)
+
+. 
+. display "MODEL=m_base"
+MODEL=m_base
+
+. display "N=" e(N)
+N=864
+
+. display "N_g=" e(N_g)
+N_g=96
+
+. display "j=" e(j)
+j=14
+
+. display "j_df_raw=" e(j_df)
+j_df_raw=.
+
+. 
+. scalar __sgmmkit_overid_df = .
+
+. scalar __sgmmkit_overid_df_source = 0
+
+. 
+. capture scalar __sgmmkit_overid_df = e(j_df)
+
+. if !missing(__sgmmkit_overid_df) {
+.     scalar __sgmmkit_overid_df_source = 1
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(hansen_df)
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 2
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(df_hansen)
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 3
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(j) - colsof(e(b))
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 4
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) | __sgmmkit_overid_df < 0 {
+.     display as error "BLOCKED: could not recover Hansen/Sargan overidentification degrees of free
+> dom."
+.     display as error "Run ereturn list after xtabond2 and inspect stored diagnostics."
+.     ereturn list
+.     exit 459
+. }
+
+. 
+. display "j_df_effective=" __sgmmkit_overid_df
+j_df_effective=11
+
+. display "j_df_source=" __sgmmkit_overid_df_source
+j_df_source=2
+
+. display "k_instruments_ej=" e(j)
+k_instruments_ej=14
+
+. display "k_params_colsof_eb=" colsof(e(b))
+k_params_colsof_eb=3
+
+. display "hansenp=" e(hansenp)
+hansenp=.63663684
+
+. display "sarganp=" e(sarganp)
+sarganp=.54223558
+
+. display "ar1p=" e(ar1p)
+ar1p=2.126e-13
+
+. display "ar2p=" e(ar2p)
+ar2p=.20589835
+
+. 
+. ********************************************************************************
+. * m_role
+. ********************************************************************************
+. xtset id t
+
+Panel variable: id (strongly balanced)
+ Time variable: t, 1 to 10
+         Delta: 1 unit
+
+. xtabond2 y L1.y x cashflow, gmmstyle(y, lag(2 5) collapse) gmmstyle(x, lag(2 5) collapse) gmmstyl
+> e(cashflow, lag(1 3) collapse) ivstyle(i.t, equation(level)) twostep robust small orthogonal
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+Warning: Two-step estimated covariance matrix of moments is singular.
+  Using a generalized inverse to calculate optimal weighting matrix for two-step estimation.
+  Difference-in-Sargan/Hansen statistics may be negative.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =       864
+Time variable : t                               Number of groups   =        96
+Number of instruments = 23                      Obs per group: min =         9
+F(3, 95)      =    150.22                                      avg =      9.00
+Prob > F      =     0.000                                      max =         9
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .5775535   .0326699    17.68   0.000     .5126955    .6424116
+             |
+           x |   .9324662    .246138     3.79   0.000     .4438205    1.421112
+    cashflow |   .4353179   .0459251     9.48   0.000     .3441451    .5264907
+       _cons |  -.0733389   .0336617    -2.18   0.032    -.1401658   -.0065121
+------------------------------------------------------------------------------
+Instruments for orthogonal deviations equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L(1/3).cashflow collapsed
+    L(2/5).x collapsed
+    L(2/5).y collapsed
+Instruments for levels equation
+  Standard
+    1b.t 2.t 3.t 4.t 5.t 6.t 7.t 8.t 9.t 10.t
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    D.cashflow collapsed
+    DL.x collapsed
+    DL.y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -7.10  Pr > z =  0.000
+Arellano-Bond test for AR(2) in first differences: z =  -0.59  Pr > z =  0.554
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(19)   =  16.91  Prob > chi2 =  0.596
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(19)   =  13.94  Prob > chi2 =  0.787
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(16)   =  11.83  Prob > chi2 =  0.756
+    Difference (null H = exogenous): chi2(3)    =   2.11  Prob > chi2 =  0.551
+  gmm(y, collapse lag(2 5))
+    Hansen test excluding group:     chi2(14)   =  12.66  Prob > chi2 =  0.553
+    Difference (null H = exogenous): chi2(5)    =   1.27  Prob > chi2 =  0.938
+  gmm(x, collapse lag(2 5))
+    Hansen test excluding group:     chi2(14)   =   9.26  Prob > chi2 =  0.814
+    Difference (null H = exogenous): chi2(5)    =   4.68  Prob > chi2 =  0.457
+  gmm(cashflow, collapse lag(1 3))
+    Hansen test excluding group:     chi2(15)   =  11.67  Prob > chi2 =  0.704
+    Difference (null H = exogenous): chi2(4)    =   2.26  Prob > chi2 =  0.687
+  iv(1b.t 2.t 3.t 4.t 5.t 6.t 7.t 8.t 9.t 10.t, eq(level))
+    Hansen test excluding group:     chi2(11)   =   8.51  Prob > chi2 =  0.667
+    Difference (null H = exogenous): chi2(8)    =   5.43  Prob > chi2 =  0.711
+
+
+. estimates store m_role
+
+. 
+. matrix b_m_role = e(b)
+
+. matrix V_m_role = e(V)
+
+. 
+. display "MODEL=m_role"
+MODEL=m_role
+
+. display "N=" e(N)
+N=864
+
+. display "N_g=" e(N_g)
+N_g=96
+
+. display "j=" e(j)
+j=23
+
+. display "j_df_raw=" e(j_df)
+j_df_raw=.
+
+. 
+. scalar __sgmmkit_overid_df = .
+
+. scalar __sgmmkit_overid_df_source = 0
+
+. 
+. capture scalar __sgmmkit_overid_df = e(j_df)
+
+. if !missing(__sgmmkit_overid_df) {
+.     scalar __sgmmkit_overid_df_source = 1
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(hansen_df)
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 2
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(df_hansen)
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 3
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(j) - colsof(e(b))
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 4
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) | __sgmmkit_overid_df < 0 {
+.     display as error "BLOCKED: could not recover Hansen/Sargan overidentification degrees of free
+> dom."
+.     display as error "Run ereturn list after xtabond2 and inspect stored diagnostics."
+.     ereturn list
+.     exit 459
+. }
+
+. 
+. display "j_df_effective=" __sgmmkit_overid_df
+j_df_effective=19
+
+. display "j_df_source=" __sgmmkit_overid_df_source
+j_df_source=2
+
+. display "k_instruments_ej=" e(j)
+k_instruments_ej=23
+
+. display "k_params_colsof_eb=" colsof(e(b))
+k_params_colsof_eb=4
+
+. display "hansenp=" e(hansenp)
+hansenp=.78744133
+
+. display "sarganp=" e(sarganp)
+sarganp=.59572515
+
+. display "ar1p=" e(ar1p)
+ar1p=1.280e-12
+
+. display "ar2p=" e(ar2p)
+ar2p=.55373402
+
+. 
+. ********************************************************************************
+. * m_var
+. ********************************************************************************
+. xtset id t
+
+Panel variable: id (strongly balanced)
+ Time variable: t, 1 to 10
+         Delta: 1 unit
+
+. xtabond2 y L1.y x cashflow, gmmstyle(y, lag(2 4) collapse) gmmstyle(x, lag(3 5) collapse) gmmstyl
+> e(cashflow, lag(1 2) collapse) ivstyle(i.t, equation(level)) twostep robust small orthogonal
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+Warning: Two-step estimated covariance matrix of moments is singular.
+  Using a generalized inverse to calculate optimal weighting matrix for two-step estimation.
+  Difference-in-Sargan/Hansen statistics may be negative.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =       864
+Time variable : t                               Number of groups   =        96
+Number of instruments = 20                      Obs per group: min =         9
+F(3, 95)      =    158.19                                      avg =      9.00
+Prob > F      =     0.000                                      max =         9
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+           y |
+         L1. |   .5743086   .0331806    17.31   0.000     .5084368    .6401804
+             |
+           x |   .8790238   .2384362     3.69   0.000      .405668     1.35238
+    cashflow |   .4407797    .041511    10.62   0.000     .3583699    .5231894
+       _cons |  -.0746747   .0341631    -2.19   0.031     -.142497   -.0068523
+------------------------------------------------------------------------------
+Instruments for orthogonal deviations equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L(1/2).cashflow collapsed
+    L(3/5).x collapsed
+    L(2/4).y collapsed
+Instruments for levels equation
+  Standard
+    1b.t 2.t 3.t 4.t 5.t 6.t 7.t 8.t 9.t 10.t
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    D.cashflow collapsed
+    DL2.x collapsed
+    DL.y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -7.19  Pr > z =  0.000
+Arellano-Bond test for AR(2) in first differences: z =  -0.54  Pr > z =  0.591
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(16)   =  16.20  Prob > chi2 =  0.439
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(16)   =  14.12  Prob > chi2 =  0.590
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(13)   =  11.78  Prob > chi2 =  0.546
+    Difference (null H = exogenous): chi2(3)    =   2.34  Prob > chi2 =  0.505
+  gmm(y, collapse lag(2 4))
+    Hansen test excluding group:     chi2(12)   =  12.74  Prob > chi2 =  0.388
+    Difference (null H = exogenous): chi2(4)    =   1.38  Prob > chi2 =  0.848
+  gmm(x, collapse lag(3 5))
+    Hansen test excluding group:     chi2(12)   =   9.26  Prob > chi2 =  0.681
+    Difference (null H = exogenous): chi2(4)    =   4.86  Prob > chi2 =  0.302
+  gmm(cashflow, collapse lag(1 2))
+    Hansen test excluding group:     chi2(13)   =  11.85  Prob > chi2 =  0.540
+    Difference (null H = exogenous): chi2(3)    =   2.27  Prob > chi2 =  0.518
+  iv(1b.t 2.t 3.t 4.t 5.t 6.t 7.t 8.t 9.t 10.t, eq(level))
+    Hansen test excluding group:     chi2(8)    =   9.06  Prob > chi2 =  0.337
+    Difference (null H = exogenous): chi2(8)    =   5.06  Prob > chi2 =  0.752
+
+
+. estimates store m_var
+
+. 
+. matrix b_m_var = e(b)
+
+. matrix V_m_var = e(V)
+
+. 
+. display "MODEL=m_var"
+MODEL=m_var
+
+. display "N=" e(N)
+N=864
+
+. display "N_g=" e(N_g)
+N_g=96
+
+. display "j=" e(j)
+j=20
+
+. display "j_df_raw=" e(j_df)
+j_df_raw=.
+
+. 
+. scalar __sgmmkit_overid_df = .
+
+. scalar __sgmmkit_overid_df_source = 0
+
+. 
+. capture scalar __sgmmkit_overid_df = e(j_df)
+
+. if !missing(__sgmmkit_overid_df) {
+.     scalar __sgmmkit_overid_df_source = 1
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(hansen_df)
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 2
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(df_hansen)
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 3
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) {
+.     capture scalar __sgmmkit_overid_df = e(j) - colsof(e(b))
+.     if !_rc & !missing(__sgmmkit_overid_df) {
+.         scalar __sgmmkit_overid_df_source = 4
+.     }
+. }
+
+. 
+. if missing(__sgmmkit_overid_df) | __sgmmkit_overid_df < 0 {
+.     display as error "BLOCKED: could not recover Hansen/Sargan overidentification degrees of free
+> dom."
+.     display as error "Run ereturn list after xtabond2 and inspect stored diagnostics."
+.     ereturn list
+.     exit 459
+. }
+
+. 
+. display "j_df_effective=" __sgmmkit_overid_df
+j_df_effective=16
+
+. display "j_df_source=" __sgmmkit_overid_df_source
+j_df_source=2
+
+. display "k_instruments_ej=" e(j)
+k_instruments_ej=20
+
+. display "k_params_colsof_eb=" colsof(e(b))
+k_params_colsof_eb=4
+
+. display "hansenp=" e(hansenp)
+hansenp=.58978567
+
+. display "sarganp=" e(sarganp)
+sarganp=.43918018
+
+. display "ar1p=" e(ar1p)
+ar1p=6.463e-13
+
+. display "ar2p=" e(ar2p)
+ar2p=.59081447
+
+. 
+. log close
+      name:  <unnamed>
+       log:  C:\Users\omoko\OneDrive\Python packages\systemgmmkit\artifacts/parity/gmm_lag_windows/
+> gmm_lag_windows_xtabond2_manual.log
+  log type:  text
+ closed on:  17 Jun 2021, 22:52:02
+---------------------------------------------------------------------------------------------------

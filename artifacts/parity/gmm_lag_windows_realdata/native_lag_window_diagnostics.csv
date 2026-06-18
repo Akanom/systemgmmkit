@@ -1,0 +1,4 @@
+model,native_nobs,native_n_groups,native_n_instruments,native_hansen_p,native_sargan_p,native_ar1_p,native_ar2_p
+m_base,1248,,18,,,0.011910550233694415,0.5128138437792078
+m_role,1248,,26,,,0.5860275797968866,0.9157455034588635
+m_var,1248,,23,,,0.18687970518494634,0.8356601354418745

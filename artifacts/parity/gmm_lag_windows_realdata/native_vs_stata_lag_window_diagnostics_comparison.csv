@@ -1,0 +1,4 @@
+model,stata_nobs,stata_n_groups,stata_n_instruments,k_params,overid_df,overid_df_source,stata_hansen_p,stata_sargan_p,stata_ar1_p,stata_ar2_p,native_nobs,native_n_groups,native_n_instruments,native_hansen_p,native_sargan_p,native_ar1_p,native_ar2_p,abs_nobs_diff,abs_groups_diff,abs_instruments_diff,abs_hansen_p_diff,abs_sargan_p_diff,abs_ar1_p_diff,abs_ar2_p_diff
+m_base,1248,96,19,4,15,2,0.015286937,5.4840825e-07,0.00017050261,0.86649328,1248,,18,,,0.011910550233694415,0.5128138437792078,0,,1,,,0.011740047623694416,0.35367943622079223
+m_role,1248,96,27,4,23,2,0.075683154,2.7598478e-06,2.2746617e-05,0.96388566,1248,,26,,,0.5860275797968866,0.9157455034588635,0,,1,,,0.5860048331798866,0.04814015654113646
+m_var,1248,96,24,4,20,2,0.0068044714,1.053469e-09,4.7984731e-06,0.7351954,1248,,23,,,0.18687970518494634,0.8356601354418745,0,,1,,,0.18687490671184634,0.1004647354418744
