@@ -74,10 +74,19 @@ program define export_model
     display "j=" e(j)
     display "j_df_effective=" __overid_df
     display "j_df_source=" __overid_source
+    capture scalar __hansen_stat = e(hansen)
+    capture scalar __sargan_stat = e(sargan)
+    capture scalar __ar1_z = e(ar1)
+    capture scalar __ar2_z = e(ar2)
+
     display "hansenp=" e(hansenp)
     display "sarganp=" e(sarganp)
     display "ar1p=" e(ar1p)
     display "ar2p=" e(ar2p)
+    capture display "hansen_stat=" __hansen_stat
+    capture display "sargan_stat=" __sargan_stat
+    capture display "ar1_z=" __ar1_z
+    capture display "ar2_z=" __ar2_z
 
     matrix b = e(b)
     matrix V = e(V)
@@ -113,10 +122,63 @@ program define export_model
         gen k_params = colsof(e(b))
         gen overid_df = __overid_df
         gen overid_df_source = __overid_source
+        capture scalar __hansen_stat = e(hansen)
+        capture scalar __sargan_stat = e(sargan)
+        capture scalar __ar1_z = e(ar1)
+        capture scalar __ar2_z = e(ar2)
+
+        scalar __hansen_stat = .
+        scalar __sargan_stat = .
+        scalar __ar1_z = .
+        scalar __ar2_z = .
+        scalar __ar1_z_abs_from_p = .
+        scalar __ar2_z_abs_from_p = .
+
+        capture scalar __hansen_stat = e(hansen)
+        capture scalar __sargan_stat = e(sargan)
+
+        capture scalar __ar1_z = e(ar1)
+        capture scalar __ar2_z = e(ar2)
+
+        if !missing(e(ar1p)) {
+            capture scalar __ar1_z_abs_from_p = invnormal(1 - e(ar1p) / 2)
+        }
+
+        if !missing(e(ar2p)) {
+            capture scalar __ar2_z_abs_from_p = invnormal(1 - e(ar2p) / 2)
+        }
+
+        capture drop hansen_p
+
         gen hansen_p = e(hansenp)
+        capture drop sargan_p
         gen sargan_p = e(sarganp)
+        capture drop ar1_p
         gen ar1_p = e(ar1p)
+        capture drop ar2_p
         gen ar2_p = e(ar2p)
+
+        capture drop hansen_stat
+
+        gen hansen_stat = __hansen_stat
+        capture drop sargan_stat
+        gen sargan_stat = __sargan_stat
+        capture drop ar1_z
+        gen ar1_z = __ar1_z
+        capture drop ar2_z
+        gen ar2_z = __ar2_z
+        capture drop ar1_z_abs_from_p
+        gen ar1_z_abs_from_p = __ar1_z_abs_from_p
+        capture drop ar2_z_abs_from_p
+        gen ar2_z_abs_from_p = __ar2_z_abs_from_p
+        capture drop hansen_stat
+        gen hansen_stat = __hansen_stat
+        capture drop sargan_stat
+        gen sargan_stat = __sargan_stat
+        capture drop ar1_z
+        gen ar1_z = __ar1_z
+        capture drop ar2_z
+        gen ar2_z = __ar2_z
 
         export delimited using "artifacts/parity/gmm_lag_windows_realdata_notime/`model'_diagnostics.csv", replace
     restore

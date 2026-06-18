@@ -108,8 +108,11 @@ def extract_diag(model, result):
         "native_n_groups": pick("n_groups", "groups", "N_g"),
         "native_n_instruments": pick("n_instruments", "k_instruments", "j"),
         "native_hansen_p": pick("hansen_p", "hansenp"),
+        "native_sargan_stat": pick("sargan_stat", "sargan"),
         "native_sargan_p": pick("sargan_p", "sarganp"),
+        "native_ar1_z": pick("ar1_z", "ar1"),
         "native_ar1_p": pick("ar1_p", "ar1p"),
+        "native_ar2_z": pick("ar2_z", "ar2"),
         "native_ar2_p": pick("ar2_p", "ar2p"),
     }
 
@@ -118,8 +121,7 @@ native_diags = []
 
 for model, spec in specs.items():
     print(f"Running native: {model}")
-    windmeijer=True,
-    res = run_system_gmm(spec, df, entity="id", time="t", backend="native")
+    res = run_system_gmm(spec, df, entity="id", time="t", backend="native", windmeijer=True)
 
     p = extract_params(res)
     p.insert(0, "model", model)
@@ -161,8 +163,21 @@ for model in specs:
             "k_instruments": "stata_n_instruments",
             "hansen_p": "stata_hansen_p",
             "sargan_p": "stata_sargan_p",
+            "hansen_stat": "stata_hansen_stat",
+            "sargan_stat": "stata_sargan_stat",
+            "ar1_z": "stata_ar1_z",
             "ar1_p": "stata_ar1_p",
+            "ar2_z": "stata_ar2_z",
             "ar2_p": "stata_ar2_p",
+            "ar1_z_abs_from_p": "stata_ar1_z_abs_from_p",
+            "ar2_z_abs_from_p": "stata_ar2_z_abs_from_p",
+        }
+    )
+
+    stata_d = stata_d.rename(
+        columns={
+            "ar1_z_abs_from_p": "stata_ar1_z_abs_from_p",
+            "ar2_z_abs_from_p": "stata_ar2_z_abs_from_p",
         }
     )
 
@@ -175,11 +190,22 @@ for model in specs:
         ("native_n_groups", "stata_n_groups", "abs_groups_diff"),
         ("native_n_instruments", "stata_n_instruments", "abs_instruments_diff"),
         ("native_hansen_p", "stata_hansen_p", "abs_hansen_p_diff"),
+        ("native_sargan_stat", "stata_sargan_stat", "abs_sargan_stat_diff"),
         ("native_sargan_p", "stata_sargan_p", "abs_sargan_p_diff"),
+        ("native_ar1_z", "stata_ar1_z", "abs_ar1_z_diff"),
         ("native_ar1_p", "stata_ar1_p", "abs_ar1_p_diff"),
+        ("native_ar2_z", "stata_ar2_z", "abs_ar2_z_diff"),
         ("native_ar2_p", "stata_ar2_p", "abs_ar2_p_diff"),
     ]:
-        dm[c] = (pd.to_numeric(dm[a], errors="coerce") - pd.to_numeric(dm[b], errors="coerce")).abs()
+        if a not in dm.columns:
+            dm[a] = pd.NA
+        if b not in dm.columns:
+            dm[b] = pd.NA
+
+        dm[c] = (
+            pd.to_numeric(dm[a], errors="coerce")
+            - pd.to_numeric(dm[b], errors="coerce")
+        ).abs()
 
     diag_frames.append(dm)
 

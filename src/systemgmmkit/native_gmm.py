@@ -38,8 +38,11 @@ class NativeGMMResult:
     n_groups: int | None = None
     hansen_p: float | None = None
     sargan_p: float | None = None
+    sargan_stat: float | None = None
     ar1_p: float | None = None
     ar2_p: float | None = None
+    ar1_z: float | None = None
+    ar2_z: float | None = None
     z_shape: tuple[int, int] | None = None
     w_shape: tuple[int, int] | None = None
     j_stat: float | None = None
@@ -1444,7 +1447,7 @@ def _native_overid_diagnostics(
     return pvalue, pvalue
 
 
-def _native_ab_serial_correlation_pvalues(
+def _native_ab_serial_correlation_diagnostics(
     *,
     data: pd.DataFrame,
     entity: str,
@@ -1454,16 +1457,32 @@ def _native_ab_serial_correlation_pvalues(
     X: np.ndarray,
     coef_names: list[str],
     system: bool,
-) -> tuple[float | None, float | None]:
-    """Experimental Arellano-Bond AR(1)/AR(2)-style residual tests.
+) -> tuple[float | None, float | None, float | None, float | None]:
+    """Experimental Arellano-Bond AR(1)/AR(2)-style residual diagnostics.
 
-    Uses residuals from differenced-equation rows. For System GMM, level rows
-    are excluded using the level-only `_con` marker.
+    Returns (ar1_z, ar1_p, ar2_z, ar2_p).
+
+    Diagnostic modes are controlled by SYSTEMGMMKIT_SYSTEM_AR_MODE. These modes
+    are intentionally experimental and should not be exposed by default.
     """
     try:
+        import os as _native_ar_mode_os
+
+        mode = (
+            _native_ar_mode_os.getenv(
+                "SYSTEMGMMKIT_SYSTEM_AR_MODE",
+                "corr_sqrt_n",
+            )
+            .strip()
+            .lower()
+        )
+
         resid = np.asarray(residuals, dtype=float).reshape(-1)
         idx = np.asarray(row_index)
 
+        # For System GMM, exclude level-equation rows. The native level equation
+        # has an explicit _con marker equal to one. The AR test is based on
+        # transformed-equation residual timing candidates only.
         if system and "_con" in coef_names:
             con_col = coef_names.index("_con")
             diff_mask = ~np.isclose(np.asarray(X[:, con_col], dtype=float), 1.0)
@@ -1477,33 +1496,82 @@ def _native_ab_serial_correlation_pvalues(
         panel_keys["_resid"] = resid
         panel_keys = panel_keys.sort_values([entity, time])
 
-        def _lag_test(lag: int) -> float | None:
+        def _safe_p(z: float | None) -> float | None:
+            if z is None or not np.isfinite(z):
+                return None
+            return float(2.0 * stats.norm.sf(abs(float(z))))
+
+        def _lag_test(lag: int) -> tuple[float | None, float | None]:
             d = panel_keys.copy()
             d["_lag"] = d.groupby(entity)["_resid"].shift(lag)
             d = d.dropna(subset=["_resid", "_lag"])
 
             if len(d) < 5:
-                return None
+                return None, None
 
             a = d["_resid"].to_numpy(dtype=float)
             b = d["_lag"].to_numpy(dtype=float)
+            prod = a * b
+            n = float(len(d))
 
-            denom = float(np.sqrt(np.sum(a * a) * np.sum(b * b)))
-            if denom <= 0:
-                return None
+            numerator = float(np.sum(prod))
 
-            corr = float(np.sum(a * b) / denom)
-            z = corr * np.sqrt(len(d))
+            denom_corr = float(np.sqrt(np.sum(a * a) * np.sum(b * b)))
+            z_corr = None
+            if denom_corr > 0:
+                z_corr = float((numerator / denom_corr) * np.sqrt(n))
 
-            if not np.isfinite(z):
-                return None
+            prod_centered = prod - float(np.mean(prod))
+            denom_prod = float(np.sqrt(np.sum(prod_centered * prod_centered)))
+            z_pair_sum = None
+            if denom_prod > 0:
+                z_pair_sum = float(numerator / denom_prod)
 
-            return float(2.0 * stats.norm.sf(abs(z)))
+            # Cluster/group-based candidate: sum the residual products within
+            # entity and standardize across groups.
+            g = d.groupby(entity, sort=False).apply(
+                lambda frame: float(np.sum(frame["_resid"].to_numpy(dtype=float) * frame["_lag"].to_numpy(dtype=float)))
+            ).to_numpy(dtype=float)
 
-        return _lag_test(1), _lag_test(2)
+            z_group_sum = None
+            if len(g) > 1:
+                g_centered = g - float(np.mean(g))
+                denom_group = float(np.sqrt(np.sum(g_centered * g_centered)))
+                if denom_group > 0:
+                    z_group_sum = float(np.sum(g) / denom_group)
+
+            z_group_t = None
+            if len(g) > 1:
+                sd_g = float(np.std(g, ddof=1))
+                if sd_g > 0:
+                    z_group_t = float(np.mean(g) / (sd_g / np.sqrt(float(len(g)))))
+
+            candidates: dict[str, float | None] = {
+                "corr_sqrt_n": z_corr,
+                "neg_corr_sqrt_n": None if z_corr is None else -z_corr,
+                "pair_sum": z_pair_sum,
+                "neg_pair_sum": None if z_pair_sum is None else -z_pair_sum,
+                "group_sum": z_group_sum,
+                "neg_group_sum": None if z_group_sum is None else -z_group_sum,
+                "group_t": z_group_t,
+                "neg_group_t": None if z_group_t is None else -z_group_t,
+            }
+
+            if mode not in candidates:
+                raise ValueError(
+                    "Unsupported SYSTEMGMMKIT_SYSTEM_AR_MODE="
+                    f"{mode!r}. Use one of: {sorted(candidates)}."
+                )
+
+            z = candidates[mode]
+            return z, _safe_p(z)
+
+        ar1_z, ar1_p = _lag_test(1)
+        ar2_z, ar2_p = _lag_test(2)
+        return ar1_z, ar1_p, ar2_z, ar2_p
 
     except Exception:
-        return None, None
+        return None, None, None, None
 
 
 def _native_fod_difference_windmeijer_covariance(
@@ -1955,7 +2023,7 @@ def run_native_dynamic_panel_gmm(
         n_params=len(names),
     )
 
-    ar1_p, ar2_p = _native_ab_serial_correlation_pvalues(
+    ar1_z, ar1_p, ar2_z, ar2_p = _native_ab_serial_correlation_diagnostics(
         data=data,
         entity=entity,
         time=time,
@@ -1968,13 +2036,28 @@ def run_native_dynamic_panel_gmm(
 
     # System-GMM AR diagnostics are not yet xtabond2-equivalent.
     #
-    # The current native helper is a residual-autocorrelation approximation.
-    # xtabond2's AR(1)/AR(2) tests are Arellano-Bond m-tests based on transformed
-    # residual moments and their appropriate variance. Until strict parity is
-    # certified, do not expose misleading System-GMM AR p-values.
+    # Diagnostic mode:
+    #   SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR=1
+    # exposes the current internal AR approximation so parity scripts can compare
+    # candidate residual timing conventions. Production output keeps these unset.
     if bool(spec.system):
-        ar1_p = None
-        ar2_p = None
+        import os as _native_ar_report_os
+
+        _report_experimental_system_ar = (
+            _native_ar_report_os.getenv(
+                "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR",
+                "0",
+            )
+            .strip()
+            .lower()
+            in {"1", "true", "yes", "on"}
+        )
+
+        if not _report_experimental_system_ar:
+            ar1_z = None
+            ar1_p = None
+            ar2_z = None
+            ar2_p = None
 
     _u_col = residual_vec.reshape(-1, 1)
     _ztu = Z.T @ _u_col
@@ -2008,6 +2091,52 @@ def run_native_dynamic_panel_gmm(
     _sargan_stat_raw = float((_ztu.T @ _sargan_weight @ _ztu).squeeze())
     _sargan_stat = float(_sargan_stat_raw * _sargan_small_scale)
 
+
+    # Experimental System-GMM Sargan statistic modes.
+    # Diagnostic only; do not productionize without strict xtabond2 parity.
+    if bool(spec.system):
+        import os as _native_sargan_mode_os
+    
+        _sargan_mode = (
+            _native_sargan_mode_os.getenv(
+                "SYSTEMGMMKIT_SYSTEM_SARGAN_MODE",
+                "current",
+            )
+            .strip()
+            .lower()
+        )
+    
+        if _sargan_mode in {"current", "final_w1_small"}:
+            pass
+    
+        elif _sargan_mode == "final_w1_raw":
+            _sargan_stat = float(_sargan_stat_raw)
+    
+        elif _sargan_mode == "final_w2_small":
+            _sargan_stat = float((_ztu.T @ W @ _ztu).squeeze() * _sargan_small_scale)
+    
+        elif _sargan_mode == "final_w2_raw":
+            _sargan_stat = float((_ztu.T @ W @ _ztu).squeeze())
+    
+        elif _sargan_mode == "hansen_stat":
+            _sargan_stat = float(_hansen_stat)
+    
+        elif _sargan_mode == "hansen_stat_raw":
+            _sargan_stat = float(_hansen_stat_raw)
+    
+        elif _sargan_mode == "n_groups_scaled_hansen":
+            _sargan_stat = float(_hansen_stat_raw * float(n_groups_for_cov))
+    
+        elif _sargan_mode == "nobs_scaled_hansen":
+            _sargan_stat = float(_hansen_stat_raw * float(nobs))
+    
+        else:
+            raise ValueError(
+                "Unsupported SYSTEMGMMKIT_SYSTEM_SARGAN_MODE="
+                f"{_sargan_mode!r}. Use current, final_w1_raw, final_w2_small, "
+                "final_w2_raw, hansen_stat, hansen_stat_raw, n_groups_scaled_hansen, "
+                "or nobs_scaled_hansen."
+            )
     _hansen_j_stat = None
     _hansen_p_candidate = None
     _hansen_j_error = None
@@ -2050,11 +2179,31 @@ def run_native_dynamic_panel_gmm(
     )
 
     if _is_twostep_like:
-        # In two-step output, keep j_stat unset because the primary robust J is Hansen.
-        # System-GMM Sargan parity is not yet certified, so do not report a misleading
-        # non-robust Sargan p-value here.
-        _j_stat = None
-        sargan_p = None
+        # In two-step output, the primary robust J is Hansen.
+        # System-GMM Sargan parity is not yet certified, so production output keeps
+        # Sargan unset unless an explicit diagnostic flag is enabled.
+        import os as _native_sargan_report_os
+
+        _report_experimental_system_sargan = (
+            _native_sargan_report_os.getenv(
+                "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_SARGAN",
+                "0",
+            )
+            .strip()
+            .lower()
+            in {"1", "true", "yes", "on"}
+        )
+
+        if bool(spec.system) and not _report_experimental_system_sargan:
+            _j_stat = None
+            sargan_p = None
+        else:
+            _j_stat = _sargan_stat
+            _df_sargan = _overid_df
+            if _df_sargan > 0 and np.isfinite(_j_stat):
+                sargan_p = float(stats.chi2.sf(_j_stat, _df_sargan))
+            else:
+                sargan_p = None
     else:
         _j_stat = _sargan_stat
 
@@ -2207,8 +2356,11 @@ def run_native_dynamic_panel_gmm(
         n_groups=int(n_groups_for_cov) if int(n_groups_for_cov) > 0 else None,
         hansen_p=hansen_p,
         sargan_p=sargan_p,
+        sargan_stat=_j_stat,
         ar1_p=ar1_p,
         ar2_p=ar2_p,
+        ar1_z=ar1_z,
+        ar2_z=ar2_z,
         z_shape=tuple(Z.shape),
         w_shape=tuple(W.shape),
         j_stat=_j_stat,
