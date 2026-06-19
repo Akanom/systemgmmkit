@@ -1,10 +1,11 @@
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from systemgmmkit.postestimation import (
-    coefficient_plot,
+    parameter_impact_plot,
     marginal_effects_plot,
     margins_prediction_plot,
     interaction_plot,
@@ -14,10 +15,11 @@ from systemgmmkit.postestimation import (
     residual_histogram,
     fixed_effects_plot,
     panel_spaghetti_plot,
-    instrument_count_plot,
-    hansen_ar_diagnostic_plot,
+    instrument_architecture_plot,
+    model_health_panel,
     counterfactual_scenario_plot,
-    surface_3d_plot,
+    effect_surface_plot,
+    dynamic_persistence_plot,
     export_postestimation_gallery,
 )
 
@@ -53,8 +55,13 @@ class DemoResult:
     ar2_p = 0.32
 
 
+def save(fig, figures, name, path):
+    figures[name] = path
+    plt.close(fig)
+
+
 def main() -> None:
-    out = Path("outputs/postestimation_graphics")
+    out = Path("outputs/sgm_viz_gallery")
     out.mkdir(parents=True, exist_ok=True)
 
     result = DemoResult()
@@ -127,118 +134,39 @@ def main() -> None:
         - 0.25 * surface["techshare"] ** 2
     )
 
-    for style in ["stata", "journal", "dashboard"]:
-        preset = "dashboard" if style == "dashboard" else "paper"
+    plot_jobs = [
+        ("01_parameter_impact", lambda p: parameter_impact_plot(result, save=p)),
+        ("02_marginal_response", lambda p: marginal_effects_plot(effects, save=p)),
+        ("03_prediction_path", lambda p: margins_prediction_plot(grid, x="techshare", y="pred", lower="lo", upper="hi", group="condition", save=p)),
+        ("04_interaction_response", lambda p: interaction_plot(grid, x="techshare", y="pred", moderator="condition", save=p)),
+        ("05_conditional_effect_path", lambda p: conditional_effects_plot(grid, x="techshare", effect="pred", condition="condition", lower="lo", upper="hi", save=p)),
+        ("06_model_fit_residual_map", lambda p: residuals_vs_fitted_plot(result, save=p)),
+        ("07_residual_distribution_check", lambda p: qq_residual_plot(result.residuals, save=p)),
+        ("08_residual_density_profile", lambda p: residual_histogram(result.residuals, save=p)),
+        ("09_panel_trajectory_map", lambda p: panel_spaghetti_plot(panel, entity="country", time="year", y="growth", highlight=["Nigeria", "Ghana"], save=p)),
+        ("10_unit_effect_profile", lambda p: fixed_effects_plot(fe, save=p)),
+        ("11_instrument_architecture", lambda p: instrument_architecture_plot(instr, save=p)),
+        ("12_model_health_panel", lambda p: model_health_panel({"Hansen": 0.19, "Sargan": 0.09, "AR(1)": 0.08, "AR(2)": 0.32}, save=p)),
+        ("13_scenario_response_path", lambda p: counterfactual_scenario_plot(scenario, time="year", y="pred", scenario="scenario", save=p)),
+        ("14_effect_surface", lambda p: effect_surface_plot(surface, x="techshare", y="polity", z="pred", save=p)),
+        ("15_dynamic_persistence_path", lambda p: dynamic_persistence_plot(0.31, periods=20, save=p)),
+    ]
 
-        path = out / f"{style}_01_coefficient_plot.png"
-        fig = coefficient_plot(result, style=style, preset=preset, save=path); import matplotlib.pyplot as plt; plt.close(fig)
-        figures[f"{style}_coefficient_plot"] = path
-
-        path = out / f"{style}_02_marginal_effects.png"
-        marginal_effects_plot(effects, style=style, preset=preset, save=path)
-        figures[f"{style}_marginal_effects"] = path
-
-        path = out / f"{style}_03_margins_prediction.png"
-        margins_prediction_plot(
-            grid,
-            x="techshare",
-            y="pred",
-            lower="lo",
-            upper="hi",
-            group="condition",
-            style=style,
-            preset=preset,
-            save=path,
-        )
-        figures[f"{style}_margins_prediction"] = path
-
-        path = out / f"{style}_04_interaction.png"
-        interaction_plot(grid, x="techshare", y="pred", moderator="condition", style=style, preset=preset, save=path)
-        figures[f"{style}_interaction"] = path
-
-        path = out / f"{style}_05_conditional_effects.png"
-        conditional_effects_plot(
-            grid,
-            x="techshare",
-            effect="pred",
-            condition="condition",
-            lower="lo",
-            upper="hi",
-            style=style,
-            preset=preset,
-            save=path,
-        )
-        figures[f"{style}_conditional_effects"] = path
-
-        path = out / f"{style}_06_residuals_vs_fitted.png"
-        residuals_vs_fitted_plot(result, style=style, preset=preset, save=path)
-        figures[f"{style}_residuals_vs_fitted"] = path
-
-        path = out / f"{style}_07_qq_residuals.png"
-        qq_residual_plot(result.residuals, style=style, preset=preset, save=path)
-        figures[f"{style}_qq_residuals"] = path
-
-        path = out / f"{style}_08_residual_histogram.png"
-        residual_histogram(result.residuals, style=style, preset=preset, save=path)
-        figures[f"{style}_residual_histogram"] = path
-
-        path = out / f"{style}_09_panel_spaghetti.png"
-        panel_spaghetti_plot(
-            panel,
-            entity="country",
-            time="year",
-            y="growth",
-            highlight=["Nigeria", "Ghana"],
-            style=style,
-            preset=preset,
-            save=path,
-        )
-        figures[f"{style}_panel_spaghetti"] = path
-
-        path = out / f"{style}_10_fixed_effects.png"
-        fixed_effects_plot(fe, style=style, preset=preset, save=path)
-        figures[f"{style}_fixed_effects"] = path
-
-        path = out / f"{style}_11_instrument_count.png"
-        instrument_count_plot(instr, style=style, preset=preset, save=path)
-        figures[f"{style}_instrument_count"] = path
-
-        path = out / f"{style}_12_hansen_ar.png"
-        hansen_ar_diagnostic_plot(
-            {"Hansen": 0.19, "Sargan": 0.09, "AR(1)": 0.08, "AR(2)": 0.32},
-            style=style,
-            preset=preset,
-            save=path,
-        )
-        figures[f"{style}_hansen_ar"] = path
-
-        path = out / f"{style}_13_counterfactual.png"
-        counterfactual_scenario_plot(
-            scenario,
-            time="year",
-            y="pred",
-            scenario="scenario",
-            style=style,
-            preset=preset,
-            save=path,
-        )
-        figures[f"{style}_counterfactual"] = path
-
-        path = out / f"{style}_14_surface_3d.png"
-        surface_3d_plot(surface, x="techshare", y="polity", z="pred", style=style, preset=preset, save=path)
-        figures[f"{style}_surface_3d"] = path
+    for name, fn in plot_jobs:
+        path = out / f"{name}.png"
+        fig = fn(path)
+        save(fig, figures, name, path)
 
     gallery = export_postestimation_gallery(
         figures,
         output_html=out / "gallery.html",
-        title="systemgmmkit post-estimation graphics gallery",
-        description="Stata-style, journal-style, and dashboard-style post-estimation graphics.",
+        title="SGM-Viz post-estimation graphics gallery",
+        description="A unified visual language combining econometric rigor, publication quality, enterprise polish, and decision-oriented storytelling.",
     )
 
-    print(f"Wrote figures to: {out.resolve()}")
-    print(f"Wrote gallery to: {gallery.resolve()}")
+    print(f"Wrote SGM-Viz figures to: {out.resolve()}")
+    print(f"Wrote SGM-Viz gallery to: {gallery.resolve()}")
 
 
 if __name__ == "__main__":
     main()
-

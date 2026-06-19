@@ -4,6 +4,7 @@ import pandas as pd
 from systemgmmkit.postestimation import (
     available_styles,
     coefficient_plot,
+    parameter_impact_plot,
     marginal_effects_plot,
     margins_prediction_plot,
     interaction_plot,
@@ -14,10 +15,15 @@ from systemgmmkit.postestimation import (
     fixed_effects_plot,
     panel_spaghetti_plot,
     instrument_count_plot,
+    instrument_architecture_plot,
     hansen_ar_diagnostic_plot,
+    model_health_panel,
     counterfactual_scenario_plot,
     surface_3d_plot,
+    effect_surface_plot,
+    dynamic_persistence_plot,
     plot_all_diagnostics,
+    sgm_plot_bundle,
     export_postestimation_gallery,
 )
 
@@ -54,7 +60,7 @@ class DummyResult:
 
 
 def test_available_styles():
-    assert available_styles() == ["stata", "journal", "dashboard"]
+    assert available_styles() == ["sgm", "stata", "journal", "dashboard"]
 
 
 def test_high_quality_postestimation_plots_smoke(tmp_path):
@@ -121,8 +127,9 @@ def test_high_quality_postestimation_plots_smoke(tmp_path):
         + 0.35 * surface["techshare"] * surface["polity"]
     )
 
-    for style in ["stata", "journal", "dashboard"]:
+    for style in ["sgm", "stata", "journal", "dashboard"]:
         coefficient_plot(result, style=style, save=tmp_path / f"{style}_coef.png")
+        parameter_impact_plot(result, style=style, save=tmp_path / f"{style}_parameter_impact.png")
         marginal_effects_plot(effects, style=style, save=tmp_path / f"{style}_me.png")
         margins_prediction_plot(grid, x="techshare", y="pred", lower="lo", upper="hi", group="condition", style=style)
         interaction_plot(grid, x="techshare", y="pred", moderator="condition", style=style)
@@ -133,13 +140,20 @@ def test_high_quality_postestimation_plots_smoke(tmp_path):
         fixed_effects_plot(fe, style=style)
         panel_spaghetti_plot(panel, entity="country", time="year", y="growth", highlight=["Nigeria", "Ghana"], style=style)
         instrument_count_plot(instr, style=style)
+        instrument_architecture_plot(instr, style=style)
         hansen_ar_diagnostic_plot({"Hansen": 0.16, "Sargan": 0.088, "AR(1)": 0.08, "AR(2)": 0.868}, style=style)
+        model_health_panel({"Hansen": 0.16, "Sargan": 0.088, "AR(1)": 0.08, "AR(2)": 0.868}, style=style)
         counterfactual_scenario_plot(scen, time="year", y="pred", scenario="scenario", style=style)
         surface_3d_plot(surface, x="techshare", y="polity", z="pred", style=style)
+        effect_surface_plot(surface, x="techshare", y="polity", z="pred", style=style)
+        dynamic_persistence_plot(0.62, style=style)
 
-    saved = plot_all_diagnostics(result, output_dir=tmp_path, style="journal", prefix="dummy")
+    saved = plot_all_diagnostics(result, output_dir=tmp_path, style="sgm", prefix="dummy")
     assert "coefplot" in saved
     assert "hansen_ar" in saved
+
+    bundle = sgm_plot_bundle(result, output_dir=tmp_path / "bundle", prefix="sgm")
+    assert "coefplot" in bundle
 
     gallery = export_postestimation_gallery(saved, output_html=tmp_path / "gallery.html")
     assert gallery.exists()

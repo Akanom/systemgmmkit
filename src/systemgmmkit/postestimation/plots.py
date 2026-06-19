@@ -17,7 +17,7 @@ from matplotlib.ticker import MaxNLocator
 
 @dataclass(frozen=True)
 class PlotTheme:
-    style: str = "journal"
+    style: str = "sgm"
     preset: str = "paper"
     dpi: int = 240
     font_family: str = "DejaVu Sans"
@@ -35,8 +35,8 @@ class PlotTheme:
         style_value = (style or "journal").strip().lower()
         preset_value = (preset or "paper").strip().lower()
 
-        if style_value not in {"stata", "journal", "dashboard"}:
-            raise ValueError("style must be one of: stata, journal, dashboard")
+        if style_value not in {"sgm", "systemgmmkit", "stata", "journal", "dashboard"}:
+            raise ValueError("style must be one of: sgm, systemgmmkit, stata, journal, dashboard")
 
         if preset_value not in {"paper", "slide", "dashboard", "compact"}:
             raise ValueError("preset must be one of: paper, slide, dashboard, compact")
@@ -49,17 +49,29 @@ class PlotTheme:
         }[preset_value]
 
         return cls(
-            style=style_value,
+            style=("sgm" if style_value == "systemgmmkit" else style_value),
             preset=preset_value,
             dpi=int(dpi or default_dpi),
         )
 
 
 def available_styles() -> list[str]:
-    return ["stata", "journal", "dashboard"]
+    return ["sgm", "stata", "journal", "dashboard"]
 
 
 _PALETTES = {
+    "sgm": {
+        "primary": "#0F3D5E",
+        "secondary": "#52616B",
+        "accent": "#C2410C",
+        "success": "#166534",
+        "warning": "#B45309",
+        "danger": "#B91C1C",
+        "grid": "#E5E7EB",
+        "band": "#DBEAFE",
+        "text": "#111827",
+        "spine": "#CBD5E1",
+    },
     "stata": {
         "primary": "#1F4E79",
         "secondary": "#7F7F7F",
@@ -90,7 +102,7 @@ _PALETTES = {
 }
 
 
-def _theme(style: str | PlotTheme | None = "journal", preset: str = "paper", dpi: int | None = None) -> PlotTheme:
+def _theme(style: str | PlotTheme | None = "sgm", preset: str = "paper", dpi: int | None = None) -> PlotTheme:
     return PlotTheme.build(style=style, preset=preset, dpi=dpi)
 
 
@@ -143,7 +155,7 @@ def _apply_theme(ax: plt.Axes, theme: PlotTheme, title: str | None = None, subti
 
     plt.rcParams.update({
         "font.family": theme.font_family,
-        "axes.titlesize": 11,
+        "axes.titlesize": 10.5,
         "axes.labelsize": 9.5,
         "xtick.labelsize": 8.5,
         "ytick.labelsize": 8.5,
@@ -157,7 +169,16 @@ def _apply_theme(ax: plt.Axes, theme: PlotTheme, title: str | None = None, subti
     ax.xaxis.label.set_color(p["text"])
     ax.yaxis.label.set_color(p["text"])
 
-    if theme.style == "stata":
+    if theme.style == "sgm":
+        ax.grid(True, axis="y", linestyle="-", linewidth=0.65, color=p["grid"], alpha=0.85)
+        ax.grid(True, axis="x", linestyle=":", linewidth=0.45, color=p["grid"], alpha=0.55)
+        for side in ["top", "right"]:
+            ax.spines[side].set_visible(False)
+        for side in ["left", "bottom"]:
+            ax.spines[side].set_color(p["spine"])
+            ax.spines[side].set_linewidth(0.8)
+
+    elif theme.style == "stata":
         ax.grid(True, axis="x", linestyle=":", linewidth=0.85, color=p["grid"], alpha=0.9)
         ax.grid(False, axis="y")
         for spine in ax.spines.values():
@@ -182,21 +203,34 @@ def _apply_theme(ax: plt.Axes, theme: PlotTheme, title: str | None = None, subti
             ax.spines[side].set_color(p["spine"])
             ax.spines[side].set_linewidth(0.8)
 
+    # Use explicit axes-level text instead of ax.set_title().
+    # This prevents title/subtitle collision across all exported plots.
     if title:
-        ax.set_title(title, loc="left", fontsize=11.5, fontweight="bold", color=p["text"], pad=12)
+        ax.text(
+            0.0,
+            1.125,
+            title,
+            transform=ax.transAxes,
+            fontsize=13.0 if theme.preset != "compact" else 11.0,
+            fontweight="bold",
+            color=p["text"],
+            ha="left",
+            va="bottom",
+            clip_on=False,
+        )
 
     if subtitle:
         ax.text(
-            0,
-            1.015,
+            0.0,
+            1.065,
             subtitle,
             transform=ax.transAxes,
-            fontsize=8.7,
+            fontsize=9.2 if theme.preset != "compact" else 8.2,
             color=p["secondary"],
-            va="bottom",
             ha="left",
+            va="bottom",
+            clip_on=False,
         )
-
 
 def _save(fig: plt.Figure, save: str | Path | None, theme: PlotTheme) -> plt.Figure:
     if save is not None:
@@ -282,9 +316,9 @@ def coefficient_plot(
     terms: Sequence[str] | None = None,
     drop_constant: bool = True,
     level: float = 0.95,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Coefficient plot",
+    title: str = "Parameter impact plot",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -343,9 +377,9 @@ def marginal_effects_plot(
     effect_col: str = "effect",
     se_col: str = "std_error",
     level: float = 0.95,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Marginal effects plot",
+    title: str = "Marginal response plot",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -408,9 +442,9 @@ def margins_prediction_plot(
     lower: str | None = None,
     upper: str | None = None,
     group: str | None = None,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Margins / prediction plot",
+    title: str = "Prediction path plot",
     subtitle: str | None = None,
     xlabel: str | None = None,
     ylabel: str = "Predicted outcome",
@@ -478,9 +512,9 @@ def interaction_plot(
     moderator: str,
     lower: str | None = None,
     upper: str | None = None,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Interaction plot",
+    title: str = "Interaction response plot",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -508,9 +542,9 @@ def conditional_effects_plot(
     condition: str,
     lower: str | None = None,
     upper: str | None = None,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Conditional effects plot",
+    title: str = "Conditional effect path",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -535,9 +569,9 @@ def residuals_vs_fitted_plot(
     *,
     fitted: Sequence[float] | None = None,
     residuals: Sequence[float] | None = None,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Residuals vs fitted",
+    title: str = "Model fit residual map",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -580,9 +614,9 @@ def residuals_vs_fitted_plot(
 def qq_residual_plot(
     residuals: Sequence[float],
     *,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "QQ plot of residuals",
+    title: str = "Residual distribution check",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -621,9 +655,9 @@ def residual_histogram(
     *,
     bins: int = 30,
     density: bool = True,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Histogram of residuals",
+    title: str = "Residual density profile",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -656,9 +690,9 @@ def fixed_effects_plot(
     entity_col: str = "entity",
     effect_col: str = "effect",
     se_col: str | None = "std_error",
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Fixed effects plot",
+    title: str = "Unit effect profile",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -710,9 +744,9 @@ def panel_spaghetti_plot(
     time: str,
     y: str,
     highlight: Sequence[Any] | None = None,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Panel spaghetti plot",
+    title: str = "Panel trajectory map",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -752,9 +786,9 @@ def instrument_count_plot(
     *,
     lag_col: str = "lag",
     count_col: str = "instruments",
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Instrument count plot",
+    title: str = "Instrument architecture plot",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -792,9 +826,9 @@ def instrument_count_plot(
 def hansen_ar_diagnostic_plot(
     diagnostics: Mapping[str, float] | Any,
     *,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Hansen and AR diagnostic p-values",
+    title: str = "Model health panel",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -843,9 +877,9 @@ def counterfactual_scenario_plot(
     time: str,
     y: str,
     scenario: str,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "Counterfactual scenario plot",
+    title: str = "Scenario response path",
     subtitle: str | None = None,
     save: str | Path | None = None,
 ) -> plt.Figure:
@@ -869,9 +903,9 @@ def surface_3d_plot(
     x: str,
     y: str,
     z: str,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
-    title: str = "3D surface plot",
+    title: str = "Effect surface",
     save: str | Path | None = None,
 ) -> plt.Figure:
     th = _theme(style, preset)
@@ -905,11 +939,212 @@ def surface_3d_plot(
     return _save(fig, save, th)
 
 
+
+
+def model_health_panel(
+    diagnostics: Mapping[str, float] | Any,
+    *,
+    style: str | PlotTheme = "sgm",
+    preset: str = "paper",
+    title: str = "Model health panel",
+    subtitle: str | None = None,
+    save: str | Path | None = None,
+) -> plt.Figure:
+    """
+    SGM-Viz wrapper for GMM model health diagnostics.
+
+    Combines Hansen/Sargan overidentification and AR serial-correlation
+    diagnostics into one reviewer-friendly diagnostic panel.
+    """
+    return hansen_ar_diagnostic_plot(
+        diagnostics,
+        style=style,
+        preset=preset,
+        title=title,
+        subtitle=subtitle or "Overidentification and serial-correlation p-values with weak-test flags.",
+        save=save,
+    )
+
+
+def parameter_impact_plot(
+    result: Any,
+    *,
+    terms: Sequence[str] | None = None,
+    drop_constant: bool = True,
+    level: float = 0.95,
+    style: str | PlotTheme = "sgm",
+    preset: str = "paper",
+    title: str = "Parameter impact plot",
+    subtitle: str | None = None,
+    save: str | Path | None = None,
+) -> plt.Figure:
+    """
+    SGM-Viz branded coefficient plot.
+    """
+    return coefficient_plot(
+        result,
+        terms=terms,
+        drop_constant=drop_constant,
+        level=level,
+        style=style,
+        preset=preset,
+        title=title,
+        subtitle=subtitle,
+        save=save,
+    )
+
+
+def effect_surface_plot(
+    data: Any,
+    *,
+    x: str,
+    y: str,
+    z: str,
+    style: str | PlotTheme = "sgm",
+    preset: str = "paper",
+    title: str = "Effect surface",
+    save: str | Path | None = None,
+) -> plt.Figure:
+    """
+    SGM-Viz branded surface plot for interaction and nonlinear effects.
+    """
+    return surface_3d_plot(
+        data,
+        x=x,
+        y=y,
+        z=z,
+        style=style,
+        preset=preset,
+        title=title,
+        save=save,
+    )
+
+
+def instrument_architecture_plot(
+    data: Any,
+    *,
+    lag_col: str = "lag",
+    count_col: str = "instruments",
+    style: str | PlotTheme = "sgm",
+    preset: str = "paper",
+    title: str = "Instrument architecture plot",
+    subtitle: str | None = None,
+    save: str | Path | None = None,
+) -> plt.Figure:
+    """
+    SGM-Viz branded instrument-count plot.
+
+    Designed for dynamic panel GMM workflows where reviewers care about
+    lag depth, instrument proliferation, and instrument discipline.
+    """
+    return instrument_count_plot(
+        data,
+        lag_col=lag_col,
+        count_col=count_col,
+        style=style,
+        preset=preset,
+        title=title,
+        subtitle=subtitle or "Instrument growth by lag depth for dynamic panel GMM.",
+        save=save,
+    )
+
+
+def dynamic_persistence_plot(
+    phi: float,
+    *,
+    periods: int = 20,
+    shock: float = 1.0,
+    style: str | PlotTheme = "sgm",
+    preset: str = "paper",
+    title: str = "Dynamic persistence path",
+    save: str | Path | None = None,
+) -> plt.Figure:
+    """
+    Plot the persistence path implied by a lagged dependent-variable coefficient.
+
+    Parameters
+    ----------
+    phi:
+        Estimated persistence coefficient, usually coefficient on L.y.
+    periods:
+        Number of periods after a unit shock.
+    shock:
+        Initial shock size.
+    """
+    th = _theme(style, preset)
+    p = _PALETTES[th.style]
+
+    if periods < 1:
+        raise ValueError("periods must be >= 1")
+
+    t = np.arange(0, periods + 1)
+    response = shock * (float(phi) ** t)
+
+    fig, ax = plt.subplots(figsize=_size("line", th))
+    ax.plot(
+        t,
+        response,
+        linewidth=2.2,
+        marker="o" if periods <= 20 else None,
+        color=p["primary"],
+        markeredgecolor="white",
+        markeredgewidth=0.7,
+    )
+    ax.axhline(0, linestyle="--", linewidth=1.0, color=p["secondary"], alpha=0.65)
+
+    half_life = None
+    if 0 < abs(float(phi)) < 1:
+        half_life = math.log(0.5) / math.log(abs(float(phi)))
+        if np.isfinite(half_life) and 0 <= half_life <= periods:
+            ax.axvline(half_life, linestyle=":", linewidth=1.2, color=p["accent"], alpha=0.85)
+            ax.text(
+                half_life,
+                max(response) * 0.55 if len(response) else 0,
+                f"half-life ≈ {half_life:.2f}",
+                rotation=90,
+                va="center",
+                ha="right",
+                fontsize=8.5,
+                color=p["accent"],
+            )
+
+    ax.set_xlabel("Periods after shock")
+    ax.set_ylabel("Remaining effect")
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    subtitle = f"Shock decay implied by persistence coefficient phi = {float(phi):.3f}."
+    _apply_theme(ax, th, title, subtitle)
+    fig.tight_layout()
+    return _save(fig, save, th)
+
+
+def sgm_plot_bundle(
+    result: Any,
+    *,
+    output_dir: str | Path,
+    prefix: str = "model",
+    style: str | PlotTheme = "sgm",
+    preset: str = "paper",
+) -> dict[str, Path]:
+    """
+    One-command SGM-Viz export bundle for handoff.
+
+    Exports available model plots without failing the full workflow when
+    a particular result object does not expose a required attribute.
+    """
+    return plot_all_diagnostics(
+        result,
+        output_dir=output_dir,
+        style=style,
+        preset=preset,
+        prefix=prefix,
+    )
+
 def plot_all_diagnostics(
     result: Any,
     *,
     output_dir: str | Path,
-    style: str | PlotTheme = "journal",
+    style: str | PlotTheme = "sgm",
     preset: str = "paper",
     prefix: str = "model",
 ) -> dict[str, Path]:

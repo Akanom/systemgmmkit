@@ -117,6 +117,7 @@ try:
         PlotTheme,
         available_styles,
         coefficient_plot,
+        parameter_impact_plot,
         marginal_effects_plot,
         margins_prediction_plot,
         interaction_plot,
@@ -127,10 +128,15 @@ try:
         fixed_effects_plot,
         panel_spaghetti_plot,
         instrument_count_plot,
+        instrument_architecture_plot,
         hansen_ar_diagnostic_plot,
+        model_health_panel,
         counterfactual_scenario_plot,
         surface_3d_plot,
+        effect_surface_plot,
+        dynamic_persistence_plot,
         plot_all_diagnostics,
+        sgm_plot_bundle,
         export_postestimation_gallery,
     )
 except Exception:
