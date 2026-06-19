@@ -67,6 +67,20 @@ __all__ = [
     "residuals",
     "vcov",
     "wald_test",
+    "HealthMetrics",
+    "InstrumentArchitecture",
+    "PersistenceAnalytics",
+    "SGMVizAccessor",
+    "sgm_viz",
+    "model_health_dashboard_v2",
+    "dynamic_persistence_dashboard_v2",
+    "instrument_architecture_dashboard_v2",
+    "effect_surface_dashboard_v2",
+    "publication_panel_v2",
+    "export_sgm_viz_v2_gallery",
+    "health_dashboard",
+    "persistence_dashboard",
+    "instrument_dashboard",
 ]
 
 # -------------------------------------------------------------------
@@ -145,3 +159,30 @@ def marginal_effects(result, *args, **kwargs):
     if callable(fn):
         return fn(*args, **kwargs)
     raise NotImplementedError("marginal_effects is not available for this result object.")
+
+from .sgm_viz import (
+    HealthMetrics,
+    model_health_dashboard,
+    dynamic_persistence_dashboard,
+    instrument_architecture_dashboard,
+    effect_surface_dashboard,
+    publication_panel,
+)
+
+
+from .sgm_viz_v2 import (
+    HealthMetrics,
+    InstrumentArchitecture,
+    PersistenceAnalytics,
+    SGMVizAccessor,
+    sgm_viz,
+    model_health_dashboard_v2,
+    dynamic_persistence_dashboard_v2,
+    instrument_architecture_dashboard_v2,
+    effect_surface_dashboard_v2,
+    publication_panel_v2,
+    export_sgm_viz_v2_gallery,
+    health_dashboard,
+    persistence_dashboard,
+    instrument_dashboard,
+)

@@ -141,3 +141,25 @@ try:
     )
 except Exception:
     pass
+
+
+# SGM-Viz v2 flagship visualization API
+try:
+    from .postestimation import (
+        HealthMetrics,
+        InstrumentArchitecture,
+        PersistenceAnalytics,
+        SGMVizAccessor,
+        sgm_viz,
+        model_health_dashboard_v2,
+        dynamic_persistence_dashboard_v2,
+        instrument_architecture_dashboard_v2,
+        effect_surface_dashboard_v2,
+        publication_panel_v2,
+        export_sgm_viz_v2_gallery,
+        health_dashboard,
+        persistence_dashboard,
+        instrument_dashboard,
+    )
+except Exception:
+    pass
