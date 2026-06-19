@@ -17,7 +17,7 @@ from systemgmmkit import (
     wald_test,
 )
 
-PKG = Path(r"C:\Users\omoko\OneDrive\Python packages\systemgmmkit")
+PKG = Path(__file__).resolve().parents[1]
 REAL = Path(r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers")
 OUT = REAL / "results" / "systemgmmkit_058dev_realdata_stata_ols"
 OUT.mkdir(parents=True, exist_ok=True)
