@@ -110,3 +110,28 @@ from .postestimation import (
 
 
 
+
+# High-quality post-estimation graphics API
+try:
+    from .postestimation import (
+        PlotTheme,
+        available_styles,
+        coefficient_plot,
+        marginal_effects_plot,
+        margins_prediction_plot,
+        interaction_plot,
+        conditional_effects_plot,
+        residuals_vs_fitted_plot,
+        qq_residual_plot,
+        residual_histogram,
+        fixed_effects_plot,
+        panel_spaghetti_plot,
+        instrument_count_plot,
+        hansen_ar_diagnostic_plot,
+        counterfactual_scenario_plot,
+        surface_3d_plot,
+        plot_all_diagnostics,
+        export_postestimation_gallery,
+    )
+except Exception:
+    pass
