@@ -10,10 +10,18 @@ BASE = Path("artifacts/parity/xtabond2")
 SPECS = {
     "system_gmm_baseline_controls": {
         "native": [
-            BASE / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "native_diagnostics.csv",
+            BASE
+            / "specs"
+            / "system_gmm_baseline_controls"
+            / "windmeijer"
+            / "native_diagnostics.csv",
         ],
         "stata": [
-            BASE / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "stata_diagnostics.csv",
+            BASE
+            / "specs"
+            / "system_gmm_baseline_controls"
+            / "windmeijer"
+            / "stata_diagnostics.csv",
             BASE / "xtabond2_system_gmm_diagnostics.csv",
             BASE / "xtabond2_internal_diagnostics.csv",
         ],

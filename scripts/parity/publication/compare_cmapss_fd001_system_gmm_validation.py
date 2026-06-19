@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 ROOT = Path(r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers")
 BASE = ROOT / "artifacts" / "parity" / "publication" / "cmapss_fd001"
 MODELS = ["risk", "degradation"]
@@ -198,14 +197,12 @@ def main() -> None:
     print(report_out)
 
     hard_fail = diag_all[
-        (diag_all["metric"].isin(["nobs", "n_instruments"]))
-        & (diag_all["status"] != "PASS")
+        (diag_all["metric"].isin(["nobs", "n_instruments"])) & (diag_all["status"] != "PASS")
     ]
 
     if not hard_fail.empty:
         raise SystemExit(
-            "Hard diagnostic mismatch on N/instruments:\n"
-            + hard_fail.to_string(index=False)
+            "Hard diagnostic mismatch on N/instruments:\n" + hard_fail.to_string(index=False)
         )
 
 

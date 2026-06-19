@@ -39,8 +39,12 @@ for _, s in oracle.iterrows():
         "native_j_stored": native_j,
         "native_j_unscaled_est": native_raw_est,
         "native_j_stored_times_6": native_j * 6 if not pd.isna(native_j) else math.nan,
-        "native_j_unscaled_times_6": native_raw_est * 6 if not pd.isna(native_raw_est) else math.nan,
-        "native_j_unscaled_times_zrank": native_raw_est * native_zrank if not pd.isna(native_raw_est) else math.nan,
+        "native_j_unscaled_times_6": native_raw_est * 6
+        if not pd.isna(native_raw_est)
+        else math.nan,
+        "native_j_unscaled_times_zrank": native_raw_est * native_zrank
+        if not pd.isna(native_raw_est)
+        else math.nan,
         "native_j_unscaled_times_rank_plus_zrank_minus_df": (
             native_raw_est * (native_rank + native_zrank - native_df)
             if not pd.isna(native_raw_est) and not pd.isna(native_df)
@@ -57,7 +61,9 @@ for _, s in oracle.iterrows():
                 "stata_chi2_J": s["stata_chi2_J"],
                 "abs_diff_chi2_J": abs(val - s["stata_chi2_J"]) if not pd.isna(val) else math.nan,
                 "stata_chi2_J_u": s["stata_chi2_J_u"],
-                "abs_diff_chi2_J_u": abs(val - s["stata_chi2_J_u"]) if not pd.isna(val) else math.nan,
+                "abs_diff_chi2_J_u": abs(val - s["stata_chi2_J_u"])
+                if not pd.isna(val)
+                else math.nan,
                 "small_scale": small_scale,
                 "native_j_stored": native_j,
                 "native_j_unscaled_est": native_raw_est,

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
-import math
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 @dataclass(frozen=True)
@@ -44,11 +44,7 @@ def model_health_dashboard(
 
     ax.axis("off")
 
-    ratio = (
-        metrics.instruments / metrics.groups
-        if metrics.groups
-        else np.nan
-    )
+    ratio = metrics.instruments / metrics.groups if metrics.groups else np.nan
 
     rows = [
         ("Estimator", metrics.estimator),
@@ -91,7 +87,7 @@ def dynamic_persistence_dashboard(
 
     t = np.arange(periods + 1)
 
-    response = phi ** t
+    response = phi**t
 
     ax.plot(
         t,
@@ -105,11 +101,7 @@ def dynamic_persistence_dashboard(
     if 0 < abs(phi) < 1:
         half_life = math.log(0.5) / math.log(abs(phi))
 
-    multiplier = (
-        1 / (1 - phi)
-        if abs(phi) < 1
-        else np.inf
-    )
+    multiplier = 1 / (1 - phi) if abs(phi) < 1 else np.inf
 
     ax.set_title(
         f"Persistence={phi:.3f} | Half-life={half_life:.2f} | LR Multiplier={multiplier:.2f}"
@@ -209,7 +201,7 @@ def publication_panel(
 
     ax2.plot(
         t,
-        phi ** t,
+        phi**t,
     )
 
     ax2.set_title("Persistence")

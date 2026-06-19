@@ -7,7 +7,6 @@ from .fixed_effects import CovarianceType, FixedEffectsSpec
 from .spec import DynamicPanelSpec, GMMStyle, IVStyle, Steps, Transformation
 from .suite import PanelModelSuite
 
-
 LagWindow = tuple[int, int]
 LagMap = Mapping[str, LagWindow]
 RoleName = Literal["endogenous", "predetermined"]
@@ -287,7 +286,6 @@ def build_dynamic_panel_gmm_spec(
         transformation=transformation,
         steps=steps,
     )
-
 
 
 def _validate_gmm_lag_window(name: str, value: object) -> tuple[int, int]:

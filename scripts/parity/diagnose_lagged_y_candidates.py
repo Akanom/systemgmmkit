@@ -35,15 +35,9 @@ def main() -> None:
     if missing:
         raise ValueError(f"Benchmark data missing columns: {sorted(missing)}")
 
-    y_map = {
-        (int(r.id), int(r.t)): float(r.y)
-        for r in data.itertuples(index=False)
-    }
+    y_map = {(int(r.id), int(r.t)): float(r.y) for r in data.itertuples(index=False)}
 
-    x_map = {
-        (int(r.id), int(r.t)): float(r.x)
-        for r in data.itertuples(index=False)
-    }
+    x_map = {(int(r.id), int(r.t)): float(r.x) for r in data.itertuples(index=False)}
 
     diff_mask = meta["equation"].astype(str).str.lower().eq("diff").to_numpy()
     level_mask = meta["equation"].astype(str).str.lower().eq("level").to_numpy()
@@ -58,7 +52,7 @@ def main() -> None:
     for lag in range(1, 7):
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
             if not diff_mask[i]:
                 continue
             z[i] = safe_lookup(y_map, entity, time - lag)
@@ -69,7 +63,7 @@ def main() -> None:
     for lag in range(1, 7):
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
             if not diff_mask[i]:
                 continue
             z[i] = safe_lookup(x_map, entity, time - lag)
@@ -95,7 +89,7 @@ def main() -> None:
     for name, (left_lag, right_lag) in level_candidates.items():
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
             if not level_mask[i]:
                 continue
 
@@ -115,7 +109,7 @@ def main() -> None:
     for name, (left_lag, right_lag) in level_x_candidates.items():
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
             if not level_mask[i]:
                 continue
 
@@ -133,13 +127,15 @@ def main() -> None:
         diffs = np.abs(stata_ze - ze)
         closest_idx = int(np.argmin(diffs))
 
-        rows.append({
-            "candidate": name,
-            "candidate_Ze": ze,
-            "closest_stata_index": closest_idx + 1,
-            "closest_stata_Ze": float(stata_ze[closest_idx]),
-            "abs_diff": float(diffs[closest_idx]),
-        })
+        rows.append(
+            {
+                "candidate": name,
+                "candidate_Ze": ze,
+                "closest_stata_index": closest_idx + 1,
+                "closest_stata_Ze": float(stata_ze[closest_idx]),
+                "abs_diff": float(diffs[closest_idx]),
+            }
+        )
 
     out = pd.DataFrame(rows).sort_values(["abs_diff", "candidate"]).reset_index(drop=True)
 
@@ -170,7 +166,11 @@ def main() -> None:
         print("=" * 100)
         print(f"BEST CANDIDATES FOR STATA r{target_idx} = {target}")
         print("=" * 100)
-        print(tmp[["candidate", "candidate_Ze", "target_stata_Ze", "target_abs_diff"]].to_string(index=False))
+        print(
+            tmp[["candidate", "candidate_Ze", "target_stata_Ze", "target_abs_diff"]].to_string(
+                index=False
+            )
+        )
         print(f"Wrote: {target_path}")
 
 

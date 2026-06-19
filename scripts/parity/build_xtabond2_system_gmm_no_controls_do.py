@@ -111,5 +111,3 @@ export delimited using "{(OUT / "stata_params.csv").as_posix()}", replace
 
 if __name__ == "__main__":
     main()
-
-

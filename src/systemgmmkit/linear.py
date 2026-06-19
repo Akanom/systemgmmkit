@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -318,7 +318,9 @@ def _fit_linear_model(
         if cluster_col is None:
             raise ValueError("Clustered covariance requested but no cluster column was supplied.")
         if cluster_col not in frame.columns:
-            raise KeyError(f"Cluster column not found after estimation sample filtering: {cluster_col}")
+            raise KeyError(
+                f"Cluster column not found after estimation sample filtering: {cluster_col}"
+            )
         cluster_values = frame[cluster_col].to_numpy()
         df_inference = int(pd.Series(cluster_values).nunique() - 1)
 
@@ -368,7 +370,7 @@ def _fit_linear_model(
         nobs=n,
         df_model=df_model,
         df_resid=df_resid,
-            df_inference=df_inference,
+        df_inference=df_inference,
         r2=float(r2),
         r2_adj=float(r2_adj),
         residual_values=pd.Series(residual_np, index=y.index, name="residual"),
@@ -411,7 +413,3 @@ def run_pooled_ols(
         time=time,
         cluster_override=cluster_override,
     )
-
-
-
-

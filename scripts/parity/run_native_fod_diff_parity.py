@@ -99,11 +99,7 @@ def _write_result(
     native_rank = int(len(native))
     native_zrank = getattr(res, "n_instruments", None)
     native_j_stat = getattr(res, "j_stat", None)
-    native_df_j = (
-        int(native_zrank) - native_rank
-        if native_zrank is not None
-        else None
-    )
+    native_df_j = int(native_zrank) - native_rank if native_zrank is not None else None
     native_j_p = (
         float(scipy.stats.chi2.sf(native_j_stat, native_df_j))
         if native_j_stat is not None and native_df_j is not None and native_df_j > 0
@@ -119,9 +115,7 @@ def _write_result(
 
     native_j_variants = {
         "native_j_raw": native_j_stat,
-        "native_j_times_rank": (
-            native_j_stat * native_rank if native_j_stat is not None else None
-        ),
+        "native_j_times_rank": (native_j_stat * native_rank if native_j_stat is not None else None),
         "native_j_times_zrank": (
             native_j_stat * native_zrank
             if native_j_stat is not None and native_zrank is not None
@@ -137,9 +131,7 @@ def _write_result(
             if native_j_stat is not None and native_zrank is not None and native_df_j is not None
             else None
         ),
-        "native_j_times_6": (
-            native_j_stat * 6 if native_j_stat is not None else None
-        ),
+        "native_j_times_6": (native_j_stat * 6 if native_j_stat is not None else None),
     }
 
     diagnostics = pd.DataFrame(
@@ -150,9 +142,7 @@ def _write_result(
                 "native_n_instruments": getattr(res, "n_instruments", None),
                 "native_backend": getattr(res, "backend", None),
                 "native_covariance_type": getattr(res, "covariance_type", None),
-                "native_instrument_names": ";".join(
-                    getattr(res, "instrument_names", []) or []
-                ),
+                "native_instrument_names": ";".join(getattr(res, "instrument_names", []) or []),
                 "native_hansen_p": getattr(res, "hansen_p", None),
                 "native_ar1_p": getattr(res, "ar1_p", None),
                 "native_ar2_p": getattr(res, "ar2_p", None),
@@ -166,12 +156,14 @@ def _write_result(
                 "native_has_constant_param": "_con" in list(params_index),
                 "dep_gmm_variable_used": dep_gmm_variable_used,
                 "windmeijer": windmeijer,
-		"native_n_groups": getattr(res, "n_groups", None) or getattr(res, "n_entities", None) or 96,
-		"native_rank": native_rank,
-		"native_zrank": native_zrank,
-		"native_df_J": native_df_j,
-		"native_j_p": native_j_p,
-		**native_j_variants,
+                "native_n_groups": getattr(res, "n_groups", None)
+                or getattr(res, "n_entities", None)
+                or 96,
+                "native_rank": native_rank,
+                "native_zrank": native_zrank,
+                "native_df_J": native_df_j,
+                "native_j_p": native_j_p,
+                **native_j_variants,
             }
         ]
     )
@@ -265,8 +257,7 @@ def _fit_with_controlled_fallback(
     error_path.write_text(json.dumps(errors, indent=2), encoding="utf-8")
 
     raise RuntimeError(
-        f"Native FOD fit failed for {spec_cfg['name']}. "
-        f"See {error_path} for full tracebacks."
+        f"Native FOD fit failed for {spec_cfg['name']}. See {error_path} for full tracebacks."
     )
 
 
@@ -311,9 +302,7 @@ def main() -> None:
     df = df.sort_values([args.entity, args.time]).reset_index(drop=True)
 
     dep_gmm_variable_order = [
-        item.strip()
-        for item in args.dep_gmm_variable_order.split(",")
-        if item.strip()
+        item.strip() for item in args.dep_gmm_variable_order.split(",") if item.strip()
     ]
 
     run_metadata = {

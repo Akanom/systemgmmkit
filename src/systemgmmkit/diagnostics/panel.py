@@ -116,7 +116,9 @@ def breusch_pagan_lm(
     if sigma2 <= 0:
         raise ValueError("Residual variance is zero; LM test undefined.")
 
-    lm = float((n * t_bar / (2 * (t_bar - 1))) * ((np.sum(entity_sum**2) / np.sum(resid**2)) - 1) ** 2)
+    lm = float(
+        (n * t_bar / (2 * (t_bar - 1))) * ((np.sum(entity_sum**2) / np.sum(resid**2)) - 1) ** 2
+    )
     pvalue = float(1.0 - stats.chi2.cdf(lm, 1))
 
     return DiagnosticResult(

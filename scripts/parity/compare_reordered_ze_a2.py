@@ -67,21 +67,27 @@ def main() -> None:
 
     native_ze_reordered = native_ze[ORDER_NATIVE_TO_STATA, :]
 
-    ze_out = pd.DataFrame({
-        "stata_order_index": np.arange(1, len(ORDER_NATIVE_TO_STATA) + 1),
-        "native_original_index": np.array(ORDER_NATIVE_TO_STATA) + 1,
-        "native_Ze_reordered": native_ze_reordered.reshape(-1),
-        "stata_Ze": stata_ze.reshape(-1),
-        "diff": native_ze_reordered.reshape(-1) - stata_ze.reshape(-1),
-        "abs_diff": np.abs(native_ze_reordered.reshape(-1) - stata_ze.reshape(-1)),
-    })
+    ze_out = pd.DataFrame(
+        {
+            "stata_order_index": np.arange(1, len(ORDER_NATIVE_TO_STATA) + 1),
+            "native_original_index": np.array(ORDER_NATIVE_TO_STATA) + 1,
+            "native_Ze_reordered": native_ze_reordered.reshape(-1),
+            "stata_Ze": stata_ze.reshape(-1),
+            "diff": native_ze_reordered.reshape(-1) - stata_ze.reshape(-1),
+            "abs_diff": np.abs(native_ze_reordered.reshape(-1) - stata_ze.reshape(-1)),
+        }
+    )
 
-    ze_summary = pd.DataFrame([{
-        "n": int(len(stata_ze)),
-        "max_abs_diff": float(ze_out["abs_diff"].max()),
-        "mean_abs_diff": float(ze_out["abs_diff"].mean()),
-        "rmse": float(np.sqrt(np.mean(ze_out["diff"].to_numpy(float) ** 2))),
-    }])
+    ze_summary = pd.DataFrame(
+        [
+            {
+                "n": int(len(stata_ze)),
+                "max_abs_diff": float(ze_out["abs_diff"].max()),
+                "mean_abs_diff": float(ze_out["abs_diff"].mean()),
+                "rmse": float(np.sqrt(np.mean(ze_out["diff"].to_numpy(float) ** 2))),
+            }
+        ]
+    )
 
     ze_out_path = ART / "native_Ze_reordered_to_stata_order.csv"
     ze_summary_path = ART / "native_Ze_reordered_to_stata_order_summary.csv"
@@ -111,15 +117,19 @@ def main() -> None:
         a2_diff = native_a2_reordered - stata_a2
 
         a2_out = pd.DataFrame(a2_diff)
-        a2_summary = pd.DataFrame([{
-            "rows": int(stata_a2.shape[0]),
-            "cols": int(stata_a2.shape[1]),
-            "native_a2_norm_reordered": float(np.linalg.norm(native_a2_reordered)),
-            "stata_a2_norm": float(np.linalg.norm(stata_a2)),
-            "max_abs_diff": float(np.max(np.abs(a2_diff))),
-            "mean_abs_diff": float(np.mean(np.abs(a2_diff))),
-            "rmse": float(np.sqrt(np.mean(a2_diff ** 2))),
-        }])
+        a2_summary = pd.DataFrame(
+            [
+                {
+                    "rows": int(stata_a2.shape[0]),
+                    "cols": int(stata_a2.shape[1]),
+                    "native_a2_norm_reordered": float(np.linalg.norm(native_a2_reordered)),
+                    "stata_a2_norm": float(np.linalg.norm(stata_a2)),
+                    "max_abs_diff": float(np.max(np.abs(a2_diff))),
+                    "mean_abs_diff": float(np.mean(np.abs(a2_diff))),
+                    "rmse": float(np.sqrt(np.mean(a2_diff**2))),
+                }
+            ]
+        )
 
         a2_reordered_path = ART / "native_A2_reordered_to_stata_order.csv"
         a2_diff_path = ART / "native_A2_reordered_minus_stata_A2.csv"

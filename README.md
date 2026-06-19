@@ -8,9 +8,9 @@
 
 ---
 
-# systemgmmkit 0.5.9
+# systemgmmkit 0.5.10
 
-`systemgmmkit` is a Python package for applied panel-data econometrics. It provides a unified workflow for baseline linear models, panel estimators, instrumental-variable models, dynamic-panel GMM estimation, diagnostics, post-estimation, and reproducible reporting.
+`systemgmmkit` is a Python package for applied panel-data econometrics. It provides a unified workflow for baseline linear models, panel estimators, instrumental-variable models, dynamic-panel GMM estimation, diagnostics, post-estimation, visualization, and reproducible reporting.
 
 The package currently supports:
 
@@ -21,9 +21,14 @@ The package currently supports:
 * Panel IV / 2SLS;
 * Difference GMM;
 * System GMM;
-* diagnostic reporting;
+* Windmeijer-corrected two-step dynamic GMM;
+* Hansen, Sargan, AR(1), and AR(2) diagnostics;
 * post-estimation utilities;
-* reproducible reporting workflows.
+* standard post-estimation graphics;
+* SGM-Viz diagnostic dashboards;
+* result-level plotting accessors;
+* HTML / PNG / SVG / PDF-compatible reporting workflows;
+* integration with `universal-output-hub`.
 
 `systemgmmkit` is designed for empirical researchers working in economics, finance, management, operations, productivity analysis, public policy, development economics, political economy, industrial organization, and other panel-data settings.
 
@@ -31,7 +36,7 @@ The package currently supports:
 
 # Why systemgmmkit?
 
-Applied panel-data research often requires several tools for one workflow:
+Applied panel-data research often requires several disconnected tools:
 
 * baseline OLS models;
 * pooled panel regressions;
@@ -40,53 +45,173 @@ Applied panel-data research often requires several tools for one workflow:
 * dynamic-panel GMM models;
 * diagnostic tests;
 * post-estimation analysis;
-* reproducible tables and exports.
+* publication tables;
+* diagnostic figures;
+* reproducible exports.
 
 `systemgmmkit` aims to bring these pieces into a consistent Python API.
 
-The package is built around four principles:
+The package is built around five principles:
 
 1. **Explicit model specification**
    Model assumptions should be visible in the code, not hidden inside estimation defaults.
 
 2. **Reproducible empirical workflows**
-   Estimation, diagnostics, and reporting should be easy to rerun and inspect.
+   Estimation, diagnostics, post-estimation, visualization, and reporting should be easy to rerun and inspect.
 
-3. **Transparent diagnostics**
-   Dynamic-panel GMM results should expose sample size, instrument count, AR tests, Hansen/Sargan tests, covariance type, and backend metadata.
+3. **Transparent dynamic-panel diagnostics**
+   Dynamic-panel GMM results should expose sample size, instrument count, AR tests, Hansen/Sargan tests, covariance type, backend metadata, and instrument architecture.
 
 4. **Verification against reference implementations**
    Estimators are benchmarked against established Stata implementations where practical.
 
-The objective is not only to estimate models, but to make modelling choices clear enough for replication, review, and publication.
+5. **Publication-oriented communication**
+   Results should be interpretable not only as coefficient tables, but also through diagnostics, model-health dashboards, persistence plots, instrument-architecture displays, and report-ready graphics.
+
+The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
 ---
 
-# What's New in 0.5.9
+# What's New in 0.5.10
 
-Version `0.5.9` strengthens the public modelling workflow by expanding baseline estimation and post-estimation support.
+Version `0.5.10` is a post-estimation, graphics, and diagnostic-reporting release.
 
-New and expanded public APIs include:
+It builds on the `0.5.9` estimator and post-estimation foundation by adding a complete visualization layer for applied panel-data workflows.
 
-* `OLSSpec`
-* `PooledOLSSpec`
-* `run_ols()`
-* `run_pooled_ols()`
-* `predict()`
-* `fitted_values()`
-* `residuals()`
-* `vcov()`
-* `confint()`
-* `lincom()`
-* `wald_test()`
-* `marginal_effects()`
+## SGM-Viz v2 diagnostic dashboards
 
-Version `0.5.9` also improves dynamic GMM documentation by clearly distinguishing:
+New flagship visualization APIs include:
 
-* lagged variables included directly in the structural equation; and
-* lagged values used internally as GMM instruments.
+* `HealthMetrics`
+* `InstrumentArchitecture`
+* `PersistenceAnalytics`
+* `model_health_dashboard_v2()`
+* `dynamic_persistence_dashboard_v2()`
+* `instrument_architecture_dashboard_v2()`
+* `effect_surface_dashboard_v2()`
+* `publication_panel_v2()`
+* `export_sgm_viz_v2_gallery()`
+* `export_sgm_viz_report()`
+* `model_comparison_dashboard_v2()`
 
-This distinction is important for correct empirical modelling and for avoiding confusion between structural lags and instrument lag windows.
+These plots are designed specifically for dynamic-panel workflows. They are not generic chart wrappers.
+
+## Result-level plotting API
+
+Version `0.5.10` adds result-level plotting accessors:
+
+```python
+result.plot.health()
+result.plot.persistence()
+result.plot.instruments()
+result.plot.publication_panel()
+result.plot.standard_gallery()
+result.plot.export_all()
+```
+
+For result objects that do not support direct `.plot` attachment, use:
+
+```python
+from systemgmmkit.postestimation import plot_accessor
+
+viz = plot_accessor(result)
+
+viz.health()
+viz.persistence()
+viz.instruments()
+viz.publication_panel()
+viz.standard_gallery("outputs/standard_gallery")
+```
+
+## Standard post-estimation graphics gallery
+
+Version `0.5.10` also adds a standard R/Stata-style post-estimation graphics gallery:
+
+* coefficient / parameter impact plot;
+* marginal effects plot;
+* margins / prediction plot;
+* conditional effects plot;
+* interaction plot;
+* residuals vs fitted plot;
+* QQ plot of residuals;
+* residual histogram / density profile;
+* panel trajectory plot;
+* fixed-effects / unit-effects plot;
+* instrument count plot;
+* Hansen / Sargan / AR diagnostics plot;
+* counterfactual scenario plot;
+* 3D / effect-surface plot.
+
+The full gallery can be exported in one command:
+
+```python
+result.plot.standard_gallery(
+    "outputs/standard_gallery",
+    prefix="model",
+)
+```
+
+or:
+
+```python
+from systemgmmkit.postestimation import export_standard_postestimation_gallery
+
+gallery = export_standard_postestimation_gallery(
+    result,
+    output_dir="outputs/standard_gallery",
+    prefix="model",
+)
+```
+
+## Report modes
+
+SGM-Viz HTML reports support three report modes:
+
+```text
+dashboard    = individual dashboards only
+publication  = composed publication panel only
+full         = all figures, including repeated components
+```
+
+Example:
+
+```python
+result.plot.export_all(
+    "outputs/sgm_report",
+    gallery_mode="dashboard",
+)
+```
+
+For a paper-style one-page summary figure:
+
+```python
+result.plot.export_all(
+    "outputs/paper_report",
+    gallery_mode="publication",
+)
+```
+
+## Single-plot usage
+
+Users can generate one figure directly without creating a full gallery:
+
+```python
+result.plot.health(save="outputs/health.png")
+result.plot.persistence(save="outputs/persistence.png")
+result.plot.instruments(save="outputs/instruments.png")
+result.plot.publication_panel(save="outputs/publication_panel.png")
+```
+
+Standard plots are also directly callable:
+
+```python
+from systemgmmkit.postestimation import coefficient_plot
+
+coefficient_plot(
+    result,
+    save="outputs/coefficient_plot.png",
+)
+```
 
 ---
 
@@ -115,6 +240,10 @@ This distinction is important for correct empirical modelling and for avoiding c
 * Windmeijer-corrected standard errors
 * Collapsed instruments
 * Restricted GMM lag windows
+* Hansen diagnostics
+* Sargan diagnostics
+* Arellano-Bond AR(1) diagnostics
+* Arellano-Bond AR(2) diagnostics
 
 ## Post-Estimation
 
@@ -127,11 +256,33 @@ This distinction is important for correct empirical modelling and for avoiding c
 * Wald tests
 * Marginal effects for linear estimators
 
+## Graphics and Diagnostics
+
+* Coefficient plots
+* Marginal effects plots
+* Prediction / margins plots
+* Interaction plots
+* Conditional effects plots
+* Residual diagnostics
+* Fixed-effects plots
+* Panel trajectory plots
+* Instrument count plots
+* Hansen / AR diagnostic plots
+* Counterfactual scenario plots
+* 3D effect surfaces
+* SGM-Viz model-health dashboards
+* SGM-Viz persistence analytics
+* SGM-Viz instrument architecture dashboards
+* SGM-Viz publication panels
+* HTML gallery export
+* PNG / SVG / PDF-compatible figure export
+
 ## Reporting
 
 * Markdown export
 * CSV export
 * LaTeX export
+* HTML figure galleries
 * Structured result objects
 * Integration with `universal-output-hub`
 
@@ -155,6 +306,12 @@ Local development installation:
 
 ```bash
 pip install -e ".[dev,all]"
+```
+
+For graphics support, ensure `matplotlib` is available:
+
+```bash
+pip install matplotlib
 ```
 
 Check the installed version:
@@ -207,6 +364,9 @@ The major estimation paths currently exposed through the public API have either 
 | Sargan diagnostics         | PASS_XTABOND2_PARITY  |
 | AR(1) diagnostics          | PASS_XTABOND2_PARITY  |
 | AR(2) diagnostics          | PASS_XTABOND2_PARITY  |
+| SGM-Viz v2 dashboards      | PASS_TESTED_EXPORT    |
+| Standard graphics gallery  | PASS_TESTED_EXPORT    |
+| Result plot accessors      | PASS_TESTED_EXPORT    |
 
 Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case. Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
 
@@ -454,12 +614,13 @@ ivregress 2sls y x1 z1 (x2 = z2)
 
 The recommended workflow is:
 
-1. Define the model specification.
-2. Classify regressors according to their exogeneity assumptions.
-3. Define the instrument strategy.
-4. Run the estimator.
-5. Review diagnostics before interpreting coefficients.
-6. Export or report results.
+1. Define the structural model.
+2. Create any lagged variables that should enter the model equation.
+3. Classify regressors as endogenous, predetermined, or exogenous.
+4. Define the GMM instrument strategy.
+5. Run the estimator.
+6. Inspect diagnostics before interpreting coefficients.
+7. Export tables and diagnostic figures.
 
 The same workflow applies whether estimating Difference GMM or System GMM.
 
@@ -469,32 +630,62 @@ The same workflow applies whether estimating Difference GMM or System GMM.
 
 Correct variable classification is one of the most important modelling decisions in dynamic-panel estimation.
 
-| Classification | Interpretation                                  | Examples                                   |
-| -------------- | ----------------------------------------------- | ------------------------------------------ |
-| Endogenous     | May be correlated with current disturbances     | investment, aid, leverage, R&D             |
-| Predetermined  | May react to past shocks but not current shocks | cashflow, backlog, lagged policy variables |
-| Exogenous      | Assumed independent of the disturbance process  | firm size, year dummies, industry dummies  |
+| Classification | Interpretation                                       | Typical instrument treatment                                                        | Examples                                                                     |
+| -------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Endogenous     | May be correlated with current and past disturbances | GMM-style instruments using deeper lags                                             | investment, aid, leverage, R&D, production decisions                         |
+| Predetermined  | May react to past shocks but not current shocks      | GMM-style instruments, often allowing shorter lag windows than endogenous variables | cash flow, backlog, lagged policy variables, delayed implementation measures |
+| Exogenous      | Assumed independent of the disturbance process       | IV-style instruments by default                                                     | firm size, year dummies, industry dummies, externally determined controls    |
 
 Researchers should perform robustness checks using alternative classifications when the theoretical justification is uncertain.
 
 ---
 
-# Lagged Variables in Dynamic GMM
+# Structural Lags vs Instrument Lags
 
-There are two different uses of lags in dynamic GMM.
+Dynamic GMM has two different uses of lags. They must not be confused.
 
-| Use                           | Meaning                                               | Example                         |
-| ----------------------------- | ----------------------------------------------------- | ------------------------------- |
-| Lagged variable in the model  | The lag enters the structural equation as a regressor | `L1_investment` in `regressors` |
-| Lagged variable as instrument | Past values are used internally as GMM instruments    | `gmm_lags=(2, 4)`               |
+| Use                          | Meaning                                               | Example                         |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------- |
+| Lagged variable in the model | The lag enters the structural equation as a regressor | `L1_investment` in `regressors` |
+| Lagged value as instrument   | Past values are used internally as GMM instruments    | `gmm_lags=(2, 4)`               |
 
-If a lagged version of an endogenous, predetermined, or exogenous variable should enter the model directly, create that lag in the data first and include it in `regressors`.
+This distinction is central.
 
-The current public API treats lagged regressors as ordinary columns supplied by the user. It does not automatically create `L1_` variables in the structural equation.
+```python
+regressors = ["L1_investment"]
+```
+
+means:
+
+```text
+Include lagged investment as an explanatory variable in the model equation.
+```
+
+while:
+
+```python
+gmm_lags = (2, 4)
+```
+
+means:
+
+```text
+Use lags 2 through 4 as GMM instruments.
+```
+
+Safe rule:
+
+```text
+Create lagged regressors yourself when they belong in the model equation.
+Classify each lagged regressor according to its maintained exogeneity assumption.
+Use GMM lag-window arguments only to control instrument construction.
+```
 
 ---
 
-## Create lags before estimation
+# Create Structural Lags Before Estimation
+
+The public API treats lagged regressors as ordinary columns supplied by the user. It does not automatically create structural `L1_` or `L2_` model variables.
 
 ```python
 df = df.sort_values(["firm_id", "year"]).copy()
@@ -520,9 +711,22 @@ df = df.dropna(
 
 ---
 
-## Lagged endogenous variables
+# Instrumenting Endogenous Variables
 
-A lagged endogenous variable can be included directly in the structural equation.
+Use endogenous classification when a regressor may be correlated with current shocks.
+
+Common endogenous variables include:
+
+* lagged dependent variables;
+* investment;
+* aid flows;
+* leverage;
+* credit supply;
+* R&D spending;
+* production decisions;
+* project implementation decisions.
+
+Example:
 
 ```python
 regressors = [
@@ -540,18 +744,31 @@ endogenous = [
     "L2_investment",
 ]
 
+predetermined = []
+
 exogenous = [
     "firm_size",
 ]
 ```
 
-In this example, `L1_investment` and `L2_investment` are model regressors. They are also classified as endogenous because the maintained assumption is that lagged investment is still not strictly exogenous.
+In this example, `L1_investment` and `L2_investment` are included directly in the model equation and are also classified as endogenous. Lagging an endogenous variable does not automatically make it exogenous.
 
 ---
 
-## Lagged predetermined variables
+# Instrumenting Predetermined Variables
 
-A lagged predetermined variable can also be included directly in the structural equation.
+Use predetermined classification when a variable may respond to past shocks but is assumed not to respond contemporaneously.
+
+Common predetermined variables include:
+
+* cash flow;
+* backlog;
+* delayed implementation measures;
+* lagged policy variables;
+* maintenance workload;
+* past operational pressure.
+
+Example:
 
 ```python
 regressors = [
@@ -577,13 +794,15 @@ exogenous = [
 ]
 ```
 
-Lagging a predetermined variable does not automatically make it exogenous. A lagged predetermined variable should usually remain classified as predetermined unless there is a strong theoretical reason to treat it as exogenous.
+Lagging a predetermined variable does not automatically make it exogenous. A lagged predetermined variable should usually remain classified as predetermined unless strict exogeneity is theoretically defensible.
 
 ---
 
-## Lagged exogenous variables
+# Instrumenting Exogenous Variables
 
-A lagged exogenous variable can be included directly in the structural equation.
+Exogenous variables are treated as IV-style instruments by default.
+
+Example:
 
 ```python
 regressors = [
@@ -598,6 +817,8 @@ endogenous = [
     "investment",
 ]
 
+predetermined = []
+
 exogenous = [
     "firm_size",
     "L1_firm_size",
@@ -608,53 +829,203 @@ A lagged exogenous variable may be classified as exogenous only if strict exogen
 
 ---
 
-## Current 0.5.9 lag-window rule
+# GMM Lag-Window Strategy in 0.5.10
 
-In version `0.5.9`, the public API supports a specification-level GMM instrument lag window:
+Version `0.5.10` supports three levels of GMM lag-window control:
 
-```python
-gmm_lags=(2, 4)
+1. global GMM lag window;
+2. role-specific GMM lag windows;
+3. variable-specific GMM lag windows.
+
+The precedence rule is:
+
+```text
+gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
 ```
 
-This means that the maintained GMM instrument lag-window strategy is applied at the specification level.
+Meaning:
 
-Different structural lags are supported by manually creating lagged columns:
+* if a variable has a variable-specific lag window, use that;
+* otherwise, if its role has a role-specific lag window, use that;
+* otherwise, fall back to the global `gmm_lags`.
+
+---
+
+## Global GMM Lag Window
+
+The global GMM lag window applies to all GMM-style variables unless overridden.
 
 ```python
-regressors = [
-    "L1_y",
-    "investment",
-    "L1_investment",
-    "L2_investment",
-    "cashflow",
-    "L1_cashflow",
-    "L2_cashflow",
-    "firm_size",
-    "L1_firm_size",
-]
+gmm_lags = (2, 4)
 ```
 
-However, in the documented `0.5.9` public API, role-specific or variable-specific GMM instrument lag windows should not be documented as current functionality unless the installed version explicitly supports them.
+This means GMM-style instruments are constructed using lags 2 through 4.
 
-Do not document this as current `0.5.9` functionality:
+Example:
 
 ```python
-gmm_lags_by_role = {
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "cashflow",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+    ],
+    predetermined=[
+        "cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    collapse=True,
+    windmeijer=True,
+)
+```
+
+Equivalent Stata idea:
+
+```stata
+xtabond2 y L.y investment cashflow firm_size, ///
+    gmm(L.y investment cashflow, lag(2 4) collapse) ///
+    iv(firm_size) ///
+    twostep robust small
+```
+
+---
+
+## Role-Specific GMM Lag Windows
+
+Role-specific GMM lag windows allow endogenous and predetermined variables to use different instrument lag ranges.
+
+This is useful because predetermined variables may be validly instrumented with shorter lags than fully endogenous variables, depending on the maintained timing assumptions.
+
+```python
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+        "cashflow",
+        "L1_cashflow",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+    ],
+    predetermined=[
+        "cashflow",
+        "L1_cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    gmm_lags_by_role={
+        "endogenous": (2, 5),
+        "predetermined": (1, 3),
+    },
+    collapse=True,
+    windmeijer=True,
+)
+```
+
+Equivalent Stata idea:
+
+```stata
+xtabond2 y L.y investment L.investment cashflow L.cashflow firm_size, ///
+    gmm(L.y investment L.investment, lag(2 5) collapse) ///
+    gmm(cashflow L.cashflow, lag(1 3) collapse) ///
+    iv(firm_size) ///
+    twostep robust small
+```
+
+In this example:
+
+* endogenous variables use lags 2 through 5;
+* predetermined variables use lags 1 through 3;
+* exogenous variables remain IV-style by default.
+
+---
+
+## Variable-Specific GMM Lag Windows
+
+Variable-specific GMM lag windows allow individual variables to override both role-specific and global lag windows.
+
+This is useful when some variables are more persistent, more weakly instrumented, or require a more conservative instrument strategy.
+
+```python
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+        "cashflow",
+        "L1_cashflow",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+    ],
+    predetermined=[
+        "cashflow",
+        "L1_cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    gmm_lags_by_role={
+        "endogenous": (2, 5),
+        "predetermined": (1, 3),
+    },
+    gmm_lags_by_variable={
+        "L1_y": (2, 4),
+        "investment": (3, 5),
+        "L1_investment": (3, 6),
+        "cashflow": (1, 2),
+        "L1_cashflow": (2, 3),
+    },
+    collapse=True,
+    windmeijer=True,
+)
+```
+
+In this example:
+
+| Variable        | Role          | Effective GMM lag window | Reason                     |
+| --------------- | ------------- | -----------------------: | -------------------------- |
+| `L1_y`          | endogenous    |                 `(2, 4)` | variable-specific override |
+| `investment`    | endogenous    |                 `(3, 5)` | variable-specific override |
+| `L1_investment` | endogenous    |                 `(3, 6)` | variable-specific override |
+| `cashflow`      | predetermined |                 `(1, 2)` | variable-specific override |
+| `L1_cashflow`   | predetermined |                 `(2, 3)` | variable-specific override |
+
+The variable-specific settings override both:
+
+```python
+gmm_lags_by_role={
     "endogenous": (2, 5),
     "predetermined": (1, 3),
 }
 ```
 
-Do not document this as current `0.5.9` functionality:
+and:
 
 ```python
-gmm_lags_by_variable = {
-    "investment": (2, 5),
-    "cashflow": (1, 3),
-}
+gmm_lags=(2, 4)
 ```
-
-These are planned next-release features.
 
 ---
 
@@ -723,117 +1094,7 @@ xtabond2 y L.y investment firm_size, ///
 
 ---
 
-## Difference GMM with Endogenous Variables
-
-Use endogenous classification when a regressor may be correlated with current shocks.
-
-```python
-spec = build_difference_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "investment",
-        "firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-        "investment",
-    ],
-    exogenous=[
-        "firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-)
-```
-
-Common examples of endogenous regressors include:
-
-* investment;
-* leverage;
-* aid flows;
-* credit supply;
-* R&D spending;
-* production decisions.
-
----
-
-## Difference GMM with Predetermined Variables
-
-Use predetermined classification when a variable may respond to past shocks but is assumed not to respond contemporaneously.
-
-```python
-spec = build_difference_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "cashflow",
-        "firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-    ],
-    predetermined=[
-        "cashflow",
-    ],
-    exogenous=[
-        "firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-)
-```
-
-Common examples of predetermined variables include:
-
-* cash flow;
-* lagged policy variables;
-* operational backlog;
-* maintenance workload;
-* delayed implementation measures.
-
----
-
-## Difference GMM with Exogenous Variables
-
-Use exogenous classification when the variable is assumed independent of the disturbance process.
-
-```python
-spec = build_difference_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "investment",
-        "firm_size",
-        "year2022",
-        "year2023",
-    ],
-    endogenous=[
-        "L1_y",
-        "investment",
-    ],
-    exogenous=[
-        "firm_size",
-        "year2022",
-        "year2023",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-)
-```
-
-Common examples of exogenous variables include:
-
-* time dummies;
-* industry dummies;
-* country dummies;
-* externally determined controls.
-
----
-
-## Difference GMM with Instrument Control
-
-Instrument count should generally be controlled to reduce overfitting and avoid weakening the Hansen test.
+## Difference GMM with Role-Specific Instruments
 
 ```python
 spec = build_difference_gmm_spec(
@@ -855,17 +1116,75 @@ spec = build_difference_gmm_spec(
         "firm_size",
     ],
     gmm_lags=(2, 4),
+    gmm_lags_by_role={
+        "endogenous": (2, 5),
+        "predetermined": (1, 3),
+    },
     collapse=True,
 )
 ```
 
-Recommended practice:
+Equivalent Stata idea:
 
-* keep the instrument count below the number of groups where possible;
-* use collapsed instruments when appropriate;
-* report the number of instruments;
-* report AR(1), AR(2), Hansen, and Sargan diagnostics;
-* test alternative lag windows as robustness checks.
+```stata
+xtabond2 y L.y investment cashflow firm_size, ///
+    gmm(L.y investment, lag(2 5) collapse) ///
+    gmm(cashflow, lag(1 3) collapse) ///
+    iv(firm_size) ///
+    robust
+```
+
+---
+
+## Difference GMM with Variable-Specific Instruments
+
+```python
+spec = build_difference_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+        "cashflow",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+        "L1_investment",
+    ],
+    predetermined=[
+        "cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    gmm_lags_by_role={
+        "endogenous": (2, 5),
+        "predetermined": (1, 3),
+    },
+    gmm_lags_by_variable={
+        "L1_y": (2, 4),
+        "investment": (3, 5),
+        "L1_investment": (3, 6),
+        "cashflow": (1, 2),
+    },
+    collapse=True,
+)
+```
+
+Equivalent Stata idea:
+
+```stata
+xtabond2 y L.y investment L.investment cashflow firm_size, ///
+    gmm(L.y, lag(2 4) collapse) ///
+    gmm(investment, lag(3 5) collapse) ///
+    gmm(L.investment, lag(3 6) collapse) ///
+    gmm(cashflow, lag(1 2) collapse) ///
+    iv(firm_size) ///
+    robust
+```
 
 ---
 
@@ -935,59 +1254,7 @@ xtabond2 y L.y investment firm_size, ///
 
 ---
 
-## System GMM with Endogenous Variables
-
-```python
-spec = build_system_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "investment",
-        "firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-        "investment",
-    ],
-    exogenous=[
-        "firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-    windmeijer=True,
-)
-```
-
----
-
-## System GMM with Predetermined Variables
-
-```python
-spec = build_system_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "cashflow",
-        "firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-    ],
-    predetermined=[
-        "cashflow",
-    ],
-    exogenous=[
-        "firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-    windmeijer=True,
-)
-```
-
----
-
-## System GMM with Multiple Variable Types
+## System GMM with Endogenous, Predetermined, and Exogenous Variables
 
 ```python
 spec = build_system_gmm_spec(
@@ -1020,467 +1287,7 @@ spec = build_system_gmm_spec(
 
 ---
 
-## System GMM with lagged endogenous, predetermined, and exogenous regressors
-
-```python
-from systemgmmkit import build_system_gmm_spec, run_system_gmm
-
-spec = build_system_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "investment",
-        "L1_investment",
-        "L2_investment",
-        "cashflow",
-        "L1_cashflow",
-        "L2_cashflow",
-        "firm_size",
-        "L1_firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-        "investment",
-        "L1_investment",
-        "L2_investment",
-    ],
-    predetermined=[
-        "cashflow",
-        "L1_cashflow",
-        "L2_cashflow",
-    ],
-    exogenous=[
-        "firm_size",
-        "L1_firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-    windmeijer=True,
-)
-
-result = run_system_gmm(
-    spec,
-    data=df,
-    entity="firm_id",
-    time="year",
-    backend="auto",
-)
-```
-
-System GMM uses both the differenced equation and the levels equation. The same distinction still applies: lagged variables in `regressors` are model covariates, while `gmm_lags` controls the instrument lag window.
-
----
-
-## Equivalent Stata idea
-
-```stata
-xtabond2 y L.y investment L.investment L2.investment ///
-    cashflow L.cashflow L2.cashflow firm_size L.firm_size, ///
-    gmm(L.y investment L.investment L2.investment, lag(2 4) collapse) ///
-    gmm(cashflow L.cashflow L2.cashflow, lag(2 4) collapse) ///
-    iv(firm_size L.firm_size) ///
-    twostep robust small
-```
-
-This Stata command illustrates the same separation:
-
-* `L.investment` and `L2.investment` appear in the model equation and are treated as GMM-style endogenous variables;
-* `L.cashflow` and `L2.cashflow` appear in the model equation and are treated as GMM-style predetermined variables;
-* `L.firm_size` appears in the model equation and is treated as IV-style exogenous;
-* `lag(2 4)` controls which lagged values are used as instruments;
-* `collapse` limits the number of instruments.
-
----
-
-## Important Modelling Note
-
-Do not confuse these two decisions:
-
-```python
-regressors = ["L1_investment"]
-```
-
-means:
-
-```text
-Include lagged investment as an explanatory variable.
-```
-
-while:
-
-```python
-gmm_lags = (2, 4)
-```
-
-means:
-
-```text
-Use lagged values, usually lags 2 through 4, as GMM instruments.
-```
-
-For the current public API, `gmm_lags=(2, 4)` applies the maintained lag-window strategy at the specification level.
-
-Safe rule:
-
-```text
-Create lagged regressors yourself when they belong in the model equation.
-Classify each lagged regressor according to its maintained exogeneity assumption.
-Use gmm_lags only to control the instrument lag window.
-```
-
----
-
-# Backend Selection
-
-By default, dynamic GMM estimators use:
-
-```python
-backend="auto"
-```
-
-Example:
-
-```python
-result = run_system_gmm(
-    spec,
-    data=df,
-    entity="firm_id",
-    time="year",
-    backend="auto",
-)
-```
-
-The `auto` backend routes estimation through the preferred supported implementation available in the installed package.
-
-Use explicit backend selection only when you need to test a specific implementation path.
-
----
-
-# Dynamic GMM Diagnostics
-
-For dynamic-panel GMM models, users should inspect diagnostics before interpreting coefficients.
-
-Recommended diagnostics include:
-
-* number of observations;
-* number of groups;
-* number of instruments;
-* AR(1) test;
-* AR(2) test;
-* Hansen test;
-* Sargan test;
-* covariance estimator;
-* one-step or two-step setting;
-* Windmeijer correction status;
-* estimation backend.
-
-A statistically significant AR(1) test is expected in many differenced dynamic-panel models. The AR(2) test is usually more important for checking second-order serial correlation in differenced residuals.
-
-The Hansen and Sargan tests should not be interpreted mechanically. Very high Hansen p-values can indicate instrument proliferation, while very low p-values may indicate invalid instruments or misspecification.
-
----
-
-# Recommended Dynamic GMM Reporting
-
-For published research, report:
-
-* dependent variable;
-* sample period;
-* number of observations;
-* number of groups;
-* estimator type;
-* transformation;
-* lagged dependent variable treatment;
-* endogenous variables;
-* predetermined variables;
-* exogenous variables;
-* structural lags included in the model;
-* GMM lag window;
-* collapse setting;
-* number of instruments;
-* AR(1) diagnostic;
-* AR(2) diagnostic;
-* Hansen test;
-* Sargan test;
-* covariance estimator;
-* Windmeijer correction status;
-* estimation backend;
-* package version.
-
-This makes the empirical specification more transparent and easier to replicate.
-
----
-
-# Post-Estimation
-
-Version `0.5.9` includes the first public post-estimation framework.
-
-Import:
-
-```python
-from systemgmmkit import (
-    predict,
-    fitted_values,
-    residuals,
-    vcov,
-    confint,
-    lincom,
-    wald_test,
-    marginal_effects,
-)
-```
-
----
-
-## Predictions
-
-Equivalent Stata idea:
-
-```stata
-predict yhat
-```
-
-Python:
-
-```python
-pred = predict(result)
-```
-
-or:
-
-```python
-pred = result.predict()
-```
-
----
-
-## Fitted Values
-
-```python
-fit = fitted_values(result)
-```
-
----
-
-## Residuals
-
-Equivalent Stata idea:
-
-```stata
-predict ehat, residuals
-```
-
-Python:
-
-```python
-resid = residuals(result)
-```
-
----
-
-## Variance-Covariance Matrix
-
-```python
-V = vcov(result)
-```
-
----
-
-## Confidence Intervals
-
-```python
-ci = confint(result)
-```
-
----
-
-## Linear Combinations
-
-Equivalent Stata idea:
-
-```stata
-lincom x1 + x2
-```
-
-Python:
-
-```python
-effect = lincom(
-    result,
-    {
-        "x1": 1,
-        "x2": 1,
-    },
-)
-
-print(effect)
-```
-
-Expected output includes:
-
-* estimate;
-* standard error;
-* test statistic;
-* p-value;
-* confidence interval.
-
----
-
-## Wald Tests
-
-Equivalent Stata idea:
-
-```stata
-test x1 x2
-```
-
-Python:
-
-```python
-test_result = wald_test(
-    result,
-    R=[
-        [0, 1, 0],
-        [0, 0, 1],
-    ],
-)
-
-print(test_result)
-```
-
-Expected output includes:
-
-* Wald statistic;
-* degrees of freedom;
-* p-value.
-
----
-
-## Marginal Effects
-
-```python
-me = marginal_effects(result)
-
-print(me)
-```
-
-For linear estimators, marginal effects correspond to estimated slopes.
-
-For nonlinear or interaction-heavy models, users should verify how the marginal effect is defined and whether additional manual computation is required.
-
----
-
-# Reporting and Export
-
-Results can be exported to:
-
-* Markdown;
-* CSV;
-* LaTeX.
-
-`systemgmmkit` is designed to integrate with:
-
-* `universal-output-hub`;
-* publication pipelines;
-* reproducible research workflows;
-* model-comparison tables.
-
-Recommended reporting fields include:
-
-* estimator;
-* dependent variable;
-* specification;
-* covariance estimator;
-* number of observations;
-* number of groups;
-* instrument count;
-* AR diagnostics;
-* Hansen diagnostics;
-* Sargan diagnostics;
-* backend;
-* package version.
-
----
-
-# Example Reporting Workflow with universal-output-hub
-
-```python
-from universal_output_hub import outreg
-
-outreg(
-    [result],
-    model_names=["System GMM"],
-    path="tables/system_gmm_results.md",
-)
-```
-
-The reporting layer is intentionally separate from estimation. This allows users to estimate models in `systemgmmkit` and export publication-style tables through `universal-output-hub`.
-
----
-
-# Practical Modelling Guidance
-
-## Use OLS and panel estimators as baselines
-
-Dynamic GMM should not usually be the first model estimated.
-
-A defensible empirical workflow often starts with:
-
-1. OLS or pooled OLS;
-2. fixed effects;
-3. random effects where appropriate;
-4. IV / 2SLS where identification requires external instruments;
-5. Difference GMM or System GMM for dynamic-panel settings.
-
-This helps users understand how estimates change across assumptions.
-
----
-
-## Control instrument proliferation
-
-Instrument proliferation is one of the most common problems in applied dynamic GMM.
-
-Recommended practice:
-
-* use `collapse=True`;
-* restrict `gmm_lags`;
-* report instrument count;
-* compare instrument count with number of groups;
-* check whether Hansen p-values are suspiciously high;
-* run robustness checks with alternative lag windows.
-
----
-
-## Do not overinterpret one specification
-
-Dynamic GMM estimates are sensitive to:
-
-* lag-window choices;
-* variable classification;
-* transformation choice;
-* instrument count;
-* sample construction;
-* missing-value handling;
-* persistence of the dependent variable;
-* weak instruments.
-
-Users should treat dynamic GMM as part of a specification family, not as a single automatic estimator.
-
----
-
-# Next Release Roadmap
-
-The next release should extend the dynamic GMM API to support role-specific and variable-specific GMM instrument lag windows.
-
-This feature is not documented as current `0.5.9` functionality. It is the recommended next implementation target.
-
----
-
-## Planned role-specific GMM lag windows
-
-The next release should support different GMM instrument lag windows for endogenous and predetermined variables.
-
-Planned API:
+## System GMM with Role-Specific Instruments
 
 ```python
 spec = build_system_gmm_spec(
@@ -1525,19 +1332,9 @@ xtabond2 y L.y investment L.investment cashflow L.cashflow firm_size, ///
     twostep robust small
 ```
 
-In this planned API:
-
-* endogenous variables can use one GMM lag window;
-* predetermined variables can use another GMM lag window;
-* exogenous variables remain IV-style by default.
-
 ---
 
-## Planned variable-specific GMM lag windows
-
-The next release should also support variable-specific overrides.
-
-Planned API:
+## System GMM with Variable-Specific Instruments
 
 ```python
 spec = build_system_gmm_spec(
@@ -1579,25 +1376,24 @@ spec = build_system_gmm_spec(
 )
 ```
 
-The planned precedence rule should be:
+Equivalent Stata idea:
 
-```text
-gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
+```stata
+xtabond2 y L.y investment L.investment cashflow L.cashflow firm_size, ///
+    gmm(L.y, lag(2 4) collapse) ///
+    gmm(investment, lag(3 5) collapse) ///
+    gmm(L.investment, lag(3 6) collapse) ///
+    gmm(cashflow, lag(1 2) collapse) ///
+    gmm(L.cashflow, lag(2 3) collapse) ///
+    iv(firm_size) ///
+    twostep robust small
 ```
-
-Meaning:
-
-* if a variable has a variable-specific lag window, use that;
-* otherwise use its role-specific lag window;
-* otherwise fall back to the global `gmm_lags`.
 
 ---
 
-## Planned treatment of exogenous variables
+# Exogenous Variables Remain IV-Style by Default
 
 Exogenous variables should remain IV-style by default.
-
-Recommended design:
 
 ```python
 exogenous = [
@@ -1606,9 +1402,9 @@ exogenous = [
 ]
 ```
 
-The next release should not force exogenous variables into GMM-style instrumentation.
+The package should not force exogenous variables into GMM-style instrumentation.
 
-If users need lagged exogenous variables in the model equation, they should still create those structural lags manually:
+If users need lagged exogenous variables in the model equation, they should create those structural lags manually:
 
 ```python
 df["L1_firm_size"] = df.groupby("firm_id")["firm_size"].shift(1)
@@ -1632,28 +1428,659 @@ If strict exogeneity is too strong, the lagged variable should be classified as 
 
 ---
 
-## Planned validation requirements for the next release
+# Instrument Control
 
-Before role-specific and variable-specific lag windows are released, the implementation should include:
+Instrument count should be controlled to reduce overfitting and avoid weakening the Hansen test.
 
-* unit tests for global `gmm_lags`;
-* unit tests for `gmm_lags_by_role`;
-* unit tests for `gmm_lags_by_variable`;
-* precedence tests for variable-level overrides;
-* tests confirming exogenous variables remain IV-style unless explicitly handled otherwise;
-* Difference GMM parity checks;
-* System GMM parity checks;
-* instrument-count checks;
-* instrument-name checks;
-* collapsed and uncollapsed instrument tests;
-* documentation examples;
-* Stata comparison scripts using separate `gmm()` blocks.
+Recommended practice:
 
-Definition of done:
+* keep the instrument count below the number of groups where possible;
+* use collapsed instruments when appropriate;
+* restrict GMM lag windows;
+* use role-specific lag windows where theoretically justified;
+* use variable-specific lag windows where persistence or weak-instrument concerns differ by variable;
+* report the number of instruments;
+* report AR(1), AR(2), Hansen, and Sargan diagnostics;
+* compare alternative lag-window choices as robustness checks.
+
+---
+
+# Instrument Architecture Reporting
+
+Version `0.5.10` supports instrument-architecture reporting through SGM-Viz.
+
+```python
+from systemgmmkit.postestimation import InstrumentArchitecture
+
+architecture = InstrumentArchitecture(
+    estimator="System GMM",
+    difference_equation=(
+        "L2.y",
+        "L3.y",
+        "L2.investment",
+        "L3.investment",
+    ),
+    level_equation=(
+        "D.y",
+        "D.investment",
+    ),
+    standard_instruments=(
+        "firm_size",
+        "time effects",
+    ),
+    lag_range=(2, 4),
+    collapsed=True,
+    transformation="FOD",
+    total_instruments=result.instruments,
+    groups=result.groups,
+)
+
+result.plot.instruments(
+    architecture=architecture,
+    save="outputs/instrument_architecture.png",
+)
+```
+
+For role-specific or variable-specific instrument designs, the instrument architecture should document the actual instrument blocks used in the model.
+
+---
+
+# Dynamic GMM Diagnostics
+
+For dynamic-panel GMM models, users should inspect diagnostics before interpreting coefficients.
+
+Recommended diagnostics include:
+
+* number of observations;
+* number of groups;
+* number of instruments;
+* instrument/group ratio;
+* AR(1) test;
+* AR(2) test;
+* Hansen test;
+* Sargan test;
+* covariance estimator;
+* one-step or two-step setting;
+* Windmeijer correction status;
+* transformation;
+* estimation backend;
+* instrument architecture.
+
+A statistically significant AR(1) test is expected in many differenced dynamic-panel models. The AR(2) test is usually more important for checking second-order serial correlation in differenced residuals.
+
+The Hansen and Sargan tests should not be interpreted mechanically. Very high Hansen p-values can indicate instrument proliferation, while very low p-values may indicate invalid instruments or misspecification.
+
+---
+
+# Recommended Dynamic GMM Reporting
+
+For published research, report:
+
+* dependent variable;
+* sample period;
+* number of observations;
+* number of groups;
+* estimator type;
+* transformation;
+* lagged dependent variable treatment;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* structural lags included in the model;
+* global GMM lag window;
+* role-specific GMM lag windows, if used;
+* variable-specific GMM lag windows, if used;
+* collapse setting;
+* number of instruments;
+* instrument/group ratio;
+* AR(1) diagnostic;
+* AR(2) diagnostic;
+* Hansen test;
+* Sargan test;
+* covariance estimator;
+* Windmeijer correction status;
+* estimation backend;
+* package version;
+* model-health dashboard or equivalent diagnostics.
+
+---
+
+# Post-Estimation Utilities
+
+Version `0.5.10` includes public post-estimation utilities.
+
+```python
+from systemgmmkit import (
+    predict,
+    fitted_values,
+    residuals,
+    vcov,
+    confint,
+    lincom,
+    wald_test,
+    marginal_effects,
+)
+```
+
+## Predictions
+
+```python
+pred = predict(result)
+```
+
+or:
+
+```python
+pred = result.predict()
+```
+
+## Fitted Values
+
+```python
+fit = fitted_values(result)
+```
+
+## Residuals
+
+```python
+resid = residuals(result)
+```
+
+## Variance-Covariance Matrix
+
+```python
+V = vcov(result)
+```
+
+## Confidence Intervals
+
+```python
+ci = confint(result)
+```
+
+## Linear Combinations
+
+Equivalent Stata idea:
+
+```stata
+lincom x1 + x2
+```
+
+Python:
+
+```python
+effect = lincom(
+    result,
+    {
+        "x1": 1,
+        "x2": 1,
+    },
+)
+
+print(effect)
+```
+
+## Wald Tests
+
+Equivalent Stata idea:
+
+```stata
+test x1 x2
+```
+
+Python:
+
+```python
+test_result = wald_test(
+    result,
+    R=[
+        [0, 1, 0],
+        [0, 0, 1],
+    ],
+)
+
+print(test_result)
+```
+
+## Marginal Effects
+
+```python
+me = marginal_effects(result)
+
+print(me)
+```
+
+For linear estimators, marginal effects correspond to estimated slopes.
+
+---
+
+# Standard Post-Estimation Graphics
+
+Version `0.5.10` includes standard post-estimation plot functions.
+
+## Coefficient plot
+
+```python
+from systemgmmkit.postestimation import coefficient_plot
+
+coefficient_plot(
+    result,
+    style="sgm",
+    preset="paper",
+    save="outputs/coefficient_plot.png",
+)
+```
+
+## Marginal effects plot
+
+```python
+from systemgmmkit.postestimation import marginal_effects_plot
+
+marginal_effects_plot(
+    effects_df,
+    style="sgm",
+    preset="paper",
+    save="outputs/marginal_effects.png",
+)
+```
+
+Expected input:
+
+```python
+effects_df = pd.DataFrame({
+    "term": ["techshare", "polity", "fragility"],
+    "effect": [0.18, 0.04, -0.09],
+    "std_error": [0.04, 0.02, 0.03],
+})
+```
+
+## Margins / prediction plot
+
+```python
+from systemgmmkit.postestimation import margins_prediction_plot
+
+margins_prediction_plot(
+    margins_df,
+    x="techshare",
+    y="pred",
+    lower="lo",
+    upper="hi",
+    group="polity_group",
+    save="outputs/prediction_plot.png",
+)
+```
+
+## Interaction plot
+
+```python
+from systemgmmkit.postestimation import interaction_plot
+
+interaction_plot(
+    interaction_df,
+    x="techshare",
+    y="pred",
+    moderator="fragility_group",
+    lower="lo",
+    upper="hi",
+    save="outputs/interaction_plot.png",
+)
+```
+
+## Residual diagnostics
+
+```python
+from systemgmmkit.postestimation import (
+    residuals_vs_fitted_plot,
+    qq_residual_plot,
+    residual_histogram,
+)
+
+residuals_vs_fitted_plot(result, save="outputs/residuals_vs_fitted.png")
+qq_residual_plot(result.residuals, save="outputs/qq_residuals.png")
+residual_histogram(result.residuals, save="outputs/residual_histogram.png")
+```
+
+## Hansen / AR diagnostic plot
+
+```python
+from systemgmmkit.postestimation import hansen_ar_diagnostic_plot
+
+hansen_ar_diagnostic_plot(
+    {
+        "Hansen": result.hansen_p,
+        "Sargan": result.sargan_p,
+        "AR(1)": result.ar1_p,
+        "AR(2)": result.ar2_p,
+    },
+    save="outputs/hansen_ar_diagnostics.png",
+)
+```
+
+---
+
+# Standard Post-Estimation Gallery
+
+To export the complete standard plot gallery:
+
+```python
+from systemgmmkit.postestimation import export_standard_postestimation_gallery
+
+gallery = export_standard_postestimation_gallery(
+    result,
+    output_dir="outputs/standard_gallery",
+    prefix="model",
+)
+```
+
+Using the result accessor:
+
+```python
+result.plot.standard_gallery(
+    "outputs/standard_gallery",
+    prefix="model",
+)
+```
+
+The standard gallery is the R/Stata-style plot collection. It is useful for detailed diagnostic review and publication appendix workflows.
+
+---
+
+# SGM-Viz v2 Diagnostic Dashboards
+
+SGM-Viz is the package's higher-level diagnostic visualization system.
+
+It combines:
+
+* econometric diagnostic discipline;
+* publication-quality layout;
+* dashboard-style readability;
+* dynamic-panel-specific interpretation.
+
+## Model health dashboard
+
+```python
+result.plot.health(
+    save="outputs/model_health.png",
+)
+```
+
+This figure summarizes:
+
+* Hansen diagnostic;
+* Sargan diagnostic;
+* AR(1);
+* AR(2);
+* observations;
+* groups;
+* instruments;
+* instrument/group ratio;
+* collapse status.
+
+## Dynamic persistence dashboard
+
+```python
+result.plot.persistence(
+    phi=result.params["L1.y"],
+    save="outputs/persistence.png",
+)
+```
+
+This figure reports:
+
+* persistence coefficient;
+* shock decay path;
+* half-life;
+* long-run multiplier;
+* persistence class.
+
+## Instrument architecture dashboard
+
+```python
+from systemgmmkit.postestimation import InstrumentArchitecture
+
+architecture = InstrumentArchitecture(
+    estimator="System GMM",
+    difference_equation=("L2.y", "L3.y"),
+    level_equation=("D.y",),
+    standard_instruments=("x", "w", "time effects"),
+    lag_range=(2, 3),
+    collapsed=True,
+    transformation="FOD",
+    total_instruments=result.instruments,
+    groups=result.groups,
+)
+
+result.plot.instruments(
+    architecture=architecture,
+    save="outputs/instruments.png",
+)
+```
+
+This figure communicates:
+
+* difference-equation instruments;
+* level-equation instruments;
+* standard instruments;
+* lag range;
+* collapse status;
+* total instrument count;
+* instrument/group ratio.
+
+## Publication panel
+
+```python
+result.plot.publication_panel(
+    architecture=architecture,
+    phi=result.params["L1.y"],
+    save="outputs/publication_panel.png",
+)
+```
+
+The publication panel combines:
+
+* model health;
+* dynamic persistence;
+* instrument architecture;
+* parameter impact.
+
+---
+
+# One-Command SGM-Viz Report
+
+```python
+result.plot.export_all(
+    "outputs/sgm_report",
+    prefix="model",
+    architecture=architecture,
+    gallery_mode="dashboard",
+)
+```
+
+Report modes:
 
 ```text
-The next release should allow users to assign different GMM instrument lag windows to endogenous and predetermined variables, and should allow variable-specific overrides, without breaking backward compatibility with gmm_lags=(2, 4).
+dashboard    = individual dashboards only
+publication  = composed publication panel only
+full         = all figures
 ```
+
+Recommended use:
+
+```python
+result.plot.export_all(
+    "outputs/sgm_report",
+    gallery_mode="dashboard",
+)
+```
+
+For a one-page paper figure:
+
+```python
+result.plot.export_all(
+    "outputs/paper_report",
+    gallery_mode="publication",
+)
+```
+
+---
+
+# Model Comparison Dashboard
+
+```python
+from systemgmmkit.postestimation import model_comparison_dashboard_v2
+
+model_comparison_dashboard_v2(
+    [baseline_result, robustness_result],
+    labels=["Baseline", "Robustness"],
+    save="outputs/model_comparison.png",
+)
+```
+
+This is designed for screening alternative GMM specifications by:
+
+* Hansen p-value;
+* Sargan p-value;
+* AR(2) p-value;
+* instrument/group ratio.
+
+---
+
+# Reporting and Export
+
+Results can be exported to:
+
+* Markdown;
+* CSV;
+* LaTeX;
+* PNG;
+* SVG;
+* PDF-compatible figures;
+* HTML galleries.
+
+`systemgmmkit` is designed to integrate with:
+
+* `universal-output-hub`;
+* publication pipelines;
+* reproducible research workflows;
+* model-comparison tables;
+* diagnostic figure workflows.
+
+---
+
+# Example Reporting Workflow with universal-output-hub
+
+```python
+from universal_output_hub import outreg
+
+outreg(
+    [result],
+    model_names=["System GMM"],
+    path="tables/system_gmm_results.md",
+)
+```
+
+The reporting layer is intentionally separate from estimation. This allows users to estimate models in `systemgmmkit` and export publication-style tables through `universal-output-hub`.
+
+---
+
+# Practical Modelling Guidance
+
+## Use OLS and panel estimators as baselines
+
+Dynamic GMM should not usually be the first model estimated.
+
+A defensible empirical workflow often starts with:
+
+1. OLS or pooled OLS;
+2. fixed effects;
+3. random effects where appropriate;
+4. IV / 2SLS where identification requires external instruments;
+5. Difference GMM or System GMM for dynamic-panel settings.
+
+This helps users understand how estimates change across assumptions.
+
+## Control instrument proliferation
+
+Instrument proliferation is one of the most common problems in applied dynamic GMM.
+
+Recommended practice:
+
+* use `collapse=True`;
+* restrict `gmm_lags`;
+* report instrument count;
+* compare instrument count with number of groups;
+* check whether Hansen p-values are suspiciously high;
+* run robustness checks with alternative lag windows;
+* inspect the SGM-Viz instrument architecture dashboard.
+
+## Do not overinterpret one specification
+
+Dynamic GMM estimates are sensitive to:
+
+* lag-window choices;
+* variable classification;
+* transformation choice;
+* instrument count;
+* sample construction;
+* missing-value handling;
+* persistence of the dependent variable;
+* weak instruments.
+
+Users should treat dynamic GMM as part of a specification family, not as a single automatic estimator.
+
+---
+
+# Recommended Dynamic GMM Reporting
+
+For published research, report:
+
+* dependent variable;
+* sample period;
+* number of observations;
+* number of groups;
+* estimator type;
+* transformation;
+* lagged dependent variable treatment;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* structural lags included in the model;
+* GMM lag window;
+* collapse setting;
+* number of instruments;
+* AR(1) diagnostic;
+* AR(2) diagnostic;
+* Hansen test;
+* Sargan test;
+* covariance estimator;
+* Windmeijer correction status;
+* estimation backend;
+* package version;
+* model-health dashboard or equivalent diagnostics.
+
+---
+
+# Roadmap
+
+The next technical extension should focus on variable-level and role-level GMM instrument design.
+
+Planned features:
+
+* role-specific GMM lag windows;
+* variable-specific GMM lag windows;
+* explicit precedence rule:
+
+```text
+gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
+```
+
+* tests confirming exogenous variables remain IV-style unless explicitly handled otherwise;
+* Difference GMM and System GMM parity checks using separate `gmm()` blocks;
+* instrument-count and instrument-name validation;
+* documentation examples;
+* Stata comparison scripts.
+
+These features should not be documented as current functionality until implemented and validated.
 
 ---
 
@@ -1667,7 +2094,7 @@ Akanbi, Oluwajuwon Mayomi.
 systemgmmkit:
 Panel Data Econometrics and Dynamic GMM Workflows in Python.
 
-Version 0.5.9.
+Version 0.5.10.
 
 https://github.com/Akanom/systemgmmkit
 ```
@@ -1680,7 +2107,7 @@ BibTeX:
   title = {systemgmmkit: Panel Data Econometrics and Dynamic GMM Workflows in Python},
   year = {2026},
   url = {https://github.com/Akanom/systemgmmkit},
-  version = {0.5.9}
+  version = {0.5.10}
 }
 ```
 

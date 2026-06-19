@@ -144,9 +144,7 @@ def _call_native_backend(
     try:
         from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
     except Exception as exc:
-        raise DynamicPanelBackendError(
-            "The native GMM backend could not be imported."
-        ) from exc
+        raise DynamicPanelBackendError("The native GMM backend could not be imported.") from exc
 
     native_windmeijer = _resolve_native_windmeijer(spec, windmeijer)
 
@@ -194,9 +192,7 @@ def run_dynamic_panel_gmm(
     """
 
     if backend not in {"auto", "validated", "native", "pydynpd"}:
-        raise ValueError(
-            "backend must be one of: 'auto', 'validated', 'native', 'pydynpd'."
-        )
+        raise ValueError("backend must be one of: 'auto', 'validated', 'native', 'pydynpd'.")
 
     is_system = _is_system_gmm(spec)
 
@@ -275,9 +271,7 @@ def run_system_gmm(
     """Run a System GMM specification through systemgmmkit."""
 
     if not _is_system_gmm(spec):
-        raise ValueError(
-            "run_system_gmm() expects a System GMM spec with spec.system=True."
-        )
+        raise ValueError("run_system_gmm() expects a System GMM spec with spec.system=True.")
 
     return run_dynamic_panel_gmm(
         spec,

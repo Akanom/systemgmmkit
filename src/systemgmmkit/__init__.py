@@ -64,15 +64,75 @@ __all__ = [
     "stata_xtreg_fe_command",
     "validate_panel",
     "write_stata_parity_do_file",
-
     "DynamicPanelBackendError",
     "run_dynamic_panel_gmm",
     "run_system_gmm",
-    "run_difference_gmm",    "FirstDifferenceResult",
+    "run_difference_gmm",
+    "FirstDifferenceResult",
     "ParityReport",
     "ParityResult",
     "classify_parity_result",
     "first_difference",
+    "LinearModelResult",
+    "OLSSpec",
+    "PooledOLSSpec",
+    "run_ols",
+    "run_pooled_ols",
+    "confint",
+    "fitted_values",
+    "lincom",
+    "marginal_effects",
+    "predict",
+    "residuals",
+    "vcov",
+    "wald_test",
+    "PlotTheme",
+    "available_styles",
+    "coefficient_plot",
+    "conditional_effects_plot",
+    "counterfactual_scenario_plot",
+    "dynamic_persistence_plot",
+    "effect_surface_plot",
+    "export_postestimation_gallery",
+    "fixed_effects_plot",
+    "hansen_ar_diagnostic_plot",
+    "instrument_architecture_plot",
+    "instrument_count_plot",
+    "interaction_plot",
+    "marginal_effects_plot",
+    "margins_prediction_plot",
+    "model_health_panel",
+    "panel_spaghetti_plot",
+    "parameter_impact_plot",
+    "plot_all_diagnostics",
+    "qq_residual_plot",
+    "residual_histogram",
+    "residuals_vs_fitted_plot",
+    "sgm_plot_bundle",
+    "surface_3d_plot",
+    "HealthMetrics",
+    "InstrumentArchitecture",
+    "PersistenceAnalytics",
+    "SGMVizAccessor",
+    "dynamic_persistence_dashboard_v2",
+    "effect_surface_dashboard_v2",
+    "export_sgm_viz_v2_gallery",
+    "health_dashboard",
+    "instrument_architecture_dashboard_v2",
+    "instrument_dashboard",
+    "model_health_dashboard_v2",
+    "persistence_dashboard",
+    "publication_panel_v2",
+    "sgm_viz",
+    "ResultPlotAccessor",
+    "attach_plot_accessor",
+    "export_sgm_viz_report",
+    "extract_health_metrics",
+    "extract_instrument_architecture",
+    "infer_persistence_phi",
+    "install_result_plot_accessors",
+    "model_comparison_dashboard_v2",
+    "plot_accessor",
 ]
 
 __version__ = "0.5.9"
@@ -93,6 +153,7 @@ with contextlib.suppress(Exception):
     from .reporting import ParityReport, ParityResult, classify_parity_result
 
 from .estimators.first_difference import FirstDifferenceResult, first_difference
+
 # Public OLS and post-estimation API
 from .linear import LinearModelResult, OLSSpec, PooledOLSSpec, run_ols, run_pooled_ols
 from .postestimation import (
@@ -106,60 +167,70 @@ from .postestimation import (
     wald_test,
 )
 
-
-
-
-
-
 # High-quality post-estimation graphics API
-try:
+with contextlib.suppress(Exception):
     from .postestimation import (
         PlotTheme,
         available_styles,
         coefficient_plot,
-        parameter_impact_plot,
+        conditional_effects_plot,
+        counterfactual_scenario_plot,
+        dynamic_persistence_plot,
+        effect_surface_plot,
+        export_postestimation_gallery,
+        fixed_effects_plot,
+        hansen_ar_diagnostic_plot,
+        instrument_architecture_plot,
+        instrument_count_plot,
+        interaction_plot,
         marginal_effects_plot,
         margins_prediction_plot,
-        interaction_plot,
-        conditional_effects_plot,
-        residuals_vs_fitted_plot,
+        model_health_panel,
+        panel_spaghetti_plot,
+        parameter_impact_plot,
+        plot_all_diagnostics,
         qq_residual_plot,
         residual_histogram,
-        fixed_effects_plot,
-        panel_spaghetti_plot,
-        instrument_count_plot,
-        instrument_architecture_plot,
-        hansen_ar_diagnostic_plot,
-        model_health_panel,
-        counterfactual_scenario_plot,
-        surface_3d_plot,
-        effect_surface_plot,
-        dynamic_persistence_plot,
-        plot_all_diagnostics,
+        residuals_vs_fitted_plot,
         sgm_plot_bundle,
-        export_postestimation_gallery,
+        surface_3d_plot,
     )
-except Exception:
-    pass
 
 
 # SGM-Viz v2 flagship visualization API
-try:
+with contextlib.suppress(Exception):
     from .postestimation import (
         HealthMetrics,
         InstrumentArchitecture,
         PersistenceAnalytics,
         SGMVizAccessor,
-        sgm_viz,
-        model_health_dashboard_v2,
         dynamic_persistence_dashboard_v2,
-        instrument_architecture_dashboard_v2,
         effect_surface_dashboard_v2,
-        publication_panel_v2,
         export_sgm_viz_v2_gallery,
         health_dashboard,
-        persistence_dashboard,
+        instrument_architecture_dashboard_v2,
         instrument_dashboard,
+        model_health_dashboard_v2,
+        persistence_dashboard,
+        publication_panel_v2,
+        sgm_viz,
     )
+
+
+# SGM-Viz result-object plotting integration
+try:
+    from .postestimation import (
+        ResultPlotAccessor,
+        attach_plot_accessor,
+        export_sgm_viz_report,
+        extract_health_metrics,
+        extract_instrument_architecture,
+        infer_persistence_phi,
+        install_result_plot_accessors,
+        model_comparison_dashboard_v2,
+        plot_accessor,
+    )
+
+    install_result_plot_accessors()
 except Exception:
     pass

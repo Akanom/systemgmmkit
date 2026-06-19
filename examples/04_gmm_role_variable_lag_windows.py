@@ -4,7 +4,6 @@ import pandas as pd
 
 from systemgmmkit import build_system_gmm_spec
 
-
 df = pd.DataFrame(
     {
         "firm_id": [1, 1, 1, 1, 2, 2, 2, 2],

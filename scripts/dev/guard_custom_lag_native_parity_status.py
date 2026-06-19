@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pandas as pd
 
 OUT = Path("artifacts/parity/gmm_lag_windows_realdata_notime")
@@ -23,10 +24,11 @@ summary = (
 
 print(summary.to_string(index=False))
 
-status = "PASS" if (
-    summary["max_abs_coef_diff"].max() <= 1e-5
-    and summary["max_abs_se_diff"].max() <= 1e-4
-) else "NOT_CERTIFIED"
+status = (
+    "PASS"
+    if (summary["max_abs_coef_diff"].max() <= 1e-5 and summary["max_abs_se_diff"].max() <= 1e-4)
+    else "NOT_CERTIFIED"
+)
 
 status_file = OUT / "custom_lag_native_parity_status.txt"
 status_file.write_text(status + "\n", encoding="utf-8")

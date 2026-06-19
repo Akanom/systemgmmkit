@@ -55,8 +55,12 @@ md.append("")
 md.append("## Interpretation")
 md.append("")
 md.append("- This tests scalar normalization only.")
-md.append("- If `match_A2_norm` is close to `match_target_J`, the problem is mostly scalar normalization.")
-md.append("- If not, the problem is matrix construction, residual moment aggregation, or equation stacking.")
+md.append(
+    "- If `match_A2_norm` is close to `match_target_J`, the problem is mostly scalar normalization."
+)
+md.append(
+    "- If not, the problem is matrix construction, residual moment aggregation, or equation stacking."
+)
 
 (OUT / "gmm_weight_scaling_candidates.md").write_text("\n".join(md), encoding="utf-8")
 

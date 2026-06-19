@@ -56,20 +56,26 @@ def main() -> None:
 
     names = ["L1.y", "x", "w", "_cons"]
 
-    cmp = pd.DataFrame({
-        "param": names[:len(stata_b)],
-        "native_b": native_b,
-        "stata_b": stata_b,
-        "diff_native_minus_stata": native_b - stata_b,
-        "abs_diff": np.abs(native_b - stata_b),
-    })
+    cmp = pd.DataFrame(
+        {
+            "param": names[: len(stata_b)],
+            "native_b": native_b,
+            "stata_b": stata_b,
+            "diff_native_minus_stata": native_b - stata_b,
+            "abs_diff": np.abs(native_b - stata_b),
+        }
+    )
 
-    summary = pd.DataFrame([{
-        "n_params": len(stata_b),
-        "max_abs_coef_diff": float(cmp["abs_diff"].max()),
-        "mean_abs_coef_diff": float(cmp["abs_diff"].mean()),
-        "rmse": float(np.sqrt(np.mean((native_b - stata_b) ** 2))),
-    }])
+    summary = pd.DataFrame(
+        [
+            {
+                "n_params": len(stata_b),
+                "max_abs_coef_diff": float(cmp["abs_diff"].max()),
+                "mean_abs_coef_diff": float(cmp["abs_diff"].mean()),
+                "rmse": float(np.sqrt(np.mean((native_b - stata_b) ** 2))),
+            }
+        ]
+    )
 
     cmp_path = ART / "native_vs_stata_coefficients.csv"
     summary_path = ART / "native_vs_stata_coefficients_summary.csv"

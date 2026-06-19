@@ -81,4 +81,3 @@ def model_card_markdown(
         lines.append(diagnostic_report.to_markdown())
 
     return "\n".join(lines)
-

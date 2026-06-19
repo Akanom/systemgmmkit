@@ -1,5 +1,6 @@
-from pathlib import Path
 import math
+from pathlib import Path
+
 import pandas as pd
 
 from systemgmmkit import build_system_gmm_spec, run_system_gmm
@@ -53,6 +54,7 @@ NAME_MAP = {
     "_cons": "_con",
 }
 
+
 def first_attr(obj, names):
     for name in names:
         if hasattr(obj, name):
@@ -60,6 +62,7 @@ def first_attr(obj, names):
             if value is not None:
                 return value
     return None
+
 
 def as_dict(value):
     if value is None:
@@ -69,6 +72,7 @@ def as_dict(value):
     if hasattr(value, "to_dict"):
         return value.to_dict()
     return {}
+
 
 def extract_params(result):
     params = as_dict(first_attr(result, ["params", "coefficients", "coef"]))
@@ -88,6 +92,7 @@ def extract_params(result):
         )
 
     return pd.DataFrame(rows)
+
 
 def extract_diag(model, result):
     diag = as_dict(getattr(result, "diagnostics", None))
@@ -115,6 +120,7 @@ def extract_diag(model, result):
         "native_ar2_z": pick("ar2_z", "ar2"),
         "native_ar2_p": pick("ar2_p", "ar2p"),
     }
+
 
 native_params = []
 native_diags = []
@@ -203,8 +209,7 @@ for model in specs:
             dm[b] = pd.NA
 
         dm[c] = (
-            pd.to_numeric(dm[a], errors="coerce")
-            - pd.to_numeric(dm[b], errors="coerce")
+            pd.to_numeric(dm[a], errors="coerce") - pd.to_numeric(dm[b], errors="coerce")
         ).abs()
 
     diag_frames.append(dm)

@@ -7,15 +7,15 @@ if "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET" in text:
     print("Level-GMM lagged dependent offset patch already exists. No patch needed.")
     raise SystemExit(0)
 
-old = '''                    if _level_diff_mode == "lag1":
+old = """                    if _level_diff_mode == "lag1":
                         left = _safe_get(s, pos - 1)
                         right = _safe_get(s, pos - 2)
 
                         if left is not None and right is not None:
                             z_dict[f"L:diff:{block.variable}:L1"] = left - right
-'''
+"""
 
-new = '''                    if _level_diff_mode == "lag1":
+new = """                    if _level_diff_mode == "lag1":
                         # Diagnostic parity switch for lagged dependent variable:
                         #
                         # xtabond2 System GMM level-equation instruments for
@@ -62,7 +62,7 @@ new = '''                    if _level_diff_mode == "lag1":
 
                         if left is not None and right is not None:
                             z_dict[f"L:diff:{block.variable}:L1"] = left - right
-'''
+"""
 
 if old not in text:
     print("Could not find exact level-GMM lag1 block.")

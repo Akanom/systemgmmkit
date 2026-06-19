@@ -7,13 +7,13 @@ backup = Path("artifacts/parity/xtabond2/native_gmm_before_fix_hansen_nameerror.
 backup.parent.mkdir(parents=True, exist_ok=True)
 backup.write_text(text, encoding="utf-8")
 
-bad = '''    _n_groups_for_hansen = max(int(getattr(result, "n_groups", 0) or 0), 1)
-'''
+bad = """    _n_groups_for_hansen = max(int(getattr(result, "n_groups", 0) or 0), 1)
+"""
 
-good = '''    # Use the input panel groups here because the result object has not
+good = """    # Use the input panel groups here because the result object has not
     # been constructed yet at this point in the function.
     _n_groups_for_hansen = max(int(df[entity].nunique()), 1)
-'''
+"""
 
 if bad not in text:
     print("Could not find the bad result-based n_groups line.")

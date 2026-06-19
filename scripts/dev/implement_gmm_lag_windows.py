@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import re
-
 
 ROOT = Path.cwd()
 PRESETS = ROOT / "src" / "systemgmmkit" / "presets.py"

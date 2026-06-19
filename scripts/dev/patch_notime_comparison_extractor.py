@@ -1,10 +1,9 @@
 from pathlib import Path
-import re
 
 path = Path("scripts/dev/compare_realdata_notime_lag_window_native_vs_stata.py")
 text = path.read_text(encoding="utf-8")
 
-old = r'''def as_dict(value):
+old = r"""def as_dict(value):
     if value is None:
         return {}
     if isinstance(value, dict):
@@ -28,9 +27,9 @@ def extract_params(result):
         }
         for k, v in params.items()
     ])
-'''
+"""
 
-new = r'''def first_attr(obj, names):
+new = r"""def first_attr(obj, names):
     for name in names:
         if hasattr(obj, name):
             value = getattr(obj, name)
@@ -65,7 +64,7 @@ def extract_params(result):
         )
 
     return pd.DataFrame(rows)
-'''
+"""
 
 if old not in text:
     raise RuntimeError("Could not find old extractor block to replace.")

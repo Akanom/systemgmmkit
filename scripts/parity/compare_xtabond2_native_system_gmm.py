@@ -29,7 +29,6 @@ def _read_csv_if_exists(path: Path | None) -> pd.DataFrame | None:
     return pd.read_csv(path)
 
 
-
 def _normalise_param_name(name: object) -> str:
     """Normalize equivalent native/Stata parameter names before parity merge."""
     value = str(name)
@@ -60,7 +59,9 @@ def _normalise_stata_params(stata_params: pd.DataFrame) -> pd.DataFrame:
     renamed = renamed.rename(columns=rename_map)
 
     if "param" not in renamed.columns:
-        raise KeyError(f"Could not find Stata parameter-name column in {list(stata_params.columns)}")
+        raise KeyError(
+            f"Could not find Stata parameter-name column in {list(stata_params.columns)}"
+        )
 
     renamed["param"] = renamed["param"].map(_normalise_param_name)
 
@@ -156,7 +157,9 @@ def main() -> None:
     if stata_diag_path is not None and stata_params_path is not None:
         md.append("Stata xtabond2 outputs detected. Comparison generated.")
     else:
-        md.append("Native outputs generated. Stata xtabond2 outputs pending. Run the generated `.do` file in Stata.")
+        md.append(
+            "Native outputs generated. Stata xtabond2 outputs pending. Run the generated `.do` file in Stata."
+        )
 
     md.extend(
         [

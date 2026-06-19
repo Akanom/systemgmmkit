@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Mapping, Sequence
 import html
 import math
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
+import matplotlib
 import numpy as np
 import pandas as pd
 
-import matplotlib
 matplotlib.use("Agg", force=True)
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
@@ -25,10 +26,10 @@ class PlotTheme:
     @classmethod
     def build(
         cls,
-        style: str | "PlotTheme" | None = "journal",
+        style: str | PlotTheme | None = "journal",
         preset: str = "paper",
         dpi: int | None = None,
-    ) -> "PlotTheme":
+    ) -> PlotTheme:
         if isinstance(style, PlotTheme):
             return style
 
@@ -102,7 +103,9 @@ _PALETTES = {
 }
 
 
-def _theme(style: str | PlotTheme | None = "sgm", preset: str = "paper", dpi: int | None = None) -> PlotTheme:
+def _theme(
+    style: str | PlotTheme | None = "sgm", preset: str = "paper", dpi: int | None = None
+) -> PlotTheme:
     return PlotTheme.build(style=style, preset=preset, dpi=dpi)
 
 
@@ -150,17 +153,21 @@ def _size(kind: str, theme: PlotTheme, n: int | None = None) -> tuple[float, flo
     return w, h
 
 
-def _apply_theme(ax: plt.Axes, theme: PlotTheme, title: str | None = None, subtitle: str | None = None) -> None:
+def _apply_theme(
+    ax: plt.Axes, theme: PlotTheme, title: str | None = None, subtitle: str | None = None
+) -> None:
     p = _PALETTES[theme.style]
 
-    plt.rcParams.update({
-        "font.family": theme.font_family,
-        "axes.titlesize": 10.5,
-        "axes.labelsize": 9.5,
-        "xtick.labelsize": 8.5,
-        "ytick.labelsize": 8.5,
-        "legend.fontsize": 8.5,
-    })
+    plt.rcParams.update(
+        {
+            "font.family": theme.font_family,
+            "axes.titlesize": 10.5,
+            "axes.labelsize": 9.5,
+            "xtick.labelsize": 8.5,
+            "ytick.labelsize": 8.5,
+            "legend.fontsize": 8.5,
+        }
+    )
 
     ax.set_facecolor("white")
     ax.figure.set_facecolor("white")
@@ -232,6 +239,7 @@ def _apply_theme(ax: plt.Axes, theme: PlotTheme, title: str | None = None, subti
             clip_on=False,
         )
 
+
 def _save(fig: plt.Figure, save: str | Path | None, theme: PlotTheme) -> plt.Figure:
     if save is not None:
         path = Path(save)
@@ -276,7 +284,9 @@ def _series(obj: Any, names: Sequence[str] | None = None) -> pd.Series:
 def _params(result: Any) -> pd.Series:
     obj = _attr(result, ["params", "coef", "coefficients", "coefs"])
     if obj is None:
-        raise ValueError("Could not extract coefficients. Expected params, coef, coefficients, or coefs.")
+        raise ValueError(
+            "Could not extract coefficients. Expected params, coef, coefficients, or coefs."
+        )
     return _series(obj)
 
 
@@ -292,13 +302,15 @@ def _ci(result: Any, level: float = 0.95) -> pd.DataFrame:
     se = _ses(result, b.index)
     z = 1.959963984540054
 
-    return pd.DataFrame({
-        "term": b.index.astype(str),
-        "estimate": b.values,
-        "std_error": se.values,
-        "ci_low": b.values - z * se.values,
-        "ci_high": b.values + z * se.values,
-    })
+    return pd.DataFrame(
+        {
+            "term": b.index.astype(str),
+            "estimate": b.values,
+            "std_error": se.values,
+            "ci_low": b.values - z * se.values,
+            "ci_high": b.values + z * se.values,
+        }
+    )
 
 
 def _safe_float_array(values: Any) -> np.ndarray:
@@ -341,10 +353,12 @@ def coefficient_plot(
     fig, ax = plt.subplots(figsize=_size("coef", th, len(df)))
 
     y = np.arange(len(df))
-    xerr = np.vstack([
-        df["estimate"].to_numpy() - df["ci_low"].to_numpy(),
-        df["ci_high"].to_numpy() - df["estimate"].to_numpy(),
-    ])
+    xerr = np.vstack(
+        [
+            df["estimate"].to_numpy() - df["ci_low"].to_numpy(),
+            df["ci_high"].to_numpy() - df["estimate"].to_numpy(),
+        ]
+    )
 
     ax.errorbar(
         df["estimate"],
@@ -365,7 +379,9 @@ def coefficient_plot(
     ax.set_yticklabels([_clean_label(t) for t in df["term"]])
     ax.set_xlabel(f"Estimate ({int(level * 100)}% CI)")
 
-    _apply_theme(ax, th, title, subtitle or "Dot-whisker coefficient estimates with confidence intervals.")
+    _apply_theme(
+        ax, th, title, subtitle or "Dot-whisker coefficient estimates with confidence intervals."
+    )
     fig.tight_layout()
     return _save(fig, save, th)
 
@@ -405,10 +421,12 @@ def marginal_effects_plot(
     fig, ax = plt.subplots(figsize=_size("coef", th, len(df)))
 
     y = np.arange(len(df))
-    xerr = np.vstack([
-        df[effect_col].to_numpy() - df["ci_low"].to_numpy(),
-        df["ci_high"].to_numpy() - df[effect_col].to_numpy(),
-    ])
+    xerr = np.vstack(
+        [
+            df[effect_col].to_numpy() - df["ci_low"].to_numpy(),
+            df["ci_high"].to_numpy() - df[effect_col].to_numpy(),
+        ]
+    )
 
     ax.errorbar(
         df[effect_col],
@@ -499,7 +517,9 @@ def margins_prediction_plot(
     ax.set_ylabel(ylabel)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=6))
 
-    _apply_theme(ax, th, title, subtitle or "Predictive margins with optional confidence intervals.")
+    _apply_theme(
+        ax, th, title, subtitle or "Predictive margins with optional confidence intervals."
+    )
     fig.tight_layout()
     return _save(fig, save, th)
 
@@ -528,7 +548,8 @@ def interaction_plot(
         style=style,
         preset=preset,
         title=title,
-        subtitle=subtitle or f"Predicted outcome across {_clean_label(x)} by {_clean_label(moderator)}.",
+        subtitle=subtitle
+        or f"Predicted outcome across {_clean_label(x)} by {_clean_label(moderator)}.",
         ylabel="Predicted outcome",
         save=save,
     )
@@ -558,7 +579,8 @@ def conditional_effects_plot(
         style=style,
         preset=preset,
         title=title,
-        subtitle=subtitle or f"Marginal effect across {_clean_label(x)} by {_clean_label(condition)}.",
+        subtitle=subtitle
+        or f"Marginal effect across {_clean_label(x)} by {_clean_label(condition)}.",
         ylabel="Marginal effect",
         save=save,
     )
@@ -594,7 +616,15 @@ def residuals_vs_fitted_plot(
     resid_arr = resid_arr[mask]
 
     fig, ax = plt.subplots(figsize=_size("resid", th))
-    ax.scatter(fitted_arr, resid_arr, s=17, alpha=0.70, color=p["primary"], edgecolor="white", linewidth=0.25)
+    ax.scatter(
+        fitted_arr,
+        resid_arr,
+        s=17,
+        alpha=0.70,
+        color=p["primary"],
+        edgecolor="white",
+        linewidth=0.25,
+    )
     ax.axhline(0, linestyle="--", linewidth=1.0, color=p["accent"], alpha=0.75)
 
     if len(fitted_arr) >= 15:
@@ -629,6 +659,7 @@ def qq_residual_plot(
 
     try:
         from scipy import stats
+
         theoretical = stats.norm.ppf((np.arange(1, len(r) + 1) - 0.5) / len(r))
     except Exception:
         theoretical = np.linspace(-2.6, 2.6, len(r))
@@ -636,7 +667,9 @@ def qq_residual_plot(
     sample = np.sort((r - np.mean(r)) / np.std(r, ddof=1))
 
     fig, ax = plt.subplots(figsize=_size("square", th))
-    ax.scatter(theoretical, sample, s=17, alpha=0.75, color=p["primary"], edgecolor="white", linewidth=0.25)
+    ax.scatter(
+        theoretical, sample, s=17, alpha=0.75, color=p["primary"], edgecolor="white", linewidth=0.25
+    )
 
     lo = min(theoretical.min(), sample.min())
     hi = max(theoretical.max(), sample.max())
@@ -645,7 +678,12 @@ def qq_residual_plot(
     ax.set_xlabel("Theoretical quantiles")
     ax.set_ylabel("Sample quantiles")
 
-    _apply_theme(ax, th, title, subtitle or "Compares standardized residual quantiles against normal quantiles.")
+    _apply_theme(
+        ax,
+        th,
+        title,
+        subtitle or "Compares standardized residual quantiles against normal quantiles.",
+    )
     fig.tight_layout()
     return _save(fig, save, th)
 
@@ -666,7 +704,15 @@ def residual_histogram(
     r = _safe_float_array(residuals)
 
     fig, ax = plt.subplots(figsize=_size("resid", th))
-    ax.hist(r, bins=bins, density=density, color=p["primary"], alpha=0.72, edgecolor="white", linewidth=0.5)
+    ax.hist(
+        r,
+        bins=bins,
+        density=density,
+        color=p["primary"],
+        alpha=0.72,
+        edgecolor="white",
+        linewidth=0.5,
+    )
 
     if len(r) > 2 and np.std(r, ddof=1) > 0:
         xs = np.linspace(r.min(), r.max(), 250)
@@ -679,7 +725,9 @@ def residual_histogram(
     ax.set_xlabel("Residuals")
     ax.set_ylabel("Density" if density else "Frequency")
 
-    _apply_theme(ax, th, title, subtitle or "Distribution of residuals with normal-density overlay.")
+    _apply_theme(
+        ax, th, title, subtitle or "Distribution of residuals with normal-density overlay."
+    )
     fig.tight_layout()
     return _save(fig, save, th)
 
@@ -732,7 +780,12 @@ def fixed_effects_plot(
     ax.set_yticklabels([_clean_label(v) for v in df[entity_col]])
     ax.set_xlabel("Fixed effect")
 
-    _apply_theme(ax, th, title, subtitle or "Estimated unit fixed effects with optional confidence intervals.")
+    _apply_theme(
+        ax,
+        th,
+        title,
+        subtitle or "Estimated unit fixed effects with optional confidence intervals.",
+    )
     fig.tight_layout()
     return _save(fig, save, th)
 
@@ -776,7 +829,9 @@ def panel_spaghetti_plot(
     ax.set_ylabel(_clean_label(y))
     ax.xaxis.set_major_locator(MaxNLocator(nbins=7))
 
-    _apply_theme(ax, th, title, subtitle or "Panel trajectories over time with selected units highlighted.")
+    _apply_theme(
+        ax, th, title, subtitle or "Panel trajectories over time with selected units highlighted."
+    )
     fig.tight_layout()
     return _save(fig, save, th)
 
@@ -861,7 +916,15 @@ def hansen_ar_diagnostic_plot(
     ax.axhline(0.05, linestyle="--", linewidth=1.1, color=p["accent"], alpha=0.80)
 
     for i, value in enumerate(vals):
-        ax.text(i, min(value + 0.03, 0.97), f"{value:.3f}", ha="center", va="bottom", fontsize=8.3, color=p["text"])
+        ax.text(
+            i,
+            min(value + 0.03, 0.97),
+            f"{value:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=8.3,
+            color=p["text"],
+        )
 
     ax.set_ylim(0, 1)
     ax.set_ylabel("p-value")
@@ -925,7 +988,9 @@ def surface_3d_plot(
     zs = df[z].to_numpy(dtype=float)
 
     try:
-        surf = ax.plot_trisurf(xs, ys, zs, cmap="viridis", linewidth=0.12, antialiased=True, alpha=0.94)
+        surf = ax.plot_trisurf(
+            xs, ys, zs, cmap="viridis", linewidth=0.12, antialiased=True, alpha=0.94
+        )
         fig.colorbar(surf, ax=ax, shrink=0.65, pad=0.1)
     except Exception:
         ax.scatter(xs, ys, zs, s=14, alpha=0.78, color=p["primary"])
@@ -937,8 +1002,6 @@ def surface_3d_plot(
 
     fig.tight_layout()
     return _save(fig, save, th)
-
-
 
 
 def model_health_panel(
@@ -961,7 +1024,8 @@ def model_health_panel(
         style=style,
         preset=preset,
         title=title,
-        subtitle=subtitle or "Overidentification and serial-correlation p-values with weak-test flags.",
+        subtitle=subtitle
+        or "Overidentification and serial-correlation p-values with weak-test flags.",
         save=save,
     )
 
@@ -1140,6 +1204,7 @@ def sgm_plot_bundle(
         prefix=prefix,
     )
 
+
 def plot_all_diagnostics(
     result: Any,
     *,
@@ -1161,17 +1226,28 @@ def plot_all_diagnostics(
         except Exception:
             pass
 
-    attempt("coefplot", lambda path: coefficient_plot(result, style=style, preset=preset, save=path))
+    attempt(
+        "coefplot", lambda path: coefficient_plot(result, style=style, preset=preset, save=path)
+    )
 
     fitted = _attr(result, ["fittedvalues", "fitted_values", "fitted"])
     residuals = _attr(result, ["resid", "residuals", "errors"])
 
     if fitted is not None and residuals is not None:
-        attempt("residuals_vs_fitted", lambda path: residuals_vs_fitted_plot(result, style=style, preset=preset, save=path))
+        attempt(
+            "residuals_vs_fitted",
+            lambda path: residuals_vs_fitted_plot(result, style=style, preset=preset, save=path),
+        )
 
     if residuals is not None:
-        attempt("qq_residuals", lambda path: qq_residual_plot(residuals, style=style, preset=preset, save=path))
-        attempt("residual_histogram", lambda path: residual_histogram(residuals, style=style, preset=preset, save=path))
+        attempt(
+            "qq_residuals",
+            lambda path: qq_residual_plot(residuals, style=style, preset=preset, save=path),
+        )
+        attempt(
+            "residual_histogram",
+            lambda path: residual_histogram(residuals, style=style, preset=preset, save=path),
+        )
 
     diagnostics = {
         "Hansen": _attr(result, ["hansen_p", "hansen_p_value"]),
@@ -1181,7 +1257,12 @@ def plot_all_diagnostics(
     }
 
     if any(v is not None for v in diagnostics.values()):
-        attempt("hansen_ar", lambda path: hansen_ar_diagnostic_plot(diagnostics, style=style, preset=preset, save=path))
+        attempt(
+            "hansen_ar",
+            lambda path: hansen_ar_diagnostic_plot(
+                diagnostics, style=style, preset=preset, save=path
+            ),
+        )
 
     return saved
 
@@ -1273,7 +1354,7 @@ p {{
   <p>{html.escape(description)}</p>
 </header>
 <main class="grid">
-{''.join(cards)}
+{"".join(cards)}
 </main>
 </body>
 </html>

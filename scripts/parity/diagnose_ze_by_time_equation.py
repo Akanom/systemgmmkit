@@ -32,14 +32,16 @@ def main() -> None:
         ze = Z[mask, :].T @ u[mask, :]
 
         for j, value in enumerate(ze.reshape(-1), start=1):
-            rows.append({
-                "equation": equation,
-                "time": time,
-                "instrument_index": j,
-                "instrument_name": inst[j - 1] if j - 1 < len(inst) else "",
-                "Ze_contribution": float(value),
-                "n_rows": int(mask.sum()),
-            })
+            rows.append(
+                {
+                    "equation": equation,
+                    "time": time,
+                    "instrument_index": j,
+                    "instrument_name": inst[j - 1] if j - 1 < len(inst) else "",
+                    "Ze_contribution": float(value),
+                    "n_rows": int(mask.sum()),
+                }
+            )
 
     out = pd.DataFrame(rows)
     out_path = ART / "native_Ze_at_stata_b_by_equation_time.csv"

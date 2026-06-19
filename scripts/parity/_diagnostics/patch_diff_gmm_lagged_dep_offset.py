@@ -7,7 +7,7 @@ if "SYSTEMGMMKIT_DIFF_GMM_LAGGED_DEP_OFFSET" in text:
     print("Lagged-dependent-variable offset patch already exists. No patch needed.")
     raise SystemExit(0)
 
-old = '''            for block in spec.gmm:
+old = """            for block in spec.gmm:
                 s = group[block.variable].astype(float)
 
                 for lag in range(block.min_lag, block.max_lag + 1):
@@ -15,9 +15,9 @@ old = '''            for block in spec.gmm:
 
                     if val is not None:
                         z_dict[f"D:{block.variable}:L{lag}"] = val
-'''
+"""
 
-new = '''            for block in spec.gmm:
+new = """            for block in spec.gmm:
                 s = group[block.variable].astype(float)
 
                 # Diagnostic parity switch:
@@ -65,7 +65,7 @@ new = '''            for block in spec.gmm:
 
                     if val is not None:
                         z_dict[f"D:{block.variable}:L{lag}"] = val
-'''
+"""
 
 if old not in text:
     print("Could not find exact difference-GMM instrument block.")

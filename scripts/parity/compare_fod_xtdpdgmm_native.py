@@ -35,20 +35,24 @@ def compare_spec(out_dir: Path, spec: str) -> pd.DataFrame:
 
     if not stata_path.exists():
         return pd.DataFrame(
-            [{
-                "spec": spec,
-                "status": "MISSING_STATA",
-                "message": str(stata_path),
-            }]
+            [
+                {
+                    "spec": spec,
+                    "status": "MISSING_STATA",
+                    "message": str(stata_path),
+                }
+            ]
         )
 
     if not native_path.exists():
         return pd.DataFrame(
-            [{
-                "spec": spec,
-                "status": "MISSING_NATIVE",
-                "message": str(native_path),
-            }]
+            [
+                {
+                    "spec": spec,
+                    "status": "MISSING_NATIVE",
+                    "message": str(native_path),
+                }
+            ]
         )
 
     stata = pd.read_csv(stata_path)
@@ -66,11 +70,13 @@ def compare_spec(out_dir: Path, spec: str) -> pd.DataFrame:
 
     if merged.empty:
         return pd.DataFrame(
-            [{
-                "spec": spec,
-                "status": "NO_MATCHED_TERMS",
-                "message": "No common coefficient names between Stata and native outputs.",
-            }]
+            [
+                {
+                    "spec": spec,
+                    "status": "NO_MATCHED_TERMS",
+                    "message": "No common coefficient names between Stata and native outputs.",
+                }
+            ]
         )
 
     merged["coef_abs_diff"] = (

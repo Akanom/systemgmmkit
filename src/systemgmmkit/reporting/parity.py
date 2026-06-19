@@ -103,7 +103,12 @@ def classify_parity_result(
     same_nobs = native_nobs == pydynpd_nobs
     same_instr = native_n_instruments == pydynpd_n_instruments
 
-    if same_nobs and same_instr and max_abs_coef_diff is not None and max_abs_coef_diff <= tolerance:
+    if (
+        same_nobs
+        and same_instr
+        and max_abs_coef_diff is not None
+        and max_abs_coef_diff <= tolerance
+    ):
         status = "PASS_PARITY"
         original_status = "PASS_STRICT"
         blocks_release = False
@@ -112,7 +117,9 @@ def classify_parity_result(
         status = "EXPERIMENTAL_PARITY_PENDING"
         original_status = "FAIL_PARITY"
         blocks_release = False
-        message = "Native System GMM executed but strict coefficient-level parity is not certified yet."
+        message = (
+            "Native System GMM executed but strict coefficient-level parity is not certified yet."
+        )
     else:
         status = "FAIL_PARITY"
         original_status = "FAIL_PARITY"

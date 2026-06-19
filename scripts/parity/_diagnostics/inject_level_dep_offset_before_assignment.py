@@ -8,14 +8,16 @@ backup.parent.mkdir(parents=True, exist_ok=True)
 backup.write_text(text, encoding="utf-8")
 
 if "SYSTEMGMMKIT_LEVEL_GMM_LAGGED_DEP_OFFSET" in text:
-    print("Level dependent offset marker already exists. Inspect active code before patching again.")
+    print(
+        "Level dependent offset marker already exists. Inspect active code before patching again."
+    )
     raise SystemExit(0)
 
-needle = '''                        if left is not None and right is not None:
+needle = """                        if left is not None and right is not None:
                             z_dict[f"L:diff:{block.variable}:L1"] = left - right
-'''
+"""
 
-replacement = '''                        # xtabond2 parity diagnostic:
+replacement = """                        # xtabond2 parity diagnostic:
                         # For gmm(L.y, lag(2 3)), the System-GMM level-equation
                         # instrument for the lagged dependent variable must use:
                         #   y[t-2] - y[t-3]
@@ -53,7 +55,7 @@ replacement = '''                        # xtabond2 parity diagnostic:
 
                         if left is not None and right is not None:
                             z_dict[f"L:diff:{block.variable}:L1"] = left - right
-'''
+"""
 
 count = text.count(needle)
 

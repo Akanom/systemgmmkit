@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 path = Path("src/systemgmmkit/presets.py")
 text = path.read_text(encoding="utf-8")
@@ -158,12 +158,12 @@ if "_prepare_dynamic_gmm_lag_kwargs" not in text:
     text = text.replace(marker, helper + marker)
 
 pattern = re.compile(
-    r'def build_system_gmm_spec\(\*\*kwargs: object\) -> DynamicPanelSpec:\n'
+    r"def build_system_gmm_spec\(\*\*kwargs: object\) -> DynamicPanelSpec:\n"
     r'    """Build a generic Blundell-Bond-style System GMM specification\."""\n\n'
-    r'    return build_dynamic_panel_gmm_spec\(\*\*kwargs, system=True\)  # type: ignore\[arg-type\]\n\n\n'
-    r'def build_difference_gmm_spec\(\*\*kwargs: object\) -> DynamicPanelSpec:\n'
+    r"    return build_dynamic_panel_gmm_spec\(\*\*kwargs, system=True\)  # type: ignore\[arg-type\]\n\n\n"
+    r"def build_difference_gmm_spec\(\*\*kwargs: object\) -> DynamicPanelSpec:\n"
     r'    """Build a generic Arellano-Bond-style Difference GMM specification\."""\n\n'
-    r'    return build_dynamic_panel_gmm_spec\(\*\*kwargs, system=False\)  # type: ignore\[arg-type\]',
+    r"    return build_dynamic_panel_gmm_spec\(\*\*kwargs, system=False\)  # type: ignore\[arg-type\]",
     re.MULTILINE,
 )
 

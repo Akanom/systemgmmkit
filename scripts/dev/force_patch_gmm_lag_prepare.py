@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 path = Path("src/systemgmmkit/presets.py")
 text = path.read_text(encoding="utf-8")
@@ -114,7 +114,9 @@ replacement = r'''def _prepare_dynamic_gmm_lag_kwargs(raw_kwargs: dict[str, obje
 new_text, count = pattern.subn(replacement, text)
 
 if count != 1:
-    raise RuntimeError(f"Expected to replace _prepare_dynamic_gmm_lag_kwargs once, replaced {count} times.")
+    raise RuntimeError(
+        f"Expected to replace _prepare_dynamic_gmm_lag_kwargs once, replaced {count} times."
+    )
 
 path.write_text(new_text, encoding="utf-8")
 print("Replaced _prepare_dynamic_gmm_lag_kwargs with backward-compatible version.")

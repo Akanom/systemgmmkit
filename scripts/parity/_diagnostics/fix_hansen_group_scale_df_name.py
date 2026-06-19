@@ -30,11 +30,11 @@ data_arg = arg_names[1]
 
 print(f"Detected data argument name: {data_arg}")
 
-old = '''    _n_groups_for_hansen = max(int(df[entity].nunique()), 1)
-'''
+old = """    _n_groups_for_hansen = max(int(df[entity].nunique()), 1)
+"""
 
-new = f'''    _n_groups_for_hansen = max(int({data_arg}[entity].nunique()), 1)
-'''
+new = f"""    _n_groups_for_hansen = max(int({data_arg}[entity].nunique()), 1)
+"""
 
 if old not in text:
     # fallback for any previous replacement attempt
@@ -45,7 +45,9 @@ if old not in text:
     matches = list(pattern.finditer(text))
 
     if len(matches) != 1:
-        print(f"Could not find exactly one _n_groups_for_hansen dataset line. Found {len(matches)}.")
+        print(
+            f"Could not find exactly one _n_groups_for_hansen dataset line. Found {len(matches)}."
+        )
         print("Inspect with:")
         print(r'rg -n -C 25 -e "_n_groups_for_hansen" .\src\systemgmmkit\native_gmm.py')
         raise SystemExit(1)

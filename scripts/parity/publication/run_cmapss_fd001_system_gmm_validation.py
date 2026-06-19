@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
@@ -20,10 +20,7 @@ def find_col(columns: Iterable[str], candidates: list[str]) -> str | None:
 
 
 def read_panel(path: Path) -> pd.DataFrame:
-    if path.suffix.lower() == ".parquet":
-        df = pd.read_parquet(path)
-    else:
-        df = pd.read_csv(path)
+    df = pd.read_parquet(path) if path.suffix.lower() == ".parquet" else pd.read_csv(path)
 
     entity = find_col(df.columns, ["id", "unit", "unit_id", "unit_number", "engine", "engine_id"])
     time = find_col(df.columns, ["t", "time", "cycle", "cycles", "time_in_cycles"])
@@ -82,14 +79,8 @@ def run_native(df: pd.DataFrame, out_root: Path, model_name: str, model: dict) -
     spec = DynamicPanelSpec(
         dependent=model["dependent"],
         regressors=[model["lagged_native"], *model["controls"]],
-        gmm=[
-            GMMStyle(variable=v, min_lag=2, max_lag=3)
-            for v in model["gmm"]
-        ],
-        iv=[
-            IVStyle(variable=v, eq="level")
-            for v in model["iv"]
-        ],
+        gmm=[GMMStyle(variable=v, min_lag=2, max_lag=3) for v in model["gmm"]],
+        iv=[IVStyle(variable=v, eq="level") for v in model["iv"]],
         system=True,
         collapse=True,
         transformation="fd",

@@ -167,9 +167,7 @@ def main() -> None:
     out = pd.DataFrame(rows)
 
     sort_cols = [
-        c
-        for c in ["se_max_rel_diff", "se_mean_rel_diff", "v_max_abs_diff"]
-        if c in out.columns
+        c for c in ["se_max_rel_diff", "se_mean_rel_diff", "v_max_abs_diff"] if c in out.columns
     ]
 
     out = out.sort_values(sort_cols, na_position="last").reset_index(drop=True)

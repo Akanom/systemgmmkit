@@ -31,7 +31,8 @@ def main() -> None:
             IVStyle(variable="w", eq="level"),
         ],
         time_dummies=False,
-        system=os.getenv("SYSTEMGMMKIT_NATIVE_SYSTEM", "1").strip().lower() not in {"0", "false", "no", "off"},
+        system=os.getenv("SYSTEMGMMKIT_NATIVE_SYSTEM", "1").strip().lower()
+        not in {"0", "false", "no", "off"},
         collapse=True,
         transformation=os.getenv("SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "fd").strip().lower(),
         steps="twostep",
@@ -76,9 +77,7 @@ def main() -> None:
                 "native_n_instruments": getattr(res, "n_instruments", None),
                 "native_backend": getattr(res, "backend", None),
                 "native_covariance_type": getattr(res, "covariance_type", None),
-                "native_instrument_names": ";".join(
-                    getattr(res, "instrument_names", []) or []
-                ),
+                "native_instrument_names": ";".join(getattr(res, "instrument_names", []) or []),
                 "native_hansen_p": getattr(res, "hansen_p", None),
                 "native_hansen_j_stat": getattr(res, "hansen_j_stat", None),
                 "native_sargan_p": getattr(res, "sargan_p", None),

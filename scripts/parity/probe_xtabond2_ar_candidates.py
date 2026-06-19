@@ -11,7 +11,11 @@ BASE = Path("artifacts/parity/xtabond2")
 SPECS = {
     "system_gmm_baseline_controls": {
         "data": BASE / "system_gmm_benchmark.csv",
-        "params": BASE / "specs" / "system_gmm_baseline_controls" / "windmeijer" / "native_params.csv",
+        "params": BASE
+        / "specs"
+        / "system_gmm_baseline_controls"
+        / "windmeijer"
+        / "native_params.csv",
         "stata": BASE / "xtabond2_system_gmm_diagnostics.csv",
         "y": "y",
         "regressors": ["L1.y", "x", "w", "_con"],
@@ -24,7 +28,10 @@ SPECS = {
         "regressors": ["L1.y", "x", "_con"],
     },
     "system_gmm_three_way_controls": {
-        "data": BASE / "specs" / "system_gmm_three_way_controls" / "system_gmm_three_way_controls_benchmark.csv",
+        "data": BASE
+        / "specs"
+        / "system_gmm_three_way_controls"
+        / "system_gmm_three_way_controls_benchmark.csv",
         "params": BASE / "specs" / "system_gmm_three_way_controls" / "native_params.csv",
         "stata": BASE / "specs" / "system_gmm_three_way_controls" / "stata_diagnostics.csv",
         "y": "y",
@@ -42,7 +49,10 @@ SPECS = {
         ],
     },
     "system_gmm_decomposition_controls": {
-        "data": BASE / "specs" / "system_gmm_decomposition_controls" / "system_gmm_decomposition_controls_benchmark.csv",
+        "data": BASE
+        / "specs"
+        / "system_gmm_decomposition_controls"
+        / "system_gmm_decomposition_controls_benchmark.csv",
         "params": BASE / "specs" / "system_gmm_decomposition_controls" / "native_params.csv",
         "stata": BASE / "specs" / "system_gmm_decomposition_controls" / "stata_diagnostics.csv",
         "y": "y",
@@ -61,10 +71,12 @@ def _abs_z_from_p(p: float) -> float:
 
 def _load_beta(path: Path) -> dict[str, float]:
     df = pd.read_csv(path)
-    return dict(zip(df["param"].astype(str), df["native_coef"].astype(float)))
+    return dict(zip(df["param"].astype(str), df["native_coef"].astype(float), strict=False))
 
 
-def _level_residuals(df: pd.DataFrame, beta: dict[str, float], y: str, regressors: list[str]) -> pd.DataFrame:
+def _level_residuals(
+    df: pd.DataFrame, beta: dict[str, float], y: str, regressors: list[str]
+) -> pd.DataFrame:
     d = df.sort_values(["id", "t"]).copy()
     d["L1.y"] = d.groupby("id")[y].shift(1)
 
@@ -110,7 +122,9 @@ def _corr_z(d: pd.DataFrame, resid_col: str, lag: int) -> tuple[float | None, fl
     return z, _two_sided_p_from_z(z), n
 
 
-def _raw_inner_z(d: pd.DataFrame, resid_col: str, lag: int) -> tuple[float | None, float | None, int]:
+def _raw_inner_z(
+    d: pd.DataFrame, resid_col: str, lag: int
+) -> tuple[float | None, float | None, int]:
     x = d.sort_values(["id", "t"]).copy()
     x["_lag"] = x.groupby("id")[resid_col].shift(lag)
     x = x.dropna(subset=[resid_col, "_lag"])

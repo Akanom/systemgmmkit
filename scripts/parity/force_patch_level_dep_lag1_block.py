@@ -10,7 +10,7 @@ backup.write_text(text, encoding="utf-8")
 
 pattern = re.compile(
     r'(?ms)^                    if _level_diff_mode == "lag1":\r?\n'
-    r'.*?'
+    r".*?"
     r'(?=^                    elif _level_diff_mode == "current":)'
 )
 
@@ -21,7 +21,7 @@ if len(matches) != 1:
     print(r'Run: rg -n -C 45 -e "_level_diff_mode" .\src\systemgmmkit\native_gmm.py')
     raise SystemExit(1)
 
-new_branch = '''                    if _level_diff_mode == "lag1":
+new_branch = """                    if _level_diff_mode == "lag1":
                         import os as _native_level_dep_offset_os
 
                         _level_dep_offset_enabled = (
@@ -63,7 +63,7 @@ new_branch = '''                    if _level_diff_mode == "lag1":
                         if left is not None and right is not None:
                             z_dict[f"L:diff:{block.variable}:L1"] = left - right
 
-'''
+"""
 
 text2 = pattern.sub(new_branch, text, count=1)
 path.write_text(text2, encoding="utf-8")

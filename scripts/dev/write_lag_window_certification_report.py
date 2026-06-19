@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pandas as pd
 
 OUT = Path("artifacts/parity/gmm_lag_windows_realdata_notime")
@@ -31,12 +32,24 @@ lines.append("## Certification Status")
 lines.append("")
 lines.append("| Layer | Status | Interpretation |")
 lines.append("|---|---|---|")
-lines.append("| Public API | PASS | New arguments are accepted and translated into internal GMM lag windows. |")
-lines.append("| Backward compatibility | PASS | Baseline dependent lag default remains `(2, 3)` while other GMM variables retain `(2, 2)`. |")
-lines.append("| Stata command generation | PASS | Generated `xtabond2` commands contain the expected `gmmstyle(... lag(a b) collapse)` blocks. |")
-lines.append("| Manual Stata real-data execution | PASS | The generated commands run on the existing benchmark data. |")
-lines.append("| Overidentification df blocker | PASS | Execution blocks if Hansen/Sargan df cannot be recovered. Real-data run recovered df successfully. |")
-lines.append("| Native-vs-xtabond2 parity for custom lag windows | NOT CERTIFIED | Native System GMM remains experimental for these custom lag-window specifications. |")
+lines.append(
+    "| Public API | PASS | New arguments are accepted and translated into internal GMM lag windows. |"
+)
+lines.append(
+    "| Backward compatibility | PASS | Baseline dependent lag default remains `(2, 3)` while other GMM variables retain `(2, 2)`. |"
+)
+lines.append(
+    "| Stata command generation | PASS | Generated `xtabond2` commands contain the expected `gmmstyle(... lag(a b) collapse)` blocks. |"
+)
+lines.append(
+    "| Manual Stata real-data execution | PASS | The generated commands run on the existing benchmark data. |"
+)
+lines.append(
+    "| Overidentification df blocker | PASS | Execution blocks if Hansen/Sargan df cannot be recovered. Real-data run recovered df successfully. |"
+)
+lines.append(
+    "| Native-vs-xtabond2 parity for custom lag windows | NOT CERTIFIED | Native System GMM remains experimental for these custom lag-window specifications. |"
+)
 lines.append("")
 lines.append("## Real-Data Stata Diagnostics")
 lines.append("")
@@ -71,7 +84,9 @@ else:
 lines.append("")
 lines.append("## Native-vs-Stata No-Time-Dummy Comparison")
 lines.append("")
-lines.append("The no-time-dummy comparison was run to remove structural time-dummy contamination. Material coefficient gaps remain; therefore native-vs-xtabond2 parity is not certified for these new custom lag-window specifications.")
+lines.append(
+    "The no-time-dummy comparison was run to remove structural time-dummy contamination. Material coefficient gaps remain; therefore native-vs-xtabond2 parity is not certified for these new custom lag-window specifications."
+)
 lines.append("")
 
 if not coef.empty:
@@ -92,14 +107,22 @@ else:
 lines.append("")
 lines.append("## Decision")
 lines.append("")
-lines.append("This feature is accepted as an API/specification and Stata command-generation enhancement.")
+lines.append(
+    "This feature is accepted as an API/specification and Stata command-generation enhancement."
+)
 lines.append("")
-lines.append("It must not be described as native System GMM parity for custom lag-window specifications until the native backend is separately certified against xtabond2 for these exact specifications.")
+lines.append(
+    "It must not be described as native System GMM parity for custom lag-window specifications until the native backend is separately certified against xtabond2 for these exact specifications."
+)
 lines.append("")
 lines.append("## Follow-up Backlog")
 lines.append("")
-lines.append("1. Align native instrument counting with xtabond2 for custom lag-window specifications.")
-lines.append("2. Confirm whether the native backend applies `spec.gmm` lag windows identically across difference and level equations.")
+lines.append(
+    "1. Align native instrument counting with xtabond2 for custom lag-window specifications."
+)
+lines.append(
+    "2. Confirm whether the native backend applies `spec.gmm` lag windows identically across difference and level equations."
+)
 lines.append("3. Extract Hansen/Sargan diagnostics from native results consistently.")
 lines.append("4. Re-run native-vs-xtabond2 parity after backend alignment.")
 lines.append("")

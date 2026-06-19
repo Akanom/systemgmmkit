@@ -7,16 +7,16 @@ if "SYSTEMGMMKIT_EXPORT_GMM_DEBUG" in text and "native_Z.csv" in text:
     print("Debug export block already exists. No patch needed.")
     raise SystemExit(0)
 
-needle = '''    _u_col = residual_vec.reshape(-1, 1)
+needle = """    _u_col = residual_vec.reshape(-1, 1)
     _ztu = Z.T @ _u_col
     _j_stat = float((_ztu.T @ W @ _ztu).squeeze())
     _ztu_norm = float(np.linalg.norm(_ztu))
     _w_norm = float(np.linalg.norm(W))
 
     return NativeGMMResult(
-'''
+"""
 
-insert = '''    _u_col = residual_vec.reshape(-1, 1)
+insert = """    _u_col = residual_vec.reshape(-1, 1)
     _ztu = Z.T @ _u_col
     _j_stat = float((_ztu.T @ W @ _ztu).squeeze())
     _ztu_norm = float(np.linalg.norm(_ztu))
@@ -119,7 +119,7 @@ insert = '''    _u_col = residual_vec.reshape(-1, 1)
             pass
 
     return NativeGMMResult(
-'''
+"""
 
 if needle not in text:
     raise SystemExit(

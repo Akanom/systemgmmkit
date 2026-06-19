@@ -54,10 +54,7 @@ def read_numeric_matrix(path: Path) -> np.ndarray:
     matrix = numeric.to_numpy(dtype=float)
 
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        _fail(
-            f"Expected a square covariance matrix in {path}, "
-            f"but got shape {matrix.shape}."
-        )
+        _fail(f"Expected a square covariance matrix in {path}, but got shape {matrix.shape}.")
 
     if not np.all(np.isfinite(matrix)):
         _fail(f"Covariance matrix contains non-finite values: {path}")
@@ -106,6 +103,7 @@ def find_native_params_file(artifact_dir: Path, explicit_native_params=None) -> 
         "Could not find native params file. Expected one of:\n"
         + "\n".join(f"  - {path}" for path in candidates)
     )
+
 
 def pick_column(df: pd.DataFrame, candidates: Iterable[str], purpose: str) -> str:
     lower_to_actual = {c.lower(): c for c in df.columns}
@@ -174,9 +172,9 @@ def pick_coef_column(df: pd.DataFrame) -> str | None:
 
 def covariance_type_values(df: pd.DataFrame) -> list[str]:
     cov_cols = [
-        c for c in df.columns
-        if c.lower() == "covariance_type"
-        or ("cov" in c.lower() and "type" in c.lower())
+        c
+        for c in df.columns
+        if c.lower() == "covariance_type" or ("cov" in c.lower() and "type" in c.lower())
     ]
 
     if not cov_cols:
@@ -284,9 +282,7 @@ def build_comparison(
             "diff": native_se - stata_se_i,
             "abs_diff": abs(native_se - stata_se_i),
             "rel_diff": (
-                abs(native_se - stata_se_i) / abs(stata_se_i)
-                if stata_se_i != 0
-                else np.nan
+                abs(native_se - stata_se_i) / abs(stata_se_i) if stata_se_i != 0 else np.nan
             ),
         }
 
@@ -472,7 +468,9 @@ def main() -> int:
         print("FAILED: Native SEs are outside the configured tolerance.")
         print("Interpretation:")
         print("  - If all rel_diff values are almost equal, this is likely a scalar scaling issue.")
-        print("  - If rel_diff varies materially by coefficient, inspect the Windmeijer derivative term.")
+        print(
+            "  - If rel_diff varies materially by coefficient, inspect the Windmeijer derivative term."
+        )
         return 1
 
     print()

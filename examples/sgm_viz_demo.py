@@ -1,8 +1,8 @@
 from systemgmmkit.postestimation import (
     HealthMetrics,
-    model_health_dashboard,
     dynamic_persistence_dashboard,
     instrument_architecture_dashboard,
+    model_health_dashboard,
     publication_panel,
 )
 
@@ -29,16 +29,16 @@ dynamic_persistence_dashboard(
 )
 
 instrument_architecture_dashboard(
-    [1,2,3,4,5,6],
-    [8,12,16,18,20,21],
+    [1, 2, 3, 4, 5, 6],
+    [8, 12, 16, 18, 20, 21],
     save="outputs/sgm_instruments.png",
 )
 
 publication_panel(
     m,
     0.618,
-    [1,2,3,4,5,6],
-    [8,12,16,18,20,21],
+    [1, 2, 3, 4, 5, 6],
+    [8, 12, 16, 18, 20, 21],
     save="outputs/sgm_publication_panel.png",
 )
 

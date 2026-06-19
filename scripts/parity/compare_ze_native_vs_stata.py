@@ -43,30 +43,36 @@ def main() -> None:
 
     corr = np.corrcoef(n, s)[0, 1] if len(n) > 1 else np.nan
 
-    out = pd.DataFrame({
-        "row_id": np.arange(1, len(n) + 1),
-        "native_Ze": n,
-        "stata_Ze": s,
-        "diff": diff,
-        "abs_diff": np.abs(diff),
-        "native_scaled_to_stata": alpha * n,
-        "scaled_diff": scaled_diff,
-        "abs_scaled_diff": np.abs(scaled_diff),
-    })
+    out = pd.DataFrame(
+        {
+            "row_id": np.arange(1, len(n) + 1),
+            "native_Ze": n,
+            "stata_Ze": s,
+            "diff": diff,
+            "abs_diff": np.abs(diff),
+            "native_scaled_to_stata": alpha * n,
+            "scaled_diff": scaled_diff,
+            "abs_scaled_diff": np.abs(scaled_diff),
+        }
+    )
 
     out_path = ART / "ze_native_vs_stata_comparison.csv"
     out.to_csv(out_path, index=False)
 
-    summary = pd.DataFrame([{
-        "n_rows": len(n),
-        "max_abs_diff": float(np.max(np.abs(diff))),
-        "mean_abs_diff": float(np.mean(np.abs(diff))),
-        "rmse": float(np.sqrt(np.mean(diff ** 2))),
-        "corr": float(corr),
-        "best_scalar_alpha_stata_over_native": alpha,
-        "max_abs_diff_after_best_scalar": float(np.max(np.abs(scaled_diff))),
-        "mean_abs_diff_after_best_scalar": float(np.mean(np.abs(scaled_diff))),
-    }])
+    summary = pd.DataFrame(
+        [
+            {
+                "n_rows": len(n),
+                "max_abs_diff": float(np.max(np.abs(diff))),
+                "mean_abs_diff": float(np.mean(np.abs(diff))),
+                "rmse": float(np.sqrt(np.mean(diff**2))),
+                "corr": float(corr),
+                "best_scalar_alpha_stata_over_native": alpha,
+                "max_abs_diff_after_best_scalar": float(np.max(np.abs(scaled_diff))),
+                "mean_abs_diff_after_best_scalar": float(np.mean(np.abs(scaled_diff))),
+            }
+        ]
+    )
 
     summary_path = ART / "ze_native_vs_stata_summary.csv"
     summary.to_csv(summary_path, index=False)

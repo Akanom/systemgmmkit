@@ -117,5 +117,3 @@ def assess_diagnostics(
         )
 
     return DiagnosticReport(checks=checks, recommendation=recommendation)
-
-

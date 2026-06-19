@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 import subprocess
-import pandas as pd
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 
 from systemgmmkit import (
     OLSSpec,
     PooledOLSSpec,
+    lincom,
+    marginal_effects,
     run_ols,
     run_pooled_ols,
-    marginal_effects,
-    lincom,
     wald_test,
 )
 
@@ -50,11 +51,14 @@ for p in candidates[:30]:
     print(" -", p)
 
 preferred = [
-    p for p in candidates
+    p
+    for p in candidates
     if any(k in p.name.lower() for k in ["prepared", "panel", "verification", "fd001"])
 ]
 
-data_path = Path(r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers\data_prepared\fd001_prepared_panel.csv")
+data_path = Path(
+    r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers\data_prepared\fd001_prepared_panel.csv"
+)
 print("\nUsing data file:", data_path)
 
 if data_path.suffix.lower() == ".parquet":
@@ -71,12 +75,14 @@ print("Raw columns:", list(df.columns))
 # 2. Resolve old FD001 verification columns
 # ------------------------------------------------------------
 
+
 def pick(*names: str) -> str | None:
     lower = {c.lower(): c for c in df.columns}
     for name in names:
         if name.lower() in lower:
             return lower[name.lower()]
     return None
+
 
 entity = pick("unit", "unit_id", "engine", "engine_id", "id", "entity")
 time = pick("cycle", "time", "period", "t")
@@ -360,6 +366,7 @@ print("Stata batch completed.")
 # 7. Compare native vs Stata
 # ------------------------------------------------------------
 
+
 def load_stata(path: Path) -> pd.DataFrame:
     if not path.exists():
         raise SystemExit(f"Expected Stata output not found: {path}")
@@ -370,8 +377,10 @@ def load_stata(path: Path) -> pd.DataFrame:
     out["term"] = out["term"].astype(str)
     return out
 
+
 stata_ols = load_stata(stata_ols_path)
 stata_pooled = load_stata(stata_pooled_path)
+
 
 def compare(native: pd.DataFrame, stata: pd.DataFrame, label: str) -> pd.DataFrame:
     n = native.copy()
@@ -420,6 +429,7 @@ def compare(native: pd.DataFrame, stata: pd.DataFrame, label: str) -> pd.DataFra
         ]
     ]
 
+
 cmp_ols = compare(native_ols, stata_ols, "ols_robust")
 cmp_pooled = compare(native_pooled, stata_pooled, "pooled_cluster_unit")
 
@@ -441,9 +451,3 @@ print("Stata Wald output:", stata_wald_path)
 print("Native Wald output:", OUT / "native_wald_all_slopes.csv")
 
 print("\nOK: real FD001 native-vs-Stata OLS comparison completed.")
-
-
-
-
-
-

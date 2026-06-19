@@ -34,8 +34,7 @@ def stata_xtabond2_command(spec: DynamicPanelSpec, *, entity: str, time: str) ->
         option_parts = [f"lag({block.min_lag} {block.max_lag})"]
 
         collapse_enabled = bool(
-            getattr(block, "collapse", False)
-            or getattr(spec, "collapse", False)
+            getattr(block, "collapse", False) or getattr(spec, "collapse", False)
         )
         if collapse_enabled:
             option_parts.append("collapse")
@@ -51,11 +50,7 @@ def stata_xtabond2_command(spec: DynamicPanelSpec, *, entity: str, time: str) ->
     nolevel = "noleveleq" if not spec.system else ""
 
     transformation = str(getattr(spec, "transformation", "")).lower()
-    orthogonal = (
-        "orthogonal"
-        if transformation in {"fod", "forward_orthogonal_deviations"}
-        else ""
-    )
+    orthogonal = "orthogonal" if transformation in {"fod", "forward_orthogonal_deviations"} else ""
 
     steps = str(getattr(spec, "steps", "")).lower()
     step_option = "twostep" if steps == "twostep" else "onestep"
@@ -74,6 +69,8 @@ def stata_xtabond2_command(spec: DynamicPanelSpec, *, entity: str, time: str) ->
     parts = " ".join(str(p).strip() for p in options if str(p).strip())
 
     return f"xtset {entity} {time}\nxtabond2 {spec.dependent} {rhs}, {parts}"
+
+
 def write_stata_parity_do_file(
     path: str | Path,
     *,

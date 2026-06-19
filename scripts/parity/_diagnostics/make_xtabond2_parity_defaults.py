@@ -104,9 +104,7 @@ for env_name, default in DEFAULTS.items():
     print(f"{env_name}: {status}")
 
 failed = {
-    env: status
-    for env, status in statuses.items()
-    if status in {"not_patched", "marker_not_found"}
+    env: status for env, status in statuses.items() if status in {"not_patched", "marker_not_found"}
 }
 
 if failed:
@@ -116,7 +114,7 @@ if failed:
         print(f"  {env}: {status}")
         idx = text.find(env)
         if idx != -1:
-            print(text[max(0, idx - 300): idx + 700])
+            print(text[max(0, idx - 300) : idx + 700])
     raise SystemExit(1)
 
 PATH.write_text(text, encoding="utf-8")

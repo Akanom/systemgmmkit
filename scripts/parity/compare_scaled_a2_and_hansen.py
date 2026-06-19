@@ -54,28 +54,32 @@ def main() -> None:
     a2_diff = native_a2_reordered_scaled - stata_a2
 
     j_from_stata_a2 = float((stata_ze.T @ stata_a2 @ stata_ze).squeeze())
-    j_from_native_scaled_a2 = float(
-        (stata_ze.T @ native_a2_reordered_scaled @ stata_ze).squeeze()
-    )
-    j_from_native_unscaled_a2 = float(
-        (stata_ze.T @ native_a2_reordered @ stata_ze).squeeze()
-    )
+    j_from_native_scaled_a2 = float((stata_ze.T @ native_a2_reordered_scaled @ stata_ze).squeeze())
+    j_from_native_unscaled_a2 = float((stata_ze.T @ native_a2_reordered @ stata_ze).squeeze())
 
-    summary = pd.DataFrame([{
-        "n_groups": N_GROUPS,
-        "native_a2_norm_reordered": float(np.linalg.norm(native_a2_reordered)),
-        "native_a2_norm_reordered_div_groups": float(np.linalg.norm(native_a2_reordered_scaled)),
-        "stata_a2_norm": float(np.linalg.norm(stata_a2)),
-        "a2_scaled_max_abs_diff": float(np.max(np.abs(a2_diff))),
-        "a2_scaled_mean_abs_diff": float(np.mean(np.abs(a2_diff))),
-        "a2_scaled_rmse": float(np.sqrt(np.mean(a2_diff ** 2))),
-        "j_from_stata_a2": j_from_stata_a2,
-        "j_from_native_scaled_a2": j_from_native_scaled_a2,
-        "j_from_native_unscaled_a2": j_from_native_unscaled_a2,
-        "xtabond2_hansen": XTABOND2_HANSEN,
-        "abs_diff_j_stata_a2_vs_xtabond2": abs(j_from_stata_a2 - XTABOND2_HANSEN),
-        "abs_diff_j_native_scaled_a2_vs_xtabond2": abs(j_from_native_scaled_a2 - XTABOND2_HANSEN),
-    }])
+    summary = pd.DataFrame(
+        [
+            {
+                "n_groups": N_GROUPS,
+                "native_a2_norm_reordered": float(np.linalg.norm(native_a2_reordered)),
+                "native_a2_norm_reordered_div_groups": float(
+                    np.linalg.norm(native_a2_reordered_scaled)
+                ),
+                "stata_a2_norm": float(np.linalg.norm(stata_a2)),
+                "a2_scaled_max_abs_diff": float(np.max(np.abs(a2_diff))),
+                "a2_scaled_mean_abs_diff": float(np.mean(np.abs(a2_diff))),
+                "a2_scaled_rmse": float(np.sqrt(np.mean(a2_diff**2))),
+                "j_from_stata_a2": j_from_stata_a2,
+                "j_from_native_scaled_a2": j_from_native_scaled_a2,
+                "j_from_native_unscaled_a2": j_from_native_unscaled_a2,
+                "xtabond2_hansen": XTABOND2_HANSEN,
+                "abs_diff_j_stata_a2_vs_xtabond2": abs(j_from_stata_a2 - XTABOND2_HANSEN),
+                "abs_diff_j_native_scaled_a2_vs_xtabond2": abs(
+                    j_from_native_scaled_a2 - XTABOND2_HANSEN
+                ),
+            }
+        ]
+    )
 
     diff_path = ART / "native_A2_reordered_div_groups_minus_stata_A2.csv"
     scaled_path = ART / "native_A2_reordered_div_groups.csv"

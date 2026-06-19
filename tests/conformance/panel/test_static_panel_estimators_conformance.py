@@ -14,7 +14,10 @@ STATIC_PANEL_CONFORMANCE_TARGETS = {
         "required_status": "STRICT_PARITY_PENDING",
     },
     "two_way_fixed_effects": {
-        "reference": ["linearmodels.PanelOLS(entity_effects=True, time_effects=True)", "Stata xtreg, fe + time dummies"],
+        "reference": [
+            "linearmodels.PanelOLS(entity_effects=True, time_effects=True)",
+            "Stata xtreg, fe + time dummies",
+        ],
         "priority": "HIGH",
         "required_status": "STRICT_PARITY_PENDING",
     },

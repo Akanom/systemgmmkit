@@ -70,9 +70,7 @@ def main() -> None:
         )
 
     if Z.shape[0] != X.shape[0] or X.shape[0] != y.shape[0]:
-        raise SystemExit(
-            f"FAILED: stacked rows differ. Z={Z.shape}, X={X.shape}, y={y.shape}"
-        )
+        raise SystemExit(f"FAILED: stacked rows differ. Z={Z.shape}, X={X.shape}, y={y.shape}")
 
     u_at_stata_b = y - X @ b_stata
     ze_at_stata_b = Z.T @ u_at_stata_b
@@ -95,30 +93,36 @@ def main() -> None:
     scaled = alpha * ze_at_stata_b.reshape(-1)
     scaled_diff = scaled - ze_stata.reshape(-1)
 
-    out = pd.DataFrame({
-        "row_id": np.arange(1, ze_stata.shape[0] + 1),
-        "native_Ze_at_stata_b": ze_at_stata_b.reshape(-1),
-        "stata_Ze": ze_stata.reshape(-1),
-        "diff": diff,
-        "abs_diff": np.abs(diff),
-        "native_scaled_to_stata": scaled,
-        "scaled_diff": scaled_diff,
-        "abs_scaled_diff": np.abs(scaled_diff),
-    })
+    out = pd.DataFrame(
+        {
+            "row_id": np.arange(1, ze_stata.shape[0] + 1),
+            "native_Ze_at_stata_b": ze_at_stata_b.reshape(-1),
+            "stata_Ze": ze_stata.reshape(-1),
+            "diff": diff,
+            "abs_diff": np.abs(diff),
+            "native_scaled_to_stata": scaled,
+            "scaled_diff": scaled_diff,
+            "abs_scaled_diff": np.abs(scaled_diff),
+        }
+    )
 
-    summary = pd.DataFrame([{
-        "n_rows": int(ze_stata.shape[0]),
-        "max_abs_diff": float(np.max(np.abs(diff))),
-        "mean_abs_diff": float(np.mean(np.abs(diff))),
-        "rmse": float(np.sqrt(np.mean(diff ** 2))),
-        "corr": float(np.corrcoef(ze_at_stata_b.reshape(-1), ze_stata.reshape(-1))[0, 1]),
-        "best_scalar_alpha_stata_over_native": alpha,
-        "max_abs_diff_after_best_scalar": float(np.max(np.abs(scaled_diff))),
-        "mean_abs_diff_after_best_scalar": float(np.mean(np.abs(scaled_diff))),
-        "u_at_stata_b_norm": float(np.linalg.norm(u_at_stata_b)),
-        "ze_at_stata_b_norm": float(np.linalg.norm(ze_at_stata_b)),
-        "stata_ze_norm": float(np.linalg.norm(ze_stata)),
-    }])
+    summary = pd.DataFrame(
+        [
+            {
+                "n_rows": int(ze_stata.shape[0]),
+                "max_abs_diff": float(np.max(np.abs(diff))),
+                "mean_abs_diff": float(np.mean(np.abs(diff))),
+                "rmse": float(np.sqrt(np.mean(diff**2))),
+                "corr": float(np.corrcoef(ze_at_stata_b.reshape(-1), ze_stata.reshape(-1))[0, 1]),
+                "best_scalar_alpha_stata_over_native": alpha,
+                "max_abs_diff_after_best_scalar": float(np.max(np.abs(scaled_diff))),
+                "mean_abs_diff_after_best_scalar": float(np.mean(np.abs(scaled_diff))),
+                "u_at_stata_b_norm": float(np.linalg.norm(u_at_stata_b)),
+                "ze_at_stata_b_norm": float(np.linalg.norm(ze_at_stata_b)),
+                "stata_ze_norm": float(np.linalg.norm(ze_stata)),
+            }
+        ]
+    )
 
     out_path = ART / "native_Ze_at_stata_b_vs_stata_Ze.csv"
     summary_path = ART / "native_Ze_at_stata_b_summary.csv"

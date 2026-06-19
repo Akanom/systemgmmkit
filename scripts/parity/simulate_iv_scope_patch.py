@@ -40,12 +40,14 @@ def main() -> None:
     ze_patched = Z_patched.T @ u
     stata_ze = pd.read_csv(STATA_ZE_FILE).to_numpy(float).reshape(-1, 1)
 
-    out = pd.DataFrame({
-        "instrument_index": np.arange(1, len(names) + 1),
-        "instrument_name": names,
-        "native_original_Ze_at_stata_b": ze_original.reshape(-1),
-        "native_after_iv_scope_patch_Ze_at_stata_b": ze_patched.reshape(-1),
-    })
+    out = pd.DataFrame(
+        {
+            "instrument_index": np.arange(1, len(names) + 1),
+            "instrument_name": names,
+            "native_original_Ze_at_stata_b": ze_original.reshape(-1),
+            "native_after_iv_scope_patch_Ze_at_stata_b": ze_patched.reshape(-1),
+        }
+    )
 
     out_path = ART / "simulate_iv_scope_patch_Ze.csv"
     out.to_csv(out_path, index=False)

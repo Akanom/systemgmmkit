@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Mapping, Sequence
 import html
 import math
-
-import numpy as np
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg", force=True)
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.patches import FancyBboxPatch
 from matplotlib.ticker import MaxNLocator
-
 
 SGM_COLORS = {
     "ink": "#111827",
@@ -68,12 +68,15 @@ class HealthMetrics:
         return float(self.instruments) / float(self.groups)
 
     @classmethod
-    def from_result(cls, result: Any, *, estimator: str | None = None) -> "HealthMetrics":
+    def from_result(cls, result: Any, *, estimator: str | None = None) -> HealthMetrics:
         return cls(
-            estimator=estimator or str(_get(result, ["estimator", "model_name", "method"], "Model")),
+            estimator=estimator
+            or str(_get(result, ["estimator", "model_name", "method"], "Model")),
             nobs=_as_optional_int(_get(result, ["nobs", "n_obs", "observations"])),
             groups=_as_optional_int(_get(result, ["groups", "n_groups", "entities", "n_entities"])),
-            instruments=_as_optional_int(_get(result, ["instruments", "n_instruments", "instrument_count"])),
+            instruments=_as_optional_int(
+                _get(result, ["instruments", "n_instruments", "instrument_count"])
+            ),
             parameters=_as_optional_int(_get(result, ["parameters", "n_params", "k_params"])),
             collapsed=_as_optional_bool(_get(result, ["collapsed", "collapse"])),
             transformation=_as_optional_str(_get(result, ["transformation", "transform"])),
@@ -116,7 +119,7 @@ class PersistenceAnalytics:
     stable: bool
 
     @classmethod
-    def from_phi(cls, phi: float) -> "PersistenceAnalytics":
+    def from_phi(cls, phi: float) -> PersistenceAnalytics:
         phi = float(phi)
         stable = abs(phi) < 1.0
 
@@ -167,7 +170,9 @@ class SGMVizAccessor:
             save=save,
         )
 
-    def persistence(self, *, phi: float | None = None, periods: int = 20, save: str | Path | None = None) -> Figure:
+    def persistence(
+        self, *, phi: float | None = None, periods: int = 20, save: str | Path | None = None
+    ) -> Figure:
         if phi is None:
             phi = _infer_lag_coefficient(self.result)
         return dynamic_persistence_dashboard_v2(
@@ -284,7 +289,11 @@ def _status_p_value(
 
     if test_type.lower() == "ar1":
         if p < 0.05:
-            return "INFO", SGM_COLORS["info"], "AR(1) rejection is common in first-differenced residuals"
+            return (
+                "INFO",
+                SGM_COLORS["info"],
+                "AR(1) rejection is common in first-differenced residuals",
+            )
         if p < 0.10:
             return "CHECK", SGM_COLORS["warn"], "weak AR(1) evidence"
         return "INFO", SGM_COLORS["neutral"], "no strong AR(1) evidence"
@@ -356,7 +365,6 @@ def _style_plot_axis(ax: Axes) -> None:
     ax.tick_params(colors=SGM_COLORS["ink"], labelsize=8.5)
     ax.xaxis.label.set_color(SGM_COLORS["ink"])
     ax.yaxis.label.set_color(SGM_COLORS["ink"])
-
 
 
 def _axis_header(
@@ -434,13 +442,45 @@ def _draw_health_dashboard(ax: Axes, metrics: HealthMetrics, *, compact: bool = 
         y = y0 - i * row_h
         status, color, explanation = _status_p_value(p_value, test_type=kind)
 
-        _card(ax, (0.03, y - 0.055), 0.94, 0.078, facecolor="#FFFFFF", edgecolor="#E2E8F0", radius=0.022)
+        _card(
+            ax,
+            (0.03, y - 0.055),
+            0.94,
+            0.078,
+            facecolor="#FFFFFF",
+            edgecolor="#E2E8F0",
+            radius=0.022,
+        )
 
-        ax.text(0.055, y, label, fontsize=9.5 if not compact else 8.2, fontweight="bold", color=SGM_COLORS["ink"], va="center")
-        ax.text(0.33, y, _fmt(p_value), fontsize=9.5 if not compact else 8.2, color=SGM_COLORS["ink"], va="center")
+        ax.text(
+            0.055,
+            y,
+            label,
+            fontsize=9.5 if not compact else 8.2,
+            fontweight="bold",
+            color=SGM_COLORS["ink"],
+            va="center",
+        )
+        ax.text(
+            0.33,
+            y,
+            _fmt(p_value),
+            fontsize=9.5 if not compact else 8.2,
+            color=SGM_COLORS["ink"],
+            va="center",
+        )
 
         _card(ax, (0.51, y - 0.028), 0.16, 0.052, facecolor=color, edgecolor=color, radius=0.018)
-        ax.text(0.59, y, status, fontsize=8.2 if not compact else 7.2, fontweight="bold", color="white", ha="center", va="center")
+        ax.text(
+            0.59,
+            y,
+            status,
+            fontsize=8.2 if not compact else 7.2,
+            fontweight="bold",
+            color="white",
+            ha="center",
+            va="center",
+        )
 
         ax.text(
             0.70,
@@ -471,7 +511,15 @@ def _draw_health_dashboard(ax: Axes, metrics: HealthMetrics, *, compact: bool = 
         y = start_y - (i // 3) * 0.105
         _card(ax, (x, y - 0.06), 0.28, 0.08, facecolor="#F8FAFC", edgecolor="#E2E8F0", radius=0.02)
         ax.text(x + 0.018, y - 0.002, label, fontsize=7.5, color=SGM_COLORS["muted"], va="center")
-        ax.text(x + 0.018, y - 0.033, str(value), fontsize=9.0, fontweight="bold", color=SGM_COLORS["ink"], va="center")
+        ax.text(
+            x + 0.018,
+            y - 0.033,
+            str(value),
+            fontsize=9.0,
+            fontweight="bold",
+            color=SGM_COLORS["ink"],
+            va="center",
+        )
 
     _card(ax, (0.03, 0.035), 0.94, 0.07, facecolor=ratio_color, edgecolor=ratio_color, radius=0.022)
     ax.text(
@@ -509,8 +557,9 @@ def model_health_dashboard_v2(
     return _save(fig, save)
 
 
-
-def _draw_persistence_dashboard(ax: Axes, phi: float, *, periods: int = 20, compact: bool = False) -> PersistenceAnalytics:
+def _draw_persistence_dashboard(
+    ax: Axes, phi: float, *, periods: int = 20, compact: bool = False
+) -> PersistenceAnalytics:
     analytics = PersistenceAnalytics.from_phi(phi)
 
     t = np.arange(periods + 1)
@@ -566,11 +615,37 @@ def _draw_persistence_dashboard(ax: Axes, phi: float, *, periods: int = 20, comp
 
     for i, (label, value) in enumerate(stats):
         y = y0 - i * (0.097 if not compact else 0.088)
-        _card(ax, (x0, y - 0.045), width, 0.068, facecolor="#FFFFFF", edgecolor="#E2E8F0", radius=0.018)
-        ax.text(x0 + 0.018, y - 0.006, label, transform=ax.transAxes, fontsize=7.2 if compact else 7.8, color=SGM_COLORS["muted"], va="center")
-        ax.text(x0 + 0.17, y - 0.006, value, transform=ax.transAxes, fontsize=8.0 if compact else 8.8, fontweight="bold", color=SGM_COLORS["ink"], va="center")
+        _card(
+            ax,
+            (x0, y - 0.045),
+            width,
+            0.068,
+            facecolor="#FFFFFF",
+            edgecolor="#E2E8F0",
+            radius=0.018,
+        )
+        ax.text(
+            x0 + 0.018,
+            y - 0.006,
+            label,
+            transform=ax.transAxes,
+            fontsize=7.2 if compact else 7.8,
+            color=SGM_COLORS["muted"],
+            va="center",
+        )
+        ax.text(
+            x0 + 0.17,
+            y - 0.006,
+            value,
+            transform=ax.transAxes,
+            fontsize=8.0 if compact else 8.8,
+            fontweight="bold",
+            color=SGM_COLORS["ink"],
+            va="center",
+        )
 
     return analytics
+
 
 def dynamic_persistence_dashboard_v2(
     phi: float,
@@ -585,8 +660,9 @@ def dynamic_persistence_dashboard_v2(
     return _save(fig, save)
 
 
-
-def _draw_instrument_architecture(ax: Axes, spec: InstrumentArchitecture, *, compact: bool = False) -> None:
+def _draw_instrument_architecture(
+    ax: Axes, spec: InstrumentArchitecture, *, compact: bool = False
+) -> None:
     _setup_card_axis(ax)
 
     ax.text(
@@ -632,20 +708,60 @@ def _draw_instrument_architecture(ax: Axes, spec: InstrumentArchitecture, *, com
             continue
 
         header_h = 0.055 if compact else 0.060
-        _card(ax, (tree_x, current_y - header_h), tree_w, header_h, facecolor=color, edgecolor=color, radius=0.018)
-        ax.text(tree_x + 0.020, current_y - header_h / 2, section_title, fontsize=7.6 if compact else 8.2, fontweight="bold", color="white", va="center")
+        _card(
+            ax,
+            (tree_x, current_y - header_h),
+            tree_w,
+            header_h,
+            facecolor=color,
+            edgecolor=color,
+            radius=0.018,
+        )
+        ax.text(
+            tree_x + 0.020,
+            current_y - header_h / 2,
+            section_title,
+            fontsize=7.6 if compact else 8.2,
+            fontweight="bold",
+            color="white",
+            va="center",
+        )
 
         current_y -= header_h + 0.020
 
         for item in list(items)[:max_items]:
             y_line = current_y - 0.012
-            ax.plot([tree_x + 0.038, tree_x + 0.038], [y_line - 0.019, y_line + 0.016], color=SGM_COLORS["border"], linewidth=1)
-            ax.plot([tree_x + 0.038, tree_x + 0.068], [y_line - 0.019, y_line - 0.019], color=SGM_COLORS["border"], linewidth=1)
-            ax.text(tree_x + 0.082, y_line - 0.019, str(item), fontsize=7.3 if compact else 8.0, color=SGM_COLORS["ink"], va="center")
+            ax.plot(
+                [tree_x + 0.038, tree_x + 0.038],
+                [y_line - 0.019, y_line + 0.016],
+                color=SGM_COLORS["border"],
+                linewidth=1,
+            )
+            ax.plot(
+                [tree_x + 0.038, tree_x + 0.068],
+                [y_line - 0.019, y_line - 0.019],
+                color=SGM_COLORS["border"],
+                linewidth=1,
+            )
+            ax.text(
+                tree_x + 0.082,
+                y_line - 0.019,
+                str(item),
+                fontsize=7.3 if compact else 8.0,
+                color=SGM_COLORS["ink"],
+                va="center",
+            )
             current_y -= item_gap
 
         if len(items) > max_items:
-            ax.text(tree_x + 0.082, current_y - 0.018, f"+ {len(items) - max_items} more", fontsize=7.1, color=SGM_COLORS["muted"], va="center")
+            ax.text(
+                tree_x + 0.082,
+                current_y - 0.018,
+                f"+ {len(items) - max_items} more",
+                fontsize=7.1,
+                color=SGM_COLORS["muted"],
+                va="center",
+            )
             current_y -= item_gap
 
         current_y -= section_gap
@@ -677,12 +793,43 @@ def _draw_instrument_architecture(ax: Axes, spec: InstrumentArchitecture, *, com
 
     for i, (label, value) in enumerate(meta):
         y = y0 - i * row_h
-        _card(ax, (meta_x, y - 0.054), meta_w, 0.070, facecolor="#F8FAFC", edgecolor="#E2E8F0", radius=0.017)
-        ax.text(meta_x + 0.015, y - 0.005, label, fontsize=6.9 if compact else 7.4, color=SGM_COLORS["muted"], va="center")
-        ax.text(meta_x + 0.015, y - 0.033, str(value), fontsize=7.8 if compact else 8.6, fontweight="bold", color=SGM_COLORS["ink"], va="center")
+        _card(
+            ax,
+            (meta_x, y - 0.054),
+            meta_w,
+            0.070,
+            facecolor="#F8FAFC",
+            edgecolor="#E2E8F0",
+            radius=0.017,
+        )
+        ax.text(
+            meta_x + 0.015,
+            y - 0.005,
+            label,
+            fontsize=6.9 if compact else 7.4,
+            color=SGM_COLORS["muted"],
+            va="center",
+        )
+        ax.text(
+            meta_x + 0.015,
+            y - 0.033,
+            str(value),
+            fontsize=7.8 if compact else 8.6,
+            fontweight="bold",
+            color=SGM_COLORS["ink"],
+            va="center",
+        )
 
     status_y = 0.045
-    _card(ax, (0.04, status_y), 0.92, 0.070, facecolor=ratio_color, edgecolor=ratio_color, radius=0.020)
+    _card(
+        ax,
+        (0.04, status_y),
+        0.92,
+        0.070,
+        facecolor=ratio_color,
+        edgecolor=ratio_color,
+        radius=0.020,
+    )
     ax.text(
         0.065,
         status_y + 0.035,
@@ -692,6 +839,7 @@ def _draw_instrument_architecture(ax: Axes, spec: InstrumentArchitecture, *, com
         fontweight="bold",
         va="center",
     )
+
 
 def instrument_architecture_dashboard_v2(
     architecture: InstrumentArchitecture | Mapping[str, Any],
@@ -707,7 +855,6 @@ def instrument_architecture_dashboard_v2(
     _draw_instrument_architecture(ax, architecture)
     fig.tight_layout()
     return _save(fig, save)
-
 
 
 def effect_surface_dashboard_v2(
@@ -755,6 +902,7 @@ def effect_surface_dashboard_v2(
     fig.subplots_adjust(top=0.84)
     return _save(fig, save)
 
+
 def _extract_params(result: Any) -> tuple[list[str], np.ndarray, np.ndarray | None]:
     params = _get(result, ["params", "coef", "coefficients", "coefs"])
     ses = _get(result, ["std_errors", "standard_errors", "bse", "se", "stderr"])
@@ -763,7 +911,7 @@ def _extract_params(result: Any) -> tuple[list[str], np.ndarray, np.ndarray | No
         return [], np.array([]), None
 
     if isinstance(params, Mapping):
-        terms = [str(k) for k in params.keys()]
+        terms = [str(k) for k in params]
         beta = np.asarray(list(params.values()), dtype=float)
     elif hasattr(params, "index") and hasattr(params, "values"):
         terms = [str(k) for k in params.index]
@@ -786,7 +934,6 @@ def _extract_params(result: Any) -> tuple[list[str], np.ndarray, np.ndarray | No
     return terms, beta, se_arr
 
 
-
 def _draw_parameter_impact(ax: Axes, result: Any, *, max_terms: int = 8) -> None:
     terms, beta, se = _extract_params(result)
 
@@ -799,18 +946,32 @@ def _draw_parameter_impact(ax: Axes, result: Any, *, max_terms: int = 8) -> None
 
     if len(beta) == 0:
         ax.axis("off")
-        ax.text(0.05, 0.5, "No coefficient vector available.", transform=ax.transAxes, fontsize=9, color=SGM_COLORS["muted"])
+        ax.text(
+            0.05,
+            0.5,
+            "No coefficient vector available.",
+            transform=ax.transAxes,
+            fontsize=9,
+            color=SGM_COLORS["muted"],
+        )
         return
 
     mask = np.isfinite(beta)
-    terms = [t for t, keep in zip(terms, mask) if keep]
+    terms = [t for t, keep in zip(terms, mask, strict=False) if keep]
     beta = beta[mask]
     if se is not None:
         se = se[mask]
 
     if len(beta) == 0:
         ax.axis("off")
-        ax.text(0.05, 0.5, "No finite coefficients available.", transform=ax.transAxes, fontsize=9, color=SGM_COLORS["muted"])
+        ax.text(
+            0.05,
+            0.5,
+            "No finite coefficients available.",
+            transform=ax.transAxes,
+            fontsize=9,
+            color=SGM_COLORS["muted"],
+        )
         return
 
     order = np.argsort(np.abs(beta))[::-1][:max_terms]
@@ -822,7 +983,15 @@ def _draw_parameter_impact(ax: Axes, result: Any, *, max_terms: int = 8) -> None
 
     if se is not None and np.all(np.isfinite(se)):
         xerr = 1.959963984540054 * se
-        ax.errorbar(beta, y, xerr=xerr, fmt="o", color=SGM_COLORS["primary"], ecolor=SGM_COLORS["primary"], capsize=3)
+        ax.errorbar(
+            beta,
+            y,
+            xerr=xerr,
+            fmt="o",
+            color=SGM_COLORS["primary"],
+            ecolor=SGM_COLORS["primary"],
+            capsize=3,
+        )
     else:
         ax.scatter(beta, y, color=SGM_COLORS["primary"], s=22)
 
@@ -831,6 +1000,7 @@ def _draw_parameter_impact(ax: Axes, result: Any, *, max_terms: int = 8) -> None
     ax.set_yticklabels(terms, fontsize=7.8)
     ax.set_xlabel("Estimate")
     _style_plot_axis(ax)
+
 
 def publication_panel_v2(
     *,
@@ -869,7 +1039,9 @@ def publication_panel_v2(
     fig = plt.figure(figsize=(13.2, 8.6))
     fig.patch.set_facecolor("#F8FAFC")
 
-    gs = fig.add_gridspec(2, 2, width_ratios=[1.05, 1.0], height_ratios=[1.0, 1.0], wspace=0.26, hspace=0.42)
+    gs = fig.add_gridspec(
+        2, 2, width_ratios=[1.05, 1.0], height_ratios=[1.0, 1.0], wspace=0.26, hspace=0.42
+    )
 
     ax_health = fig.add_subplot(gs[0, 0])
     ax_persist = fig.add_subplot(gs[0, 1])
@@ -884,7 +1056,15 @@ def publication_panel_v2(
         _draw_parameter_impact(ax_param, result)
     else:
         _setup_card_axis(ax_param)
-        ax_param.text(0.03, 0.95, "SGM-Viz publication panel", fontsize=12, fontweight="bold", color=SGM_COLORS["ink"], va="top")
+        ax_param.text(
+            0.03,
+            0.95,
+            "SGM-Viz publication panel",
+            fontsize=12,
+            fontweight="bold",
+            color=SGM_COLORS["ink"],
+            va="top",
+        )
         ax_param.text(
             0.03,
             0.84,
@@ -903,7 +1083,15 @@ def publication_panel_v2(
             y = 0.68 - i * 0.10
             _card(ax_param, (0.05, y - 0.045), 0.55, 0.07, facecolor="#FFFFFF", edgecolor="#E2E8F0")
             ax_param.text(0.075, y - 0.01, k, fontsize=8, color=SGM_COLORS["muted"], va="center")
-            ax_param.text(0.32, y - 0.01, str(v), fontsize=9, fontweight="bold", color=SGM_COLORS["ink"], va="center")
+            ax_param.text(
+                0.32,
+                y - 0.01,
+                str(v),
+                fontsize=9,
+                fontweight="bold",
+                color=SGM_COLORS["ink"],
+                va="center",
+            )
 
     fig.suptitle(
         "SGM-Viz dynamic panel diagnostic panel",
@@ -929,11 +1117,12 @@ def publication_panel_v2(
 
 def _infer_lag_coefficient(result: Any) -> float:
     terms, beta, _ = _extract_params(result)
-    for term, value in zip(terms, beta):
+    for term, value in zip(terms, beta, strict=False):
         lower = term.lower().replace(" ", "")
-        if lower.startswith("l1.") or lower.startswith("l.") or "lag" in lower:
-            if np.isfinite(value):
-                return float(value)
+        if (lower.startswith("l1.") or lower.startswith("l.") or "lag" in lower) and np.isfinite(
+            value
+        ):
+            return float(value)
     return 0.5
 
 
@@ -943,18 +1132,45 @@ def export_sgm_viz_v2_gallery(
     output_html: str | Path,
     title: str = "SGM-Viz v2 gallery",
     description: str = "Dynamic panel post-estimation graphics generated by systemgmmkit.",
+    gallery_mode: str = "dashboard",
 ) -> Path:
     output = Path(output_html)
     output.parent.mkdir(parents=True, exist_ok=True)
 
+    mode = (gallery_mode or "dashboard").strip().lower()
+    if mode not in {"dashboard", "publication", "full"}:
+        raise ValueError("gallery_mode must be one of: dashboard, publication, full")
+
+    def _is_publication_panel(name: str) -> bool:
+        lower = str(name).lower()
+        return "publication" in lower or (("panel" in lower) and ("health" not in lower))
+
+    items = list(figures.items())
+
+    if mode == "dashboard":
+        # Avoid duplicate information: exclude the publication panel from the
+        # dashboard gallery because it embeds the individual dashboards again.
+        filtered = [(name, path) for name, path in items if not _is_publication_panel(str(name))]
+        items = filtered or items
+
+    elif mode == "publication":
+        # Paper/report mode: show only the composed publication panel.
+        filtered = [(name, path) for name, path in items if _is_publication_panel(str(name))]
+        items = filtered or items
+
+    # mode == "full" intentionally keeps all figures.
+
     cards: list[str] = []
-    for name, path in figures.items():
+    for name, path in items:
         p = Path(path)
         rel = p.name if p.parent.resolve() == output.parent.resolve() else str(p)
         label = str(name).replace("_", " ").title()
+        lower_name = str(name).lower()
+        card_class = "card card-wide" if _is_publication_panel(lower_name) else "card"
+
         cards.append(
             f"""
-            <section class="card">
+            <section class="{card_class}">
               <h2>{html.escape(label)}</h2>
               <img src="{html.escape(rel)}" alt="{html.escape(label)}">
             </section>
@@ -1015,6 +1231,77 @@ p {{
   display: block;
   border-radius: 8px;
 }}
+
+.card-wide {{
+  grid-column: 1 / -1;
+}}
+
+.card-wide img {{
+  max-width: 1500px;
+  margin: 0 auto;
+}}
+
+@media print {{
+  @page {{
+    size: A4 landscape;
+    margin: 10mm;
+  }}
+
+  body {{
+    background: #ffffff !important;
+  }}
+
+  header {{
+    display: none !important;
+  }}
+
+  h1 {{
+    font-size: 22px;
+  }}
+
+  .grid {{
+    display: block;
+    padding: 0;
+  }}
+
+  .card {{
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    margin: 0 0 10mm 0;
+    padding: 10px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }}
+
+  .card h2 {{
+    page-break-after: avoid;
+    break-after: avoid;
+    margin-bottom: 8px;
+  }}
+
+  .card img {{
+    max-height: 165mm;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    object-fit: contain;
+  }}
+
+  .card-wide {{
+    page-break-before: always;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }}
+
+  .card-wide img {{
+    max-height: 170mm;
+    max-width: 100%;
+    width: auto;
+    margin: 0 auto;
+  }}
+}}
+
 </style>
 </head>
 <body>
@@ -1023,7 +1310,7 @@ p {{
 <p>{html.escape(description)}</p>
 </header>
 <main class="grid">
-{''.join(cards)}
+{"".join(cards)}
 </main>
 </body>
 </html>

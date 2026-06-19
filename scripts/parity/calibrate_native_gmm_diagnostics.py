@@ -70,7 +70,9 @@ out.to_csv(OUT / "native_gmm_diagnostic_calibration.csv", index=False)
 md = []
 md.append("# Native GMM Diagnostic Calibration")
 md.append("")
-md.append("This file compares native experimental diagnostic p-values against xtabond2 implied statistics.")
+md.append(
+    "This file compares native experimental diagnostic p-values against xtabond2 implied statistics."
+)
 md.append("")
 md.append("## Calibration Table")
 md.append("")
@@ -81,7 +83,9 @@ md.append("")
 md.append("- Nobs and instrument-count parity are already achieved.")
 md.append("- Native AR(2) is directionally close to xtabond2.")
 md.append("- Native AR(1) and Hansen are not parity-calibrated.")
-md.append("- Coefficient and diagnostic parity should not be claimed until the weighting matrix and residual moment tests are aligned with xtabond2.")
+md.append(
+    "- Coefficient and diagnostic parity should not be claimed until the weighting matrix and residual moment tests are aligned with xtabond2."
+)
 
 (OUT / "native_gmm_diagnostic_calibration.md").write_text("\n".join(md), encoding="utf-8")
 

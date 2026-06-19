@@ -25,4 +25,6 @@ class GmmDiagnostics:
             return False
         if self.hansen_pvalue is not None and self.hansen_pvalue < 0.05:
             return False
-        return not (self.instrument_pressure_ratio is not None and self.instrument_pressure_ratio >= 1.0)
+        return not (
+            self.instrument_pressure_ratio is not None and self.instrument_pressure_ratio >= 1.0
+        )

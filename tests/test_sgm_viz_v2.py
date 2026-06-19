@@ -6,12 +6,12 @@ from systemgmmkit.postestimation import (
     HealthMetrics,
     InstrumentArchitecture,
     PersistenceAnalytics,
-    model_health_dashboard_v2,
     dynamic_persistence_dashboard_v2,
-    instrument_architecture_dashboard_v2,
     effect_surface_dashboard_v2,
-    publication_panel_v2,
     export_sgm_viz_v2_gallery,
+    instrument_architecture_dashboard_v2,
+    model_health_dashboard_v2,
+    publication_panel_v2,
     sgm_viz,
 )
 
@@ -90,10 +90,14 @@ def test_sgm_viz_v2_figures_save(tmp_path):
     y = np.tile(np.linspace(-2, 2, 10), 10)
     z = 0.5 * x + 0.2 * y + 0.3 * x * y
     paths["surface"] = tmp_path / "surface.png"
-    figs["surface"] = effect_surface_dashboard_v2(x, y, z, x_label="TechShare", y_label="Polity", save=paths["surface"])
+    figs["surface"] = effect_surface_dashboard_v2(
+        x, y, z, x_label="TechShare", y_label="Polity", save=paths["surface"]
+    )
 
     paths["panel"] = tmp_path / "panel.png"
-    figs["panel"] = publication_panel_v2(metrics=metrics, phi=0.618, instruments=arch, result=DummyResult(), save=paths["panel"])
+    figs["panel"] = publication_panel_v2(
+        metrics=metrics, phi=0.618, instruments=arch, result=DummyResult(), save=paths["panel"]
+    )
 
     for fig in figs.values():
         assert fig is not None

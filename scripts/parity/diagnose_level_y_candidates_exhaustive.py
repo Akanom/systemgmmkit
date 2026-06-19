@@ -35,10 +35,7 @@ def main() -> None:
     target_index = 7
     target = float(stata_ze[target_index - 1])
 
-    y_map = {
-        (int(r.id), int(r.t)): float(r.y)
-        for r in data.itertuples(index=False)
-    }
+    y_map = {(int(r.id), int(r.t)): float(r.y) for r in data.itertuples(index=False)}
 
     entity_arr = meta["entity"].astype(int).to_numpy()
     time_arr = meta["time"].astype(int).to_numpy()
@@ -54,18 +51,20 @@ def main() -> None:
         native_col = Z[:, native_idx]
         native_ze = float(native_col @ u)
 
-        rows.append({
-            "candidate": "CURRENT_NATIVE_L:diff:y:L1",
-            "left_offset": None,
-            "right_offset": None,
-            "time_min": None,
-            "time_max": None,
-            "missing_policy": "native",
-            "candidate_Ze": native_ze,
-            "target_stata_r7": target,
-            "abs_diff_to_r7": abs(native_ze - target),
-            "nonzero_rows": int(np.count_nonzero(native_col)),
-        })
+        rows.append(
+            {
+                "candidate": "CURRENT_NATIVE_L:diff:y:L1",
+                "left_offset": None,
+                "right_offset": None,
+                "time_min": None,
+                "time_max": None,
+                "missing_policy": "native",
+                "candidate_Ze": native_ze,
+                "target_stata_r7": target,
+                "abs_diff_to_r7": abs(native_ze - target),
+                "nonzero_rows": int(np.count_nonzero(native_col)),
+            }
+        )
 
     # Offset convention:
     # offset = 0  -> y[t]
@@ -98,7 +97,7 @@ def main() -> None:
                     for policy in missing_policies:
                         z = np.zeros(len(meta), dtype=float)
 
-                        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
+                        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
                             if not level_mask[i]:
                                 continue
 
@@ -117,18 +116,20 @@ def main() -> None:
 
                         ze = float(z @ u)
 
-                        rows.append({
-                            "candidate": f"y[t-{left_offset}] - y[t-{right_offset}]",
-                            "left_offset": left_offset,
-                            "right_offset": right_offset,
-                            "time_min": time_min,
-                            "time_max": time_max,
-                            "missing_policy": policy,
-                            "candidate_Ze": ze,
-                            "target_stata_r7": target,
-                            "abs_diff_to_r7": abs(ze - target),
-                            "nonzero_rows": int(np.count_nonzero(z)),
-                        })
+                        rows.append(
+                            {
+                                "candidate": f"y[t-{left_offset}] - y[t-{right_offset}]",
+                                "left_offset": left_offset,
+                                "right_offset": right_offset,
+                                "time_min": time_min,
+                                "time_max": time_max,
+                                "missing_policy": policy,
+                                "candidate_Ze": ze,
+                                "target_stata_r7": target,
+                                "abs_diff_to_r7": abs(ze - target),
+                                "nonzero_rows": int(np.count_nonzero(z)),
+                            }
+                        )
 
     out = pd.DataFrame(rows).sort_values("abs_diff_to_r7").reset_index(drop=True)
 

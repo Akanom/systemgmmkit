@@ -16,9 +16,7 @@ def block(lines: list[str]) -> str:
 
 
 def replace_section(source: str, heading: str, lines: list[str]) -> str:
-    pattern = re.compile(
-        rf"(?ms)^## {re.escape(heading)}\n.*?(?=^---\n\n## |\Z)"
-    )
+    pattern = re.compile(rf"(?ms)^## {re.escape(heading)}\n.*?(?=^---\n\n## |\Z)")
 
     replacement = f"## {heading}\n\n{block(lines)}\n"
 
@@ -52,7 +50,7 @@ text = replace_section(
         "| Static panel estimators         | Active development                                  | Pooled OLS, Fixed Effects, Random Effects, and Panel IV / 2SLS are available for applied workflow use and should be validated against reference packages for critical work. |",
         "| Native Difference GMM           | Strict parity passed on current benchmark           | Native Difference GMM matches the current validation backend and Stata oracle within numerical tolerance on the tested benchmark. |",
         "| Native System GMM               | `xtabond2` baseline parity passed                   | Native System GMM matches `xtabond2` on the current collapsed two-step System GMM benchmark for coefficients, raw residual moments (`Z'u`), group-scaled two-step weighting matrix (`A2 / n_groups`), and Hansen J. |",
-        "| System GMM via `backend=\"auto\"` | Stable public workflow route                        | `backend=\"auto\"` remains the recommended public workflow route unless the user needs explicit native/adapter comparison. Users who need exact replication should report the selected backend and validation benchmark. |",
+        '| System GMM via `backend="auto"` | Stable public workflow route                        | `backend="auto"` remains the recommended public workflow route unless the user needs explicit native/adapter comparison. Users who need exact replication should report the selected backend and validation benchmark. |',
         "",
         "The current validation harness confirms strict parity for native Difference GMM on the benchmark specification.",
         "",
@@ -78,10 +76,10 @@ text = replace_section(
         "",
         "| User option           | Difference GMM behavior                                       | System GMM behavior |",
         "| --------------------- | ------------------------------------------------------------- | ------------------- |",
-        "| `backend=\"auto\"`      | Uses the validated native `systemgmmkit` Difference GMM path. | Uses the package's configured stable System GMM route. This is the recommended default workflow unless the user needs a specific backend. |",
-        "| `backend=\"validated\"` | Uses the validated native `systemgmmkit` Difference GMM path. | Routes through the validated backend adapter where available. |",
-        "| `backend=\"native\"`    | Uses the native `systemgmmkit` engine.                        | Uses the native `systemgmmkit` engine. The current baseline `xtabond2` parity benchmark is passed for collapsed two-step System GMM coefficients, moments, group-scaled A2, and Hansen J. |",
-        "| `backend=\"pydynpd\"`   | Explicitly routes through the backend adapter.                | Explicitly routes through the backend adapter. |",
+        '| `backend="auto"`      | Uses the validated native `systemgmmkit` Difference GMM path. | Uses the package\'s configured stable System GMM route. This is the recommended default workflow unless the user needs a specific backend. |',
+        '| `backend="validated"` | Uses the validated native `systemgmmkit` Difference GMM path. | Routes through the validated backend adapter where available. |',
+        '| `backend="native"`    | Uses the native `systemgmmkit` engine.                        | Uses the native `systemgmmkit` engine. The current baseline `xtabond2` parity benchmark is passed for collapsed two-step System GMM coefficients, moments, group-scaled A2, and Hansen J. |',
+        '| `backend="pydynpd"`   | Explicitly routes through the backend adapter.                | Explicitly routes through the backend adapter. |',
         "",
         "This design keeps `systemgmmkit` as the stable public interface while allowing explicit backend selection for replication, benchmarking, and sensitivity analysis.",
         "",
@@ -91,19 +89,19 @@ text = replace_section(
         "result = run_system_gmm(",
         "    spec,",
         "    data,",
-        "    entity=\"id\",",
-        "    time=\"time\",",
-        "    backend=\"auto\",",
+        '    entity="id",',
+        '    time="time",',
+        '    backend="auto",',
         ")",
         "```",
         "",
-        "For strict native replication of the current `xtabond2` parity benchmark, use `backend=\"native\"` and match the sample, lag windows, collapsed-instrument setting, IV treatment, time-dummy treatment, transformation, covariance assumptions, and estimation options.",
+        'For strict native replication of the current `xtabond2` parity benchmark, use `backend="native"` and match the sample, lag windows, collapsed-instrument setting, IV treatment, time-dummy treatment, transformation, covariance assumptions, and estimation options.',
     ],
 )
 
 text = replace_if_present(
     text,
-    "Native System GMM is currently experimental. Use `backend=\"auto\"` for empirical System GMM workflows requiring stronger external validation through the package’s validated backend route.",
+    'Native System GMM is currently experimental. Use `backend="auto"` for empirical System GMM workflows requiring stronger external validation through the package’s validated backend route.',
     "Native System GMM now passes a dedicated `xtabond2` baseline parity benchmark for collapsed two-step System GMM coefficients, residual moments, group-scaled two-step weighting matrix, and Hansen J. Broader specification coverage and Windmeijer-corrected two-step standard-error parity remain under validation, so users should report the backend, model specification, instrument count, and validation context for critical empirical work.",
 )
 
@@ -135,7 +133,8 @@ if "The native System GMM parity benchmark currently verifies:" not in text:
     text = replace_if_present(
         text,
         "The native backend is intended to provide a transparent Python implementation that can be inspected, tested, and extended without relying only on an external backend.",
-        "The native backend is intended to provide a transparent Python implementation that can be inspected, tested, and extended without relying only on an external backend.\n\n" + block(native_extra).strip(),
+        "The native backend is intended to provide a transparent Python implementation that can be inspected, tested, and extended without relying only on an external backend.\n\n"
+        + block(native_extra).strip(),
     )
 
 text = replace_section(

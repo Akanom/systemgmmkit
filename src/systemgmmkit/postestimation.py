@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -45,7 +46,7 @@ def _get_covariance(result: Any, params: pd.Series | None = None) -> pd.DataFram
                 break
 
     if cov is None and hasattr(result, "vcov"):
-        value = getattr(result, "vcov")
+        value = result.vcov
         cov = value() if callable(value) else value
 
     if cov is None:
@@ -185,7 +186,9 @@ def lincom(
     std_error = float(np.sqrt(max(variance, 0.0)))
 
     statistic = float((estimate - value) / std_error) if std_error > 0 else np.nan
-    p_value = float(2.0 * stats.t.sf(abs(statistic), df_resid)) if np.isfinite(statistic) else np.nan
+    p_value = (
+        float(2.0 * stats.t.sf(abs(statistic), df_resid)) if np.isfinite(statistic) else np.nan
+    )
     critical = float(stats.t.ppf(1.0 - alpha / 2.0, df_resid))
 
     return {
@@ -267,11 +270,7 @@ def marginal_effects(
     ci = confint(result, alpha=alpha)
 
     if variables is None:
-        variables = [
-            name
-            for name in params.index
-            if name not in {"_con", "const", "intercept"}
-        ]
+        variables = [name for name in params.index if name not in {"_con", "const", "intercept"}]
 
     rows: list[dict[str, float | str]] = []
 
@@ -292,5 +291,3 @@ def marginal_effects(
         )
 
     return pd.DataFrame(rows)
-
-

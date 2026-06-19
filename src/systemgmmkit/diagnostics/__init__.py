@@ -117,11 +117,15 @@ def assess_diagnostics(
     if not failures:
         recommendation = "Diagnostics are broadly defensible. Interpret coefficients with normal dynamic-panel caution."
     elif "AR(2) p-value" in failures:
-        recommendation = "Do not rely on this specification until serial-correlation failure is resolved."
+        recommendation = (
+            "Do not rely on this specification until serial-correlation failure is resolved."
+        )
     elif "Instrument/entity ratio" in failures or "Hansen p-value" in failures:
         recommendation = "Reduce instrument count: collapse instruments, shorten lag windows, or move weakly endogenous blocks to IV-style treatment."
     else:
-        recommendation = "Use as sensitivity evidence only; explain diagnostic weaknesses transparently."
+        recommendation = (
+            "Use as sensitivity evidence only; explain diagnostic weaknesses transparently."
+        )
 
     return DiagnosticReport(checks=checks, recommendation=recommendation)
 

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
-import json
 import math
+from pathlib import Path
 
 import pandas as pd
 
 from systemgmmkit import build_system_gmm_spec, run_system_gmm
-
 
 OUT = Path("artifacts/parity/gmm_lag_windows_realdata")
 DATA = Path("artifacts/parity/xtabond2/system_gmm_benchmark.csv")
@@ -81,14 +79,31 @@ def extract_params(result):
                 frame = pd.DataFrame(value)
                 if not frame.empty:
                     cols = {c.lower(): c for c in frame.columns}
-                    term_col = cols.get("param") or cols.get("term") or cols.get("variable") or cols.get("name")
-                    coef_col = cols.get("coef") or cols.get("coefficient") or cols.get("estimate") or cols.get("params")
-                    se_col = cols.get("std_err") or cols.get("stderr") or cols.get("std_error") or cols.get("standard_error")
+                    term_col = (
+                        cols.get("param")
+                        or cols.get("term")
+                        or cols.get("variable")
+                        or cols.get("name")
+                    )
+                    coef_col = (
+                        cols.get("coef")
+                        or cols.get("coefficient")
+                        or cols.get("estimate")
+                        or cols.get("params")
+                    )
+                    se_col = (
+                        cols.get("std_err")
+                        or cols.get("stderr")
+                        or cols.get("std_error")
+                        or cols.get("standard_error")
+                    )
                     if term_col and coef_col:
-                        out = pd.DataFrame({
-                            "param": frame[term_col].astype(str),
-                            "native_coef": pd.to_numeric(frame[coef_col], errors="coerce"),
-                        })
+                        out = pd.DataFrame(
+                            {
+                                "param": frame[term_col].astype(str),
+                                "native_coef": pd.to_numeric(frame[coef_col], errors="coerce"),
+                            }
+                        )
                         if se_col:
                             out["native_std_err"] = pd.to_numeric(frame[se_col], errors="coerce")
                         else:
@@ -108,11 +123,13 @@ def extract_params(result):
 
     rows = []
     for key, coef in params.items():
-        rows.append({
-            "param": str(key),
-            "native_coef": coef,
-            "native_std_err": ses.get(key, math.nan),
-        })
+        rows.append(
+            {
+                "param": str(key),
+                "native_coef": coef,
+                "native_std_err": ses.get(key, math.nan),
+            }
+        )
 
     return pd.DataFrame(rows)
 
@@ -163,10 +180,7 @@ for model, spec in specs.items():
 
     introspection_path = OUT / f"{model}_native_result_introspection.txt"
     introspection_path.write_text(
-        "type:\n"
-        f"{type(result)!r}\n\n"
-        "attrs:\n"
-        + "\n".join(dir(result)),
+        f"type:\n{type(result)!r}\n\nattrs:\n" + "\n".join(dir(result)),
         encoding="utf-8",
     )
 
@@ -197,12 +211,14 @@ for model in specs:
         print(f"Skipping malformed Stata params file: {stata_path}")
         continue
 
-    stata_clean = pd.DataFrame({
-        "model": model,
-        "param": stata[param_col].astype(str),
-        "stata_coef": pd.to_numeric(stata[coef_col], errors="coerce"),
-        "stata_std_err": pd.to_numeric(stata[se_col], errors="coerce") if se_col else math.nan,
-    })
+    stata_clean = pd.DataFrame(
+        {
+            "model": model,
+            "param": stata[param_col].astype(str),
+            "stata_coef": pd.to_numeric(stata[coef_col], errors="coerce"),
+            "stata_std_err": pd.to_numeric(stata[se_col], errors="coerce") if se_col else math.nan,
+        }
+    )
 
     merged = stata_clean.merge(native, on=["model", "param"], how="outer")
     merged["abs_coef_diff"] = (merged["native_coef"] - merged["stata_coef"]).abs()
@@ -256,7 +272,9 @@ for model in specs:
 
 if diag_comparisons:
     diag_comparison = pd.concat(diag_comparisons, ignore_index=True)
-    diag_comparison.to_csv(OUT / "native_vs_stata_lag_window_diagnostics_comparison.csv", index=False)
+    diag_comparison.to_csv(
+        OUT / "native_vs_stata_lag_window_diagnostics_comparison.csv", index=False
+    )
 
 print("\nWrote native outputs and comparisons to:")
 print(OUT)

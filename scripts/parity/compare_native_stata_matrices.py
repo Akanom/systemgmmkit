@@ -101,7 +101,9 @@ def main() -> None:
     md = []
     md.append("# Native vs Stata Matrix Comparison")
     md.append("")
-    md.append("This report compares native GMM internal diagnostics with exported xtabond2 matrices.")
+    md.append(
+        "This report compares native GMM internal diagnostics with exported xtabond2 matrices."
+    )
     md.append("")
     md.append(out.to_markdown(index=False))
     md.append("")
@@ -109,7 +111,9 @@ def main() -> None:
     md.append("")
     md.append("- Native and xtabond2 now match on N and instrument count.")
     md.append("- Native J-stat remains much larger than xtabond2 Hansen statistic.")
-    md.append("- Stata A2 norm is far smaller than native W norm, indicating weighting-scale/normalization mismatch.")
+    md.append(
+        "- Stata A2 norm is far smaller than native W norm, indicating weighting-scale/normalization mismatch."
+    )
     md.append("- Next step: test native W rescalings against xtabond2 A2 and recompute J-stat.")
 
     (OUT / "native_stata_matrix_comparison.md").write_text("\n".join(md), encoding="utf-8")

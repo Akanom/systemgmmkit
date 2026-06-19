@@ -69,13 +69,15 @@ def main() -> None:
     print()
 
     if stata_ze is not None and stata_ze.shape == native_ze.shape:
-        cmp = pd.DataFrame({
-            "row": np.arange(1, native_ze.shape[0] + 1),
-            "native_Ze": native_ze.reshape(-1),
-            "stata_Ze": stata_ze.reshape(-1),
-            "diff": native_ze.reshape(-1) - stata_ze.reshape(-1),
-            "abs_diff": np.abs(native_ze.reshape(-1) - stata_ze.reshape(-1)),
-        })
+        cmp = pd.DataFrame(
+            {
+                "row": np.arange(1, native_ze.shape[0] + 1),
+                "native_Ze": native_ze.reshape(-1),
+                "stata_Ze": stata_ze.reshape(-1),
+                "diff": native_ze.reshape(-1) - stata_ze.reshape(-1),
+                "abs_diff": np.abs(native_ze.reshape(-1) - stata_ze.reshape(-1)),
+            }
+        )
         cmp.to_csv(ART / "native_vs_stata_Ze_direct.csv", index=False)
 
         print("=" * 100)
@@ -131,8 +133,7 @@ def main() -> None:
 
     # Ze contribution by equation-like columns
     equation_like = [
-        c for c in ["equation", "eq", "equation_type", "row_type", "transform"]
-        if c in meta.columns
+        c for c in ["equation", "eq", "equation_type", "row_type", "transform"] if c in meta.columns
     ]
 
     for col in equation_like:
@@ -147,12 +148,14 @@ def main() -> None:
             ze_g = z_g.T @ u_g
 
             for j, val in enumerate(ze_g.reshape(-1), start=1):
-                rows.append({
-                    col: value,
-                    "instrument_index": j,
-                    "Ze_contribution": float(val),
-                    "n_rows": int(mask.sum()),
-                })
+                rows.append(
+                    {
+                        col: value,
+                        "instrument_index": j,
+                        "Ze_contribution": float(val),
+                        "n_rows": int(mask.sum()),
+                    }
+                )
 
         out = pd.DataFrame(rows)
         out_path = ART / f"native_Ze_by_{col}.csv"

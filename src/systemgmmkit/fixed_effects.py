@@ -124,9 +124,7 @@ def _build_lsdv_design(
     # parameterisation and is slope-equivalent to the within estimator used by
     # Stata xtreg, fe. Omitting the constant while also dropping a dummy
     # incorrectly constrains the base group intercept to zero and changes slopes.
-    X_parts.append(
-        pd.DataFrame({"const": np.ones(len(work), dtype=float)}, index=work.index)
-    )
+    X_parts.append(pd.DataFrame({"const": np.ones(len(work), dtype=float)}, index=work.index))
 
     # Structural regressors follow; output is restricted to these coefficients
     # plus the constant when it survives collinearity checks.

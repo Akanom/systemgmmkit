@@ -7,10 +7,30 @@ REPORT_PATH = Path("artifacts/parity/panel_econometrics_certification_report.md"
 
 
 CERTIFICATION_ROWS = [
-    ("Conformance Suite", "PASS", "tests/conformance", "Core API, diagnostics, reporting, and registry contracts."),
-    ("Static Estimator Certification", "PASS", "tests/parity/static", "FD, FE, RE, IV/2SLS certification contracts."),
-    ("Difference GMM Expanded Certification", "PASS", "tests/parity/gmm/test_difference_gmm_expanded_certification.py", "Balanced, unbalanced, missing periods, lag windows, collapse behavior."),
-    ("System GMM Certification", "PASS", "tests/parity/gmm/test_system_gmm_certification.py", "Balanced, unbalanced, missing periods, lag windows, collapse behavior, diagnostics contract."),
+    (
+        "Conformance Suite",
+        "PASS",
+        "tests/conformance",
+        "Core API, diagnostics, reporting, and registry contracts.",
+    ),
+    (
+        "Static Estimator Certification",
+        "PASS",
+        "tests/parity/static",
+        "FD, FE, RE, IV/2SLS certification contracts.",
+    ),
+    (
+        "Difference GMM Expanded Certification",
+        "PASS",
+        "tests/parity/gmm/test_difference_gmm_expanded_certification.py",
+        "Balanced, unbalanced, missing periods, lag windows, collapse behavior.",
+    ),
+    (
+        "System GMM Certification",
+        "PASS",
+        "tests/parity/gmm/test_system_gmm_certification.py",
+        "Balanced, unbalanced, missing periods, lag windows, collapse behavior, diagnostics contract.",
+    ),
 ]
 
 
@@ -35,19 +55,35 @@ def main() -> None:
     lines.append("")
     lines.append("## Current Certification Position")
     lines.append("")
-    lines.append("- Static panel estimators have certification tests for FE, RE, IV/2SLS, and FD workflows.")
-    lines.append("- Difference GMM has expanded native certification coverage across balanced/unbalanced panels, missing periods, lag windows, and collapsed/uncollapsed instruments.")
-    lines.append("- System GMM has native certification coverage across the same structural scenarios, but remains labelled experimental until strict coefficient and standard-error parity against xtabond2 and pydynpd is completed.")
-    lines.append("- Windmeijer correction remains explicitly not certified unless separately implemented and benchmarked.")
+    lines.append(
+        "- Static panel estimators have certification tests for FE, RE, IV/2SLS, and FD workflows."
+    )
+    lines.append(
+        "- Difference GMM has expanded native certification coverage across balanced/unbalanced panels, missing periods, lag windows, and collapsed/uncollapsed instruments."
+    )
+    lines.append(
+        "- System GMM has native certification coverage across the same structural scenarios, but remains labelled experimental until strict coefficient and standard-error parity against xtabond2 and pydynpd is completed."
+    )
+    lines.append(
+        "- Windmeijer correction remains explicitly not certified unless separately implemented and benchmarked."
+    )
     lines.append("")
     lines.append("## Reviewer-Relevant Status")
     lines.append("")
     lines.append("| Component | Reviewer Claim Allowed Now | Stronger Claim Still Needed |")
     lines.append("|---|---|---|")
-    lines.append("| FE / RE / IV / FD | Implemented and certification-tested | Strict Stata/linearmodels parity for all SE variants |")
-    lines.append("| Difference GMM | Expanded native certification-tested | Full xtabond2/pydynpd parity table across benchmark specs |")
-    lines.append("| System GMM | Runs and passes structural certification | Strict xtabond2/pydynpd parity for coefficients, SEs, diagnostics, sample, and instruments |")
-    lines.append("| Diagnostics | Implemented and contract-tested | Numeric parity against reference implementations |")
+    lines.append(
+        "| FE / RE / IV / FD | Implemented and certification-tested | Strict Stata/linearmodels parity for all SE variants |"
+    )
+    lines.append(
+        "| Difference GMM | Expanded native certification-tested | Full xtabond2/pydynpd parity table across benchmark specs |"
+    )
+    lines.append(
+        "| System GMM | Runs and passes structural certification | Strict xtabond2/pydynpd parity for coefficients, SEs, diagnostics, sample, and instruments |"
+    )
+    lines.append(
+        "| Diagnostics | Implemented and contract-tested | Numeric parity against reference implementations |"
+    )
     lines.append("")
     lines.append("## Next Certification Milestone")
     lines.append("")

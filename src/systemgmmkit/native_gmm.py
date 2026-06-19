@@ -157,11 +157,7 @@ def _fod_at(series: pd.Series, pos: int) -> float | None:
 
     deviation = float(now) - (sum(future_values) / float(m))
 
-    mode = (
-        os.getenv("SYSTEMGMMKIT_FOD_SCALE_MODE", "canonical")
-        .strip()
-        .lower()
-    )
+    mode = os.getenv("SYSTEMGMMKIT_FOD_SCALE_MODE", "canonical").strip().lower()
 
     if mode in {"canonical", "default", ""}:
         scale = math.sqrt(float(m) / float(m + 1))
@@ -190,9 +186,7 @@ def _transform_at(series: pd.Series, pos: int, transformation: str) -> float | N
     if transformation_normalized == "fod":
         return _fod_at(series, pos)
 
-    raise ValueError(
-        f"Unsupported transformation={transformation!r}. Expected 'fd' or 'fod'."
-    )
+    raise ValueError(f"Unsupported transformation={transformation!r}. Expected 'fd' or 'fod'.")
 
 
 def _lagged_series(series: pd.Series, lag: int) -> pd.Series:
@@ -271,9 +265,7 @@ def _transformed_regressor_at(
         "forward_orthogonal_deviations",
     }:
         mode = (
-            os.getenv("SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE", "transform_lagged")
-            .strip()
-            .lower()
+            os.getenv("SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE", "transform_lagged").strip().lower()
         )
 
         if mode in {"transform_lagged", "current", "default", ""}:
@@ -355,11 +347,7 @@ def _transformed_error_terms(
         if m <= 0:
             return {}
 
-        mode = (
-            os.getenv("SYSTEMGMMKIT_FOD_SCALE_MODE", "canonical")
-            .strip()
-            .lower()
-        )
+        mode = os.getenv("SYSTEMGMMKIT_FOD_SCALE_MODE", "canonical").strip().lower()
 
         if mode in {"canonical", "default", ""}:
             scale = math.sqrt(float(m) / float(m + 1))
@@ -383,9 +371,7 @@ def _transformed_error_terms(
 
         return weights
 
-    raise ValueError(
-        "transformation must be one of 'fd', 'difference', 'fod', or 'orthogonal'."
-    )
+    raise ValueError("transformation must be one of 'fd', 'difference', 'fod', or 'orthogonal'.")
 
 
 def _build_native_matrices(
@@ -394,7 +380,9 @@ def _build_native_matrices(
     *,
     entity: str,
     time: str,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[str], pd.Index, int, list[str], list[dict[str, object]]]:
+) -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, list[str], pd.Index, int, list[str], list[dict[str, object]]
+]:
     raw_vars = _required_variables(spec)
     _require_columns(data, [entity, time, *raw_vars])
     work = data[[entity, time, *raw_vars]].dropna().copy().sort_values([entity, time])
@@ -413,7 +401,7 @@ def _build_native_matrices(
     # positions and create dummy columns for time_values[2:].
     time_dummy_values = time_values[2:] if getattr(spec, "time_dummies", False) else []
     time_dummy_names = [f"{time}_{value}" for value in time_dummy_values]
-    time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names))
+    time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names, strict=False))
 
     y_rows: list[float] = []
     x_rows: list[list[float]] = []
@@ -453,9 +441,7 @@ def _build_native_matrices(
             import os as _native_fod_start_os
 
             _fod_start_raw = (
-                _native_fod_start_os.getenv("SYSTEMGMMKIT_FOD_START_POS", "0")
-                .strip()
-                .lower()
+                _native_fod_start_os.getenv("SYSTEMGMMKIT_FOD_START_POS", "0").strip().lower()
             )
 
             if _fod_start_raw in {"default", ""}:
@@ -551,6 +537,7 @@ def _build_native_matrices(
                 # as current level values, not as FOD-transformed instruments.
                 if str(spec.transformation).strip().lower() == "fod":
                     import os as _native_fod_iv_os
+
                     _iv_offset_raw = (
                         _native_fod_iv_os.getenv(
                             "SYSTEMGMMKIT_FOD_IV_INSTRUMENT_POS_OFFSET",
@@ -741,10 +728,7 @@ def _build_native_matrices(
             # SYSTEMGMMKIT_STACK_ORDER_DEBUG
             # Diagnose whether stacked System-GMM rows are ordered as
             # [all-diff][all-level] or as group-level [D...L...] blocks.
-            _eq_sequence = [
-                "D" if _native_is_diff_equation_row(row) else "L"
-                for row in staged
-            ]
+            _eq_sequence = ["D" if _native_is_diff_equation_row(row) else "L" for row in staged]
 
             def _native_run_lengths(seq):
                 runs = []
@@ -897,6 +881,7 @@ def _native_pydynpd_compat_instrument_order(spec: DynamicPanelSpec) -> list[str]
         # duplicated: keep separate L:iv:* columns
         # single_both: suppress L:iv:* columns and keep only IV:* columns
         import os as _native_system_iv_layout_os
+
         _system_iv_layout = (
             _native_system_iv_layout_os.getenv(
                 "SYSTEMGMMKIT_SYSTEM_IV_LAYOUT",
@@ -1048,11 +1033,7 @@ def _native_fd_system_h1(*, group_rows: int, diff_width: int) -> np.ndarray:
     diff_width = int(diff_width)
     level_width = width - diff_width
 
-    mode = (
-        _native_h1_os.getenv("SYSTEMGMMKIT_H1_MODE", "blockdiag")
-        .strip()
-        .lower()
-    )
+    mode = _native_h1_os.getenv("SYSTEMGMMKIT_H1_MODE", "blockdiag").strip().lower()
 
     if mode in {"identity", "eye"}:
         return np.eye(width, dtype=float)
@@ -1098,8 +1079,7 @@ def _native_fd_system_h1(*, group_rows: int, diff_width: int) -> np.ndarray:
         return h1
 
     raise ValueError(
-        "Unsupported SYSTEMGMMKIT_H1_MODE="
-        f"{mode!r}. Use blockdiag, full_error_cov, or identity."
+        f"Unsupported SYSTEMGMMKIT_H1_MODE={mode!r}. Use blockdiag, full_error_cov, or identity."
     )
 
 
@@ -1142,7 +1122,6 @@ def _native_infer_panel_blocks(
     return n_groups, group_rows, diff_width
 
 
-
 def _native_group_indices_from_row_meta(
     row_meta: list[dict[str, object]],
 ) -> list[np.ndarray]:
@@ -1174,19 +1153,14 @@ def _native_h1_from_row_meta(
 
     n = len(row_meta_i)
 
-    mode = (
-        _row_meta_h1_os.getenv("SYSTEMGMMKIT_ROW_META_H1_MODE", "dot_product")
-        .strip()
-        .lower()
-    )
+    mode = _row_meta_h1_os.getenv("SYSTEMGMMKIT_ROW_META_H1_MODE", "dot_product").strip().lower()
 
     if mode in {"identity", "eye"}:
         return np.eye(n, dtype=float)
 
     if mode not in {"dot_product", "metadata", "default", ""}:
         raise ValueError(
-            "Unsupported SYSTEMGMMKIT_ROW_META_H1_MODE="
-            f"{mode!r}. Use dot_product or identity."
+            f"Unsupported SYSTEMGMMKIT_ROW_META_H1_MODE={mode!r}. Use dot_product or identity."
         )
 
     h = np.zeros((n, n), dtype=float)
@@ -1265,6 +1239,7 @@ def _native_pydynpd_first_step_weight_inv(
 
     return np.linalg.pinv(W), n_groups, group_rows, diff_width
 
+
 def _native_pydynpd_next_weight_inv(
     *,
     Z: np.ndarray,
@@ -1302,6 +1277,7 @@ def _native_pydynpd_next_weight_inv(
     W_next = ZuuZ * (1.0 / int(n_groups))
     return np.linalg.pinv(W_next)
 
+
 def _native_gmm_beta(
     *,
     y: np.ndarray,
@@ -1317,8 +1293,6 @@ def _native_gmm_beta(
     XZ_W = X2.T @ Z2 @ W_inv
     M_inv = XZ_W @ Z2.T @ X2
     return np.linalg.pinv(M_inv) @ (XZ_W @ Z2.T @ y2)
-
-
 
 
 def _native_group_indices_from_entities(row_entities: np.ndarray) -> list[np.ndarray]:
@@ -1414,6 +1388,7 @@ def _native_windmeijer_covariance(
     cov = cov + (D_wind @ vcov_step1 @ D_wind.T)
 
     return 0.5 * (cov + cov.T)
+
 
 def _native_overid_diagnostics(
     *,
@@ -1529,9 +1504,18 @@ def _native_ab_serial_correlation_diagnostics(
 
             # Cluster/group-based candidate: sum the residual products within
             # entity and standardize across groups.
-            g = d.groupby(entity, sort=False).apply(
-                lambda frame: float(np.sum(frame["_resid"].to_numpy(dtype=float) * frame["_lag"].to_numpy(dtype=float)))
-            ).to_numpy(dtype=float)
+            g = (
+                d.groupby(entity, sort=False)
+                .apply(
+                    lambda frame: float(
+                        np.sum(
+                            frame["_resid"].to_numpy(dtype=float)
+                            * frame["_lag"].to_numpy(dtype=float)
+                        )
+                    )
+                )
+                .to_numpy(dtype=float)
+            )
 
             z_group_sum = None
             if len(g) > 1:
@@ -1605,7 +1589,7 @@ def _native_xtabond2_system_ar_diagnostics(
         X = np.asarray(X, dtype=float)
         Z = np.asarray(Z, dtype=float)
         W = np.asarray(W, dtype=float)
-        V = np.asarray(cov, dtype=float)
+        np.asarray(cov, dtype=float)
         V_m2 = np.asarray(cov if cov_m2 is None else cov_m2, dtype=float)
         V_vxw = np.asarray(cov if cov_vxw is None else cov_vxw, dtype=float)
         D = np.asarray(D, dtype=float)
@@ -1620,11 +1604,7 @@ def _native_xtabond2_system_ar_diagnostics(
 
         import os as _native_ar_a_os
 
-        _a_mode = (
-            _native_ar_a_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_A_MODE", "group")
-            .strip()
-            .lower()
-        )
+        _a_mode = _native_ar_a_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_A_MODE", "group").strip().lower()
 
         # xtabond2's AR denominator uses A`steps'. Hansen parity proved the
         # reported Hansen J uses W / n_groups. Keep A scaling selectable while
@@ -1851,9 +1831,7 @@ def _native_fod_difference_windmeijer_covariance(
             # dg_i / d beta_j = -Z_i' X_{ij}
             dS_j += -((hi_j @ gi1.T) + (gi1 @ hi_j.T))
 
-        correction_jacobian[:, [j]] = -(
-            bread2 @ D @ W2 @ dS_j @ W2 @ ztu2
-        )
+        correction_jacobian[:, [j]] = -(bread2 @ D @ W2 @ dS_j @ W2 @ ztu2)
 
     cov = np.zeros((k, k), dtype=float)
 
@@ -1874,6 +1852,7 @@ def _native_fod_difference_windmeijer_covariance(
         cov += corrected_if @ corrected_if.T
 
     return 0.5 * (cov + cov.T)
+
 
 def run_native_dynamic_panel_gmm(
     spec: DynamicPanelSpec,
@@ -2000,6 +1979,7 @@ def run_native_dynamic_panel_gmm(
     # Force the native estimator to return the first-step estimate.
     # This isolates whether System-GMM parity fails in W1/Z/H1 or in W2.
     import os as _native_force_onestep_os
+
     if _native_force_onestep_os.getenv("SYSTEMGMMKIT_FORCE_ONESTEP") == "1":
         use_twostep = False
 
@@ -2207,9 +2187,8 @@ def run_native_dynamic_panel_gmm(
         # xtabond2's reported usable System-GMM observations.
         windmeijer_xtabond2_small_n = int(len(data)) + int(nobs_reported)
         if windmeijer_xtabond2_small_n > k:
-            windmeijer_xtabond2_small_correction = (
-                (windmeijer_xtabond2_small_n - 1.0)
-                / (windmeijer_xtabond2_small_n - k)
+            windmeijer_xtabond2_small_correction = (windmeijer_xtabond2_small_n - 1.0) / (
+                windmeijer_xtabond2_small_n - k
             )
 
     if windmeijer_requested and not use_twostep:
@@ -2275,11 +2254,7 @@ def run_native_dynamic_panel_gmm(
                 group_indices=group_indices_for_cov,
                 n_groups=n_groups_for_cov,
             )
-            cov = (
-                cov_correction
-                * windmeijer_xtabond2_small_correction
-                * windmeijer_base_cov
-            )
+            cov = cov_correction * windmeijer_xtabond2_small_correction * windmeijer_base_cov
 
             # xtabond2-compatible normalization for FD Difference GMM:
             # the generic Windmeijer helper returns a group-summed covariance.
@@ -2374,14 +2349,11 @@ def run_native_dynamic_panel_gmm(
             if _mode in {"final", "reported", "windmeijer"}:
                 return ar_cov_final
             raise ValueError(
-                "Unsupported AR covariance mode "
-                f"{_mode!r}. Use final, base, or uncorrected."
+                f"Unsupported AR covariance mode {_mode!r}. Use final, base, or uncorrected."
             )
 
         _default_ar_cov_mode = (
-            _native_ar_cov_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_COV_MODE", "final")
-            .strip()
-            .lower()
+            _native_ar_cov_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_COV_MODE", "final").strip().lower()
         )
 
         # Certified closest xtabond2 AR denominator mapping on the maintained
@@ -2439,15 +2411,10 @@ def run_native_dynamic_panel_gmm(
     if bool(spec.system):
         import os as _native_ar_report_os
 
-        _report_experimental_system_ar = (
-            _native_ar_report_os.getenv(
-                "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR",
-                "0",
-            )
-            .strip()
-            .lower()
-            in {"1", "true", "yes", "on"}
-        )
+        _report_experimental_system_ar = _native_ar_report_os.getenv(
+            "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR",
+            "0",
+        ).strip().lower() in {"1", "true", "yes", "on"}
 
         if not _report_experimental_system_ar:
             ar1_z = None
@@ -2510,15 +2477,10 @@ def run_native_dynamic_panel_gmm(
     # diagnostic flag is enabled.
     import os as _native_sargan_report_os
 
-    _report_experimental_system_sargan = (
-        _native_sargan_report_os.getenv(
-            "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_SARGAN",
-            "0",
-        )
-        .strip()
-        .lower()
-        in {"1", "true", "yes", "on"}
-    )
+    _report_experimental_system_sargan = _native_sargan_report_os.getenv(
+        "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_SARGAN",
+        "0",
+    ).strip().lower() in {"1", "true", "yes", "on"}
 
     if _overid_df > 0:
         if bool(spec.system):
@@ -2565,7 +2527,11 @@ def run_native_dynamic_panel_gmm(
                     "_row_index_df",
                 ):
                     _obj = locals().get(_candidate_name)
-                    if _obj is not None and hasattr(_obj, "__contains__") and "_is_level_equation" in _obj:
+                    if (
+                        _obj is not None
+                        and hasattr(_obj, "__contains__")
+                        and "_is_level_equation" in _obj
+                    ):
                         _level_mask = np.asarray(_obj["_is_level_equation"], dtype=bool).reshape(-1)
                         break
 
@@ -2586,7 +2552,11 @@ def run_native_dynamic_panel_gmm(
                     _ok = True
                     for _r in _meta:
                         if isinstance(_r, dict):
-                            _tmp.append(bool(_r.get("is_level_equation", _r.get("_is_level_equation", False))))
+                            _tmp.append(
+                                bool(
+                                    _r.get("is_level_equation", _r.get("_is_level_equation", False))
+                                )
+                            )
                         else:
                             _ok = False
                             break
@@ -2605,13 +2575,12 @@ def run_native_dynamic_panel_gmm(
                 # Accepting that mask makes _diff_mask = all rows, which
                 # incorrectly contaminates xtabond2 Sargan sig2 with level
                 # residuals.
-                if bool(spec.system):
-                    if (
-                        len(_level_mask) != len(_u1_col)
-                        or not bool(np.any(_level_mask))
-                        or not bool(np.any(~_level_mask))
-                    ):
-                        _level_mask = None
+                if bool(spec.system) and (
+                    len(_level_mask) != len(_u1_col)
+                    or not bool(np.any(_level_mask))
+                    or not bool(np.any(~_level_mask))
+                ):
+                    _level_mask = None
 
             if _level_mask is None or len(_level_mask) != len(_u1_col):
                 # xtabond2-compatible fallback for native System GMM.
@@ -2723,9 +2692,8 @@ def run_native_dynamic_panel_gmm(
             except NameError:
                 _sargan_weight = W
 
-            _sargan_small_scale = (
-                max(float(_n_groups_for_diag - len(names)), 1.0)
-                / float(_n_groups_for_diag)
+            _sargan_small_scale = max(float(_n_groups_for_diag - len(names)), 1.0) / float(
+                _n_groups_for_diag
             )
             _sargan_stat_raw = float((_ztu.T @ _sargan_weight @ _ztu).squeeze())
             _sargan_stat = float(_sargan_stat_raw * _sargan_small_scale)
@@ -2737,10 +2705,7 @@ def run_native_dynamic_panel_gmm(
     sargan_p = _sargan_p_candidate
 
     # Generic J statistic: in two-step output, use Hansen; otherwise use Sargan.
-    if _is_twostep_like:
-        _j_stat = _hansen_j_stat
-    else:
-        _j_stat = _sargan_stat
+    _j_stat = _hansen_j_stat if _is_twostep_like else _sargan_stat
 
     _ztu_norm = float(np.linalg.norm(_ztu))
     _w_norm = float(np.linalg.norm(W))
@@ -2890,7 +2855,3 @@ def run_native_dynamic_panel_gmm(
         overid_df=_overid_df,
         hansen_j_error=_hansen_j_error,
     )
-
-
-
-

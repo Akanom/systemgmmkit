@@ -7,7 +7,9 @@ import pandas as pd
 ART = Path("artifacts/parity/xtabond2")
 
 NATIVE_PARAMS = ART / "specs" / "system_gmm_baseline_controls" / "uncorrected" / "native_params.csv"
-NATIVE_DIAG = ART / "specs" / "system_gmm_baseline_controls" / "uncorrected" / "native_diagnostics.csv"
+NATIVE_DIAG = (
+    ART / "specs" / "system_gmm_baseline_controls" / "uncorrected" / "native_diagnostics.csv"
+)
 
 STATA_PARAMS = ART / "system_gmm_fd_onestep_params.csv"
 STATA_DIAG = ART / "system_gmm_fd_onestep_diagnostics.csv"
@@ -38,20 +40,32 @@ def normalize_param(x: object) -> str:
 
 def read_native(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    return pd.DataFrame({
-        "param": df[first_col(df, ["param"])].map(normalize_param),
-        "native_coef": pd.to_numeric(df[first_col(df, ["native_coef", "coef", "estimate"])], errors="coerce"),
-        "native_std_err": pd.to_numeric(df[first_col(df, ["native_std_err", "std_err", "stderr", "se"])], errors="coerce"),
-    })
+    return pd.DataFrame(
+        {
+            "param": df[first_col(df, ["param"])].map(normalize_param),
+            "native_coef": pd.to_numeric(
+                df[first_col(df, ["native_coef", "coef", "estimate"])], errors="coerce"
+            ),
+            "native_std_err": pd.to_numeric(
+                df[first_col(df, ["native_std_err", "std_err", "stderr", "se"])], errors="coerce"
+            ),
+        }
+    )
 
 
 def read_stata(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    return pd.DataFrame({
-        "param": df[first_col(df, ["parm", "param", "term"])].map(normalize_param),
-        "stata_coef": pd.to_numeric(df[first_col(df, ["estimate", "coef", "b"])], errors="coerce"),
-        "stata_std_err": pd.to_numeric(df[first_col(df, ["stderr", "std_err", "se"])], errors="coerce"),
-    })
+    return pd.DataFrame(
+        {
+            "param": df[first_col(df, ["parm", "param", "term"])].map(normalize_param),
+            "stata_coef": pd.to_numeric(
+                df[first_col(df, ["estimate", "coef", "b"])], errors="coerce"
+            ),
+            "stata_std_err": pd.to_numeric(
+                df[first_col(df, ["stderr", "std_err", "se"])], errors="coerce"
+            ),
+        }
+    )
 
 
 def diag_value(df: pd.DataFrame, names: list[str]) -> float | None:
@@ -84,33 +98,35 @@ def main() -> None:
     nd = pd.read_csv(NATIVE_DIAG)
     sd = pd.read_csv(STATA_DIAG)
 
-    diag = pd.DataFrame([
-        {
-            "metric": "nobs",
-            "native": diag_value(nd, ["native_nobs", "nobs"]),
-            "stata": diag_value(sd, ["stata_nobs", "nobs"]),
-        },
-        {
-            "metric": "n_instruments",
-            "native": diag_value(nd, ["native_n_instruments", "n_instruments"]),
-            "stata": diag_value(sd, ["stata_n_instruments", "n_instruments"]),
-        },
-        {
-            "metric": "hansen_p",
-            "native": diag_value(nd, ["native_hansen_p", "hansen_p"]),
-            "stata": diag_value(sd, ["stata_hansen_p", "hansen_p"]),
-        },
-        {
-            "metric": "ar1_p",
-            "native": diag_value(nd, ["native_ar1_p", "ar1_p"]),
-            "stata": diag_value(sd, ["stata_ar1_p", "ar1_p"]),
-        },
-        {
-            "metric": "ar2_p",
-            "native": diag_value(nd, ["native_ar2_p", "ar2_p"]),
-            "stata": diag_value(sd, ["stata_ar2_p", "ar2_p"]),
-        },
-    ])
+    diag = pd.DataFrame(
+        [
+            {
+                "metric": "nobs",
+                "native": diag_value(nd, ["native_nobs", "nobs"]),
+                "stata": diag_value(sd, ["stata_nobs", "nobs"]),
+            },
+            {
+                "metric": "n_instruments",
+                "native": diag_value(nd, ["native_n_instruments", "n_instruments"]),
+                "stata": diag_value(sd, ["stata_n_instruments", "n_instruments"]),
+            },
+            {
+                "metric": "hansen_p",
+                "native": diag_value(nd, ["native_hansen_p", "hansen_p"]),
+                "stata": diag_value(sd, ["stata_hansen_p", "hansen_p"]),
+            },
+            {
+                "metric": "ar1_p",
+                "native": diag_value(nd, ["native_ar1_p", "ar1_p"]),
+                "stata": diag_value(sd, ["stata_ar1_p", "ar1_p"]),
+            },
+            {
+                "metric": "ar2_p",
+                "native": diag_value(nd, ["native_ar2_p", "ar2_p"]),
+                "stata": diag_value(sd, ["stata_ar2_p", "ar2_p"]),
+            },
+        ]
+    )
 
     diag["abs_diff"] = (diag["native"] - diag["stata"]).abs()
     diag.to_csv(OUT_DIAG, index=False)

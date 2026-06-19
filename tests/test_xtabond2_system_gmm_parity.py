@@ -20,10 +20,7 @@ ORDER_NATIVE_TO_STATA = [4, 7, 0, 2, 1, 3, 5, 6]
 def _read_matrix(path: Path) -> np.ndarray:
     df = pd.read_csv(path)
 
-    drop_cols = [
-        c for c in df.columns
-        if c.lower() in {"index", "row", "row_id"}
-    ]
+    drop_cols = [c for c in df.columns if c.lower() in {"index", "row", "row_id"}]
 
     if drop_cols:
         df = df.drop(columns=drop_cols)
@@ -55,8 +52,7 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
     missing = [p for p in required if not p.exists()]
     if missing:
         pytest.skip(
-            "xtabond2 parity artifacts are unavailable: "
-            + ", ".join(str(p) for p in missing)
+            "xtabond2 parity artifacts are unavailable: " + ", ".join(str(p) for p in missing)
         )
 
     env = os.environ.copy()

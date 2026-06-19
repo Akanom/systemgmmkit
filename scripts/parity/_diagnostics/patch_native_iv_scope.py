@@ -10,13 +10,13 @@ if start == -1:
     raise SystemExit("Could not find IV block start.")
 
 # The IV block ends at the first same-indentation 'if not cols:' after the IV block.
-end_token = '    if not cols:'
+end_token = "    if not cols:"
 end = text.find(end_token, start)
 
 if end == -1:
     raise SystemExit("Could not find block end marker: '    if not cols:'.")
 
-new_block = '''        if label.startswith("IV:"):
+new_block = """        if label.startswith("IV:"):
             var = label.split(":", 1)[1]
 
             if var not in x_cols:
@@ -78,7 +78,7 @@ new_block = '''        if label.startswith("IV:"):
             cols.append(col)
             continue
 
-'''
+"""
 
 text2 = text[:start] + new_block + text[end:]
 path.write_text(text2, encoding="utf-8")
