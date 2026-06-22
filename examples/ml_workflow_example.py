@@ -9,6 +9,7 @@ This example demonstrates:
 - GMM specification search scaffold
 - model comparison
 - recursive forecasting
+- forecast backtesting
 
 The workflow layer is additive. It does not change the validated estimators.
 """
@@ -18,6 +19,7 @@ import pandas as pd
 from systemgmmkit.ml import (
     GMMGridSearch,
     PanelTimeSeriesSplit,
+    backtest_forecast,
     compare_models,
     cross_validate_panel,
     fitted_values,
@@ -147,6 +149,22 @@ def main() -> None:
 
     print("\nForecast")
     print(fc)
+
+    def dynamic_estimator(data):
+        return DynamicExampleResult()
+
+    backtest = backtest_forecast(
+        result_factory=dynamic_estimator,
+        data=df,
+        y="y",
+        entity="id",
+        time="t",
+        horizon=1,
+        min_train_periods=2,
+    )
+
+    print("\nForecast backtest")
+    print(backtest)
 
 
 if __name__ == "__main__":

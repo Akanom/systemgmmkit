@@ -141,3 +141,54 @@ For dynamic panel models, lagged dependent-variable terms are detected from coef
 The function recursively updates lagged dependent variables using previous forecasts.
 
 If `future_exog` is not supplied, the latest observed exogenous values are held constant for each entity.
+
+## Forecast backtesting
+
+`backtest_forecast` evaluates recursive forecasts over expanding time cutoffs.
+
+    from systemgmmkit.ml import backtest_forecast
+
+    scores = backtest_forecast(
+        result_factory=my_estimator,
+        data=df,
+        y="growth_rate",
+        entity="country",
+        time="year",
+        horizon=4,
+        min_train_periods=10,
+    )
+
+The `result_factory` should return an already fitted model result for the training data.
+
+Example:
+
+    def my_estimator(data):
+        spec = build_system_gmm_spec(...)
+        return run_system_gmm(
+            spec,
+            data,
+            entity="country",
+            time="year",
+        )
+
+    scores = backtest_forecast(
+        result_factory=my_estimator,
+        data=df,
+        y="growth_rate",
+        entity="country",
+        time="year",
+        horizon=4,
+    )
+
+The output contains one row per cutoff and forecast horizon, including:
+
+- cutoff
+- horizon
+- train_n
+- test_n
+- MAE
+- MSE
+- RMSE
+- MAPE
+- SMAPE
+- R²

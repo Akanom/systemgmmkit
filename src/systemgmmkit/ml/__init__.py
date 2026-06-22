@@ -15,6 +15,7 @@ from .validation import cross_validate_panel
 from .gmm_search import GMMGridSearch, GMMSearchResult
 from .compare import compare_models
 from .forecast import forecast
+from .backtest import backtest_forecast
 
 __all__ = [
     "ResultAdapter",
@@ -30,4 +31,5 @@ __all__ = [
     "GMMSearchResult",
     "compare_models",
     "forecast",
+    "backtest_forecast",
 ]
