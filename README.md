@@ -367,6 +367,7 @@ The major estimation paths currently exposed through the public API have either 
 | SGM-Viz v2 dashboards      | PASS_TESTED_EXPORT    |
 | Standard graphics gallery  | PASS_TESTED_EXPORT    |
 | Result plot accessors      | PASS_TESTED_EXPORT    |
+| ML workflow smoke script   | PASS_TESTED_WORKFLOW  |
 
 Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case. Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
 
@@ -829,7 +830,7 @@ A lagged exogenous variable may be classified as exogenous only if strict exogen
 
 ---
 
-# GMM Lag-Window Strategy in 0.5.10
+# GMM Lag-Window Strategy
 
 Version `0.5.10` supports three levels of GMM lag-window control:
 
@@ -1945,6 +1946,195 @@ This is designed for screening alternative GMM specifications by:
 
 ---
 
+# ML-Style Workflow Layer
+
+`systemgmmkit.ml` adds machine-learning-style workflow utilities around already fitted econometric result objects.
+
+This layer is intentionally additive:
+
+```text
+validated econometric estimator
+        ↓
+result object
+        ↓
+ML-style workflow utilities
+```
+
+It does **not** replace the econometric estimators and does **not** rewrite the validated estimation core.
+
+## Current ML workflow utilities
+
+```python
+from systemgmmkit.ml import (
+    predict,
+    fitted_values,
+    residuals,
+    regression_metrics,
+    panel_train_test_split,
+    PanelTimeSeriesSplit,
+    cross_validate_panel,
+    GMMGridSearch,
+    compare_models,
+    forecast,
+    backtest_forecast,
+)
+```
+
+Supported workflow tasks include:
+
+* prediction from fitted result objects;
+* fitted values and residual extraction;
+* ML-style regression metrics;
+* time-respecting panel train/test splitting;
+* expanding-window panel cross-validation;
+* model comparison across fitted estimators;
+* recursive forecasting from dynamic-panel results;
+* forecast backtesting;
+* GMM specification-search scaffolding.
+
+The purpose is not to turn `systemgmmkit` into a generic machine-learning library. The purpose is to make validated econometric models usable in modern prediction, validation, forecasting, and comparison workflows.
+
+## Prediction and residuals
+
+```python
+from systemgmmkit.ml import predict, fitted_values, residuals
+
+pred = predict(result, df)
+fit = fitted_values(result, df)
+err = residuals(result, df, y="growth_rate")
+```
+
+## Panel-aware cross-validation
+
+```python
+from systemgmmkit.ml import PanelTimeSeriesSplit, cross_validate_panel
+
+cv = PanelTimeSeriesSplit(
+    n_splits=5,
+    min_train_periods=10,
+    test_periods=1,
+)
+
+scores = cross_validate_panel(
+    estimator=my_estimator,
+    data=df,
+    y="growth_rate",
+    time="year",
+    cv=cv,
+)
+```
+
+The split is time-respecting and does not randomly split panel rows.
+
+## Model comparison
+
+```python
+from systemgmmkit.ml import compare_models
+
+comparison = compare_models(
+    models={
+        "OLS": ols_result,
+        "Fixed Effects": fe_result,
+        "System GMM": sysgmm_result,
+    },
+    data=test_df,
+    y="growth_rate",
+)
+```
+
+The comparison table reports prediction metrics such as MAE, MSE, RMSE, MAPE, SMAPE, and R². Where available, scalar diagnostics are also included with a `diag_` prefix.
+
+## Recursive forecasting
+
+```python
+from systemgmmkit.ml import forecast
+
+fc = forecast(
+    result=sysgmm_result,
+    history=df,
+    y="growth_rate",
+    entity="country",
+    time="year",
+    horizon=4,
+    future_exog=future_controls,
+)
+```
+
+For dynamic-panel models, lagged dependent-variable terms are detected from coefficient names such as:
+
+* `L1.y`;
+* `L2.y`;
+* `L.y`;
+* `y_lag1`;
+* `lag1_y`;
+* `L1_y`.
+
+The function recursively updates lagged dependent variables using previous forecasts.
+
+## Forecast backtesting
+
+```python
+from systemgmmkit.ml import backtest_forecast
+
+scores = backtest_forecast(
+    result_factory=my_estimator,
+    data=df,
+    y="growth_rate",
+    entity="country",
+    time="year",
+    horizon=4,
+    min_train_periods=10,
+)
+```
+
+This supports expanding-window forecast validation for panel-data workflows.
+
+## GMM specification search scaffold
+
+```python
+from systemgmmkit.ml import GMMGridSearch
+
+search = GMMGridSearch(
+    build_spec=build_system_gmm_spec,
+    run_model=run_system_gmm,
+    param_grid=[
+        {"gmm_lags": (2, 2), "collapse": True},
+        {"gmm_lags": (2, 3), "collapse": True},
+        {"gmm_lags": (2, 4), "collapse": True},
+    ],
+    y="growth_rate",
+    entity="country",
+    time="year",
+    diagnostic_rules={
+        "hansen_p": (">", 0.05),
+        "ar2_p": (">", 0.05),
+    },
+)
+
+search_result = search.fit(df)
+```
+
+The search layer repeatedly calls existing validated estimators. It does not implement a new GMM estimator.
+
+## Smoke demonstration
+
+A reviewer-facing smoke script is available:
+
+```bash
+python scripts/ml/run_ml_workflow_smoke.py --outdir artifacts/ml_workflow
+```
+
+The script writes reproducible workflow artifacts including:
+
+* synthetic static and dynamic panel data;
+* predictions and residuals;
+* panel cross-validation scores;
+* model comparison output;
+* GMM grid-search output;
+* recursive forecasts;
+* forecast backtest metrics;
+* a machine-readable summary file.
+
 # Reporting and Export
 
 Results can be exported to:
@@ -2120,3 +2310,4 @@ Replace or supplement this citation with DOI information once a Zenodo archive o
 MIT License.
 
 See `LICENSE` for details.
+
