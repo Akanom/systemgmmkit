@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -22,19 +21,13 @@ from systemgmmkit.ml import (
 )
 
 
-class DynamicPanelDemoResult:
-    """
-    Lightweight fitted-result object used only to demonstrate the ML workflow
-    layer around dynamic panel-style coefficient names.
-    """
-
+class DynamicResult:
     def __init__(self) -> None:
         self.params = pd.Series(
             {
-                "L1.y": 0.60,
+                "L1.y": 0.55,
                 "x": 1.20,
-                "w": -0.30,
-                "_con": 0.50,
+                "_con": 0.10,
             }
         )
         self.diagnostics = {
@@ -44,35 +37,15 @@ class DynamicPanelDemoResult:
         }
 
 
-class StaticSearchDemoResult:
-    """
-    Lightweight fitted-result object used for the GMMGridSearch scaffold demo.
-    """
-
-    def __init__(self) -> None:
-        self.params = pd.Series(
-            {
-                "x": 2.00,
-                "z": -0.50,
-                "_con": 1.00,
-            }
-        )
-        self.diagnostics = {
-            "hansen_p": 0.22,
-            "ar2_p": 0.35,
-            "n_instruments": 10,
-        }
-
-
 def make_static_panel() -> pd.DataFrame:
-    rows: list[dict[str, float | int]] = []
+    rows = []
 
     for entity in range(1, 7):
-        entity_effect = 0.15 * entity
-        for t in range(1, 13):
-            x = 0.8 * t + 0.2 * entity
-            z = 1.5 + 0.1 * t + 0.05 * entity
-            y = 1.0 + 2.0 * x - 0.5 * z + entity_effect
+        for t in range(1, 11):
+            x = 1.0 + 0.20 * t + 0.10 * entity
+            z = 0.50 + 0.05 * entity
+            y = 0.75 + 1.50 * x - 0.40 * z
+
             rows.append(
                 {
                     "id": entity,
@@ -87,37 +60,30 @@ def make_static_panel() -> pd.DataFrame:
 
 
 def make_dynamic_panel() -> pd.DataFrame:
-    rows: list[dict[str, float | int]] = []
+    rows = []
 
     for entity in range(1, 7):
-        y_prev = 1.0 + 0.2 * entity
-        for t in range(1, 13):
-            x = 2.0 + 0.15 * t + 0.05 * entity
-            w = 1.0 if entity % 2 == 0 else 0.0
-            y = 0.60 * y_prev + 1.20 * x - 0.30 * w + 0.50
+        y_prev = float(entity)
+
+        for t in range(1, 11):
+            x = 1.0 + 0.20 * t + 0.10 * entity
+            y = 0.10 + 0.55 * y_prev + 1.20 * x
+
             rows.append(
                 {
                     "id": entity,
                     "t": t,
                     "y": y,
                     "x": x,
-                    "w": w,
                 }
             )
+
             y_prev = y
 
     return pd.DataFrame(rows)
 
 
-def write_csv(df: pd.DataFrame, path: Path) -> None:
-    df.to_csv(path, index=False)
-
-
-def write_json(obj: dict[str, Any], path: Path) -> None:
-    path.write_text(json.dumps(obj, indent=2, default=str), encoding="utf-8")
-
-
-def fit_full_ols(data: pd.DataFrame) -> Any:
+def fit_ols(data: pd.DataFrame):
     spec = OLSSpec(
         dependent="y",
         regressors=["x", "z"],
@@ -126,7 +92,7 @@ def fit_full_ols(data: pd.DataFrame) -> Any:
     return run_ols(spec, data)
 
 
-def fit_short_ols(data: pd.DataFrame) -> Any:
+def fit_ols_short(data: pd.DataFrame):
     spec = OLSSpec(
         dependent="y",
         regressors=["x"],
@@ -135,71 +101,121 @@ def fit_short_ols(data: pd.DataFrame) -> Any:
     return run_ols(spec, data)
 
 
-def run_smoke(outdir: Path) -> dict[str, Any]:
+def write_readme(outdir: Path) -> None:
+    readme = """# systemgmmkit ML Workflow Smoke Artifacts
+
+This directory contains reviewer-facing smoke outputs for the additive
+`systemgmmkit.ml` workflow layer.
+
+Generated files:
+
+- `static_panel.csv`: synthetic static panel used for OLS workflow checks.
+- `dynamic_panel.csv`: synthetic dynamic panel used for forecasting checks.
+- `ols_predictions_residuals.csv`: predictions, fitted values, and residuals.
+- `panel_cv_scores.csv`: panel time-series cross-validation metrics.
+- `model_comparison.csv`: ML-style comparison of fitted model results.
+- `gmm_grid_search.csv`: GMM specification-search scaffold output.
+- `forecast.csv`: recursive dynamic-panel forecast output.
+- `forecast_backtest.csv`: expanding-window forecast backtest metrics.
+- `summary.json`: machine-readable run summary.
+
+The smoke script does not alter validated estimator internals.
+"""
+
+    (outdir / "README.md").write_text(readme, encoding="utf-8")
+
+
+def run_smoke(outdir: Path) -> None:
     outdir.mkdir(parents=True, exist_ok=True)
 
     static_df = make_static_panel()
     dynamic_df = make_dynamic_panel()
 
-    write_csv(static_df, outdir / "static_panel.csv")
-    write_csv(dynamic_df, outdir / "dynamic_panel.csv")
+    static_df.to_csv(outdir / "static_panel.csv", index=False)
+    dynamic_df.to_csv(outdir / "dynamic_panel.csv", index=False)
 
-    # --------------------------------------------------------
-    # 1. Prediction, fitted values, residuals with real OLS
-    # --------------------------------------------------------
-    full_ols = fit_full_ols(static_df)
-    short_ols = fit_short_ols(static_df)
+    ols_full = fit_ols(static_df)
+    ols_short = fit_ols_short(static_df)
 
-    pred = predict(full_ols, static_df)
-    fit = fitted_values(full_ols, static_df)
-    err = residuals(full_ols, static_df, y="y")
+    pred = predict(ols_full, static_df)
+    fit = fitted_values(ols_full, static_df)
+    err = residuals(ols_full, static_df, y="y")
 
-    pred_table = static_df[["id", "t", "y", "x", "z"]].copy()
-    pred_table["prediction"] = pred.to_numpy()
-    pred_table["fitted"] = fit.to_numpy()
-    pred_table["residual"] = err.to_numpy()
+    pd.DataFrame(
+        {
+            "id": static_df["id"],
+            "t": static_df["t"],
+            "y": static_df["y"],
+            "prediction": pred,
+            "fitted": fit,
+            "residual": err,
+        }
+    ).to_csv(outdir / "ols_predictions_residuals.csv", index=False)
 
-    write_csv(pred_table, outdir / "ols_predictions_residuals.csv")
-
-    # --------------------------------------------------------
-    # 2. Panel cross-validation
-    # --------------------------------------------------------
-    cv_scores = cross_validate_panel(
-        estimator=fit_full_ols,
-        data=static_df,
-        y="y",
-        time="t",
-        cv=PanelTimeSeriesSplit(
-            n_splits=4,
-            min_train_periods=6,
-            test_periods=1,
-        ),
-    )
-
-    write_csv(cv_scores, outdir / "panel_cv_scores.csv")
-
-    # --------------------------------------------------------
-    # 3. Model comparison
-    # --------------------------------------------------------
     comparison = compare_models(
         {
-            "OLS full": full_ols,
-            "OLS short": short_ols,
+            "OLS full": ols_full,
+            "OLS short": ols_short,
         },
         static_df,
         y="y",
     )
+    comparison.to_csv(outdir / "model_comparison.csv", index=False)
 
-    write_csv(comparison, outdir / "model_comparison.csv")
+    cv_scores = cross_validate_panel(
+        estimator=fit_ols,
+        data=static_df,
+        y="y",
+        time="t",
+        cv=PanelTimeSeriesSplit(
+            n_splits=3,
+            min_train_periods=5,
+            test_periods=1,
+        ),
+    )
+    cv_scores.to_csv(outdir / "panel_cv_scores.csv", index=False)
 
-    # --------------------------------------------------------
-    # 4. GMMGridSearch scaffold
-    # --------------------------------------------------------
-    def build_spec(**kwargs: Any) -> dict[str, Any]:
+    future = pd.DataFrame(
+        {
+            "id": np.repeat(sorted(dynamic_df["id"].unique()), 2),
+            "t": list([11, 12]) * dynamic_df["id"].nunique(),
+            "x": 3.5,
+        }
+    )
+
+    fc = forecast(
+        DynamicResult(),
+        dynamic_df,
+        y="y",
+        entity="id",
+        time="t",
+        horizon=2,
+        future_exog=future,
+        strict=True,
+    )
+    fc.to_csv(outdir / "forecast.csv", index=False)
+
+    def dynamic_estimator(data: pd.DataFrame):
+        return DynamicResult()
+
+    backtest = backtest_forecast(
+        result_factory=dynamic_estimator,
+        data=dynamic_df,
+        y="y",
+        entity="id",
+        time="t",
+        horizon=2,
+        min_train_periods=5,
+        max_cutoffs=3,
+        strict=True,
+    )
+    backtest.to_csv(outdir / "forecast_backtest.csv", index=False)
+
+    def build_spec(**kwargs):
         return kwargs
 
-    def run_model(spec: dict[str, Any], data: pd.DataFrame, *, entity: str, time: str) -> StaticSearchDemoResult:
-        return StaticSearchDemoResult()
+    def run_model(spec, data, *, entity, time):
+        return DynamicResult()
 
     search = GMMGridSearch(
         build_spec=build_spec,
@@ -219,70 +235,35 @@ def run_smoke(outdir: Path) -> dict[str, Any]:
         test_size=2,
     )
 
-    search_result = search.fit(static_df)
-    write_csv(search_result.results, outdir / "gmm_grid_search.csv")
+    search_result = search.fit(dynamic_df)
+    search_result.results.to_csv(outdir / "gmm_grid_search.csv", index=False)
 
-    # --------------------------------------------------------
-    # 5. Recursive forecasting
-    # --------------------------------------------------------
-    future_exog = pd.DataFrame(
-        [
-            {"id": entity, "t": t, "x": 2.0 + 0.15 * t + 0.05 * entity, "w": 1.0 if entity % 2 == 0 else 0.0}
-            for entity in range(1, 7)
-            for t in range(13, 16)
-        ]
-    )
+    write_readme(outdir)
 
-    fc = forecast(
-        DynamicPanelDemoResult(),
-        dynamic_df,
-        y="y",
-        entity="id",
-        time="t",
-        horizon=3,
-        future_exog=future_exog,
-    )
+    expected_outputs = [
+        "static_panel.csv",
+        "dynamic_panel.csv",
+        "ols_predictions_residuals.csv",
+        "panel_cv_scores.csv",
+        "model_comparison.csv",
+        "gmm_grid_search.csv",
+        "forecast.csv",
+        "forecast_backtest.csv",
+        "summary.json",
+        "README.md",
+    ]
 
-    write_csv(fc, outdir / "forecast.csv")
-
-    # --------------------------------------------------------
-    # 6. Forecast backtesting
-    # --------------------------------------------------------
-    def dynamic_result_factory(data: pd.DataFrame) -> DynamicPanelDemoResult:
-        return DynamicPanelDemoResult()
-
-    backtest = backtest_forecast(
-        result_factory=dynamic_result_factory,
-        data=dynamic_df,
-        y="y",
-        entity="id",
-        time="t",
-        horizon=3,
-        min_train_periods=6,
-        max_cutoffs=3,
-    )
-
-    write_csv(backtest, outdir / "forecast_backtest.csv")
-
-    # --------------------------------------------------------
-    # 7. Summary
-    # --------------------------------------------------------
     summary = {
         "status": "PASS",
-        "outputs": {
-            "static_panel": "static_panel.csv",
-            "dynamic_panel": "dynamic_panel.csv",
-            "ols_predictions_residuals": "ols_predictions_residuals.csv",
-            "panel_cv_scores": "panel_cv_scores.csv",
-            "model_comparison": "model_comparison.csv",
-            "gmm_grid_search": "gmm_grid_search.csv",
-            "forecast": "forecast.csv",
-            "forecast_backtest": "forecast_backtest.csv",
-        },
+        "static_panel_rows": int(len(static_df)),
+        "dynamic_panel_rows": int(len(dynamic_df)),
+        "entities": int(dynamic_df["id"].nunique()),
+        "periods": int(dynamic_df["t"].nunique()),
+        "outputs": expected_outputs,
         "row_counts": {
             "static_panel": int(len(static_df)),
             "dynamic_panel": int(len(dynamic_df)),
-            "ols_predictions_residuals": int(len(pred_table)),
+            "ols_predictions_residuals": int(len(static_df)),
             "panel_cv_scores": int(len(cv_scores)),
             "model_comparison": int(len(comparison)),
             "gmm_grid_search": int(len(search_result.results)),
@@ -292,54 +273,35 @@ def run_smoke(outdir: Path) -> dict[str, Any]:
         "best_gmm_spec": search_result.best_spec,
     }
 
-    write_json(summary, outdir / "summary.json")
+    with open(outdir / "summary.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
 
-    readme = f"""# systemgmmkit ML Workflow Smoke Demo
+    missing = [name for name in expected_outputs if not (outdir / name).exists()]
+    if missing:
+        raise RuntimeError(f"Smoke script did not create expected files: {missing}")
 
-This folder contains outputs from the ML-style workflow smoke script.
-
-The smoke script demonstrates the additive workflow layer around already accepted estimators.
-
-## Outputs
-
-| File | Purpose |
-|---|---|
-| `static_panel.csv` | Synthetic static panel dataset |
-| `dynamic_panel.csv` | Synthetic dynamic panel dataset |
-| `ols_predictions_residuals.csv` | Prediction, fitted values, and residuals from real OLS |
-| `panel_cv_scores.csv` | Panel time-series cross-validation scores |
-| `model_comparison.csv` | ML-style comparison of fitted econometric models |
-| `gmm_grid_search.csv` | GMM specification-search scaffold output |
-| `forecast.csv` | Recursive dynamic-panel forecast output |
-| `forecast_backtest.csv` | Expanding-window forecast backtest scores |
-| `summary.json` | Machine-readable smoke-run summary |
-
-## Status
-
-PASS
-
-## Design principle
-
-The workflow layer does not modify estimator internals. It wraps already fitted results with prediction, validation, comparison, forecasting, and backtesting utilities.
-"""
-
-    (outdir / "README.md").write_text(readme, encoding="utf-8")
-
-    return summary
+    print("PASS")
+    print("ML workflow smoke script completed.")
+    print(f"Wrote outputs to: {outdir}")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run systemgmmkit ML workflow smoke demonstration."
+    )
     parser.add_argument(
         "--outdir",
         default="artifacts/ml_workflow",
-        help="Output directory for smoke artifacts.",
+        help="Directory where smoke-test artifacts should be written.",
     )
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    summary = run_smoke(Path(args.outdir))
-    print(json.dumps(summary, indent=2, default=str))
+
+def main() -> None:
+    args = parse_args()
+    run_smoke(Path(args.outdir))
 
 
 if __name__ == "__main__":
     main()
+

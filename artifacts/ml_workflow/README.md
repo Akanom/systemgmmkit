@@ -1,27 +1,18 @@
-# systemgmmkit ML Workflow Smoke Demo
+# systemgmmkit ML Workflow Smoke Artifacts
 
-This folder contains outputs from the ML-style workflow smoke script.
+This directory contains reviewer-facing smoke outputs for the additive
+`systemgmmkit.ml` workflow layer.
 
-The smoke script demonstrates the additive workflow layer around already accepted estimators.
+Generated files:
 
-## Outputs
+- `static_panel.csv`: synthetic static panel used for OLS workflow checks.
+- `dynamic_panel.csv`: synthetic dynamic panel used for forecasting checks.
+- `ols_predictions_residuals.csv`: predictions, fitted values, and residuals.
+- `panel_cv_scores.csv`: panel time-series cross-validation metrics.
+- `model_comparison.csv`: ML-style comparison of fitted model results.
+- `gmm_grid_search.csv`: GMM specification-search scaffold output.
+- `forecast.csv`: recursive dynamic-panel forecast output.
+- `forecast_backtest.csv`: expanding-window forecast backtest metrics.
+- `summary.json`: machine-readable run summary.
 
-| File | Purpose |
-|---|---|
-| `static_panel.csv` | Synthetic static panel dataset |
-| `dynamic_panel.csv` | Synthetic dynamic panel dataset |
-| `ols_predictions_residuals.csv` | Prediction, fitted values, and residuals from real OLS |
-| `panel_cv_scores.csv` | Panel time-series cross-validation scores |
-| `model_comparison.csv` | ML-style comparison of fitted econometric models |
-| `gmm_grid_search.csv` | GMM specification-search scaffold output |
-| `forecast.csv` | Recursive dynamic-panel forecast output |
-| `forecast_backtest.csv` | Expanding-window forecast backtest scores |
-| `summary.json` | Machine-readable smoke-run summary |
-
-## Status
-
-PASS
-
-## Design principle
-
-The workflow layer does not modify estimator internals. It wraps already fitted results with prediction, validation, comparison, forecasting, and backtesting utilities.
+The smoke script does not alter validated estimator internals.

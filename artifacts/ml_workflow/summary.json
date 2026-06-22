@@ -1,25 +1,21 @@
 {
   "status": "PASS",
-  "outputs": {
-    "static_panel": "static_panel.csv",
-    "dynamic_panel": "dynamic_panel.csv",
-    "ols_predictions_residuals": "ols_predictions_residuals.csv",
-    "panel_cv_scores": "panel_cv_scores.csv",
-    "model_comparison": "model_comparison.csv",
-    "gmm_grid_search": "gmm_grid_search.csv",
-    "forecast": "forecast.csv",
-    "forecast_backtest": "forecast_backtest.csv"
-  },
-  "row_counts": {
-    "static_panel": 72,
-    "dynamic_panel": 72,
-    "ols_predictions_residuals": 72,
-    "panel_cv_scores": 4,
-    "model_comparison": 2,
-    "gmm_grid_search": 3,
-    "forecast": 18,
-    "forecast_backtest": 9
-  },
+  "static_panel_rows": 60,
+  "dynamic_panel_rows": 60,
+  "entities": 6,
+  "periods": 10,
+  "outputs": [
+    "static_panel.csv",
+    "dynamic_panel.csv",
+    "ols_predictions_residuals.csv",
+    "panel_cv_scores.csv",
+    "model_comparison.csv",
+    "gmm_grid_search.csv",
+    "forecast.csv",
+    "forecast_backtest.csv",
+    "summary.json",
+    "README.md"
+  ],
   "best_gmm_spec": {
     "lag_window": [
       2,
