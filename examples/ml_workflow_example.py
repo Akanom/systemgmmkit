@@ -8,6 +8,7 @@ This example demonstrates:
 - panel cross-validation
 - GMM specification search scaffold
 - model comparison
+- recursive forecasting
 
 The workflow layer is additive. It does not change the validated estimators.
 """
@@ -20,6 +21,7 @@ from systemgmmkit.ml import (
     compare_models,
     cross_validate_panel,
     fitted_values,
+    forecast,
     predict,
     residuals,
 )
@@ -28,6 +30,16 @@ from systemgmmkit.ml import (
 class ExampleResult:
     def __init__(self):
         self.params = pd.Series({"x": 2.0, "w": -1.0, "_con": 0.5})
+        self.diagnostics = {
+            "hansen_p": 0.25,
+            "ar2_p": 0.40,
+            "n_instruments": 8,
+        }
+
+
+class DynamicExampleResult:
+    def __init__(self):
+        self.params = pd.Series({"L1.y": 0.5, "x": 1.0, "_con": 0.0})
         self.diagnostics = {
             "hansen_p": 0.25,
             "ar2_p": 0.40,
@@ -114,6 +126,27 @@ def main() -> None:
 
     print("\nModel comparison")
     print(comparison)
+
+    future = pd.DataFrame({
+        "id": [1, 1, 2, 2],
+        "t": [5, 6, 5, 6],
+        "x": [4, 4, 4, 4],
+    })
+
+    dynamic_result = DynamicExampleResult()
+
+    fc = forecast(
+        dynamic_result,
+        df,
+        y="y",
+        entity="id",
+        time="t",
+        horizon=2,
+        future_exog=future,
+    )
+
+    print("\nForecast")
+    print(fc)
 
 
 if __name__ == "__main__":

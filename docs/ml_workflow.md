@@ -112,3 +112,32 @@ If available, scalar model diagnostics are also included with a `diag_` prefix, 
 - `diag_n_instruments`
 
 This allows users to compare predictive performance and econometric validity in one table.
+
+## Forecasting
+
+`forecast` generates recursive forecasts from an already fitted result object.
+
+    from systemgmmkit.ml import forecast
+
+    fc = forecast(
+        result=sysgmm_result,
+        history=df,
+        y="growth_rate",
+        entity="country",
+        time="year",
+        horizon=4,
+        future_exog=future_controls,
+    )
+
+For dynamic panel models, lagged dependent-variable terms are detected from coefficient names such as:
+
+- `L1.y`
+- `L2.y`
+- `L.y`
+- `y_lag1`
+- `lag1_y`
+- `L1_y`
+
+The function recursively updates lagged dependent variables using previous forecasts.
+
+If `future_exog` is not supplied, the latest observed exogenous values are held constant for each entity.
