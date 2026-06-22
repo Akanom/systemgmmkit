@@ -16,6 +16,16 @@
     "summary.json",
     "README.md"
   ],
+  "row_counts": {
+    "static_panel": 60,
+    "dynamic_panel": 60,
+    "ols_predictions_residuals": 60,
+    "panel_cv_scores": 3,
+    "model_comparison": 2,
+    "gmm_grid_search": 3,
+    "forecast": 12,
+    "forecast_backtest": 6
+  },
   "best_gmm_spec": {
     "lag_window": [
       2,
