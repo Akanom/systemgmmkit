@@ -234,3 +234,22 @@ try:
     install_result_plot_accessors()
 except Exception:
     pass
+
+# ML workflow exports
+try:
+    from .ml import (
+        ResultAdapter,
+        adapt_result,
+        regression_metrics,
+        predict,
+        fitted_values,
+        residuals,
+        panel_train_test_split,
+        PanelTimeSeriesSplit,
+        cross_validate_panel,
+        GMMGridSearch,
+        GMMSearchResult,
+    )
+except Exception:
+    # Keep core estimator imports robust even if optional ML dependencies change.
+    pass
