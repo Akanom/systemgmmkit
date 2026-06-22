@@ -192,3 +192,24 @@ The output contains one row per cutoff and forecast horizon, including:
 - MAPE
 - SMAPE
 - R²
+
+## Smoke demonstration
+
+A reviewer-facing smoke script is provided:
+
+    python scripts/ml/run_ml_workflow_smoke.py
+
+By default, it writes outputs to:
+
+    artifacts/ml_workflow/
+
+The smoke script demonstrates:
+
+- real OLS prediction, fitted values, and residuals
+- panel time-series cross-validation
+- model comparison
+- GMM specification-search scaffold
+- recursive forecasting
+- forecast backtesting
+
+The script is intended as a reproducible demonstration that the ML workflow layer operates around accepted estimators without modifying estimator internals.
