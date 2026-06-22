@@ -13,6 +13,7 @@ from .prediction import predict, fitted_values, residuals
 from .split import panel_train_test_split, PanelTimeSeriesSplit
 from .validation import cross_validate_panel
 from .gmm_search import GMMGridSearch, GMMSearchResult
+from .compare import compare_models
 
 __all__ = [
     "ResultAdapter",
@@ -26,4 +27,5 @@ __all__ = [
     "cross_validate_panel",
     "GMMGridSearch",
     "GMMSearchResult",
+    "compare_models",
 ]

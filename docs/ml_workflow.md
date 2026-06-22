@@ -79,3 +79,36 @@ Most econometric packages stop after estimation. This layer supports the workflo
 5. communicate results
 
 The validated econometric core remains unchanged.
+
+## Model comparison
+
+`compare_models` compares already fitted model results on a shared evaluation dataset.
+
+    from systemgmmkit.ml import compare_models
+
+    table = compare_models(
+        models={
+            "OLS": ols_result,
+            "Fixed Effects": fe_result,
+            "System GMM": sysgmm_result,
+        },
+        data=test_df,
+        y="growth_rate",
+    )
+
+The output includes standard prediction metrics:
+
+- MAE
+- MSE
+- RMSE
+- MAPE
+- SMAPE
+- R²
+
+If available, scalar model diagnostics are also included with a `diag_` prefix, for example:
+
+- `diag_hansen_p`
+- `diag_ar2_p`
+- `diag_n_instruments`
+
+This allows users to compare predictive performance and econometric validity in one table.

@@ -7,6 +7,7 @@ This example demonstrates:
 - residuals
 - panel cross-validation
 - GMM specification search scaffold
+- model comparison
 
 The workflow layer is additive. It does not change the validated estimators.
 """
@@ -16,6 +17,7 @@ import pandas as pd
 from systemgmmkit.ml import (
     GMMGridSearch,
     PanelTimeSeriesSplit,
+    compare_models,
     cross_validate_panel,
     fitted_values,
     predict,
@@ -101,6 +103,17 @@ def main() -> None:
 
     print("\nBest spec")
     print(search_result.best_spec)
+
+    comparison = compare_models(
+        {
+            "Example model": result,
+        },
+        df,
+        y="y",
+    )
+
+    print("\nModel comparison")
+    print(comparison)
 
 
 if __name__ == "__main__":
