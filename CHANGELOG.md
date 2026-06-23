@@ -9,6 +9,195 @@ The project follows a practical semantic-versioning style:
 * validation claims are benchmark-specific and apply to the maintained parity workflows in the repository.
 
 ---
+## 0.5.11
+
+### Added
+
+* Added the new `systemgmmkit.ml` namespace for additive ML-style workflow utilities around already fitted econometric result objects.
+
+* Added generic result adaptation through `ResultAdapter` and `adapt_result()` for duck-typed access to fitted model parameters, covariance matrices, diagnostics, and metadata.
+
+* Added ML-style prediction helpers:
+
+  * `predict()`;
+  * `fitted_values()`;
+  * `residuals()`.
+
+* Added `regression_metrics()` for standard predictive-performance metrics:
+
+  * MAE;
+  * MSE;
+  * RMSE;
+  * MAPE;
+  * SMAPE;
+  * R²;
+  * evaluated observation count.
+
+* Added panel-aware train/test splitting through `panel_train_test_split()`.
+
+* Added expanding-window panel time-series cross-validation through:
+
+  * `PanelTimeSeriesSplit`;
+  * `cross_validate_panel()`.
+
+* Added `compare_models()` for comparing already fitted model results on a common evaluation dataset.
+
+* Added recursive forecasting support through `forecast()`.
+
+* Added expanding-window forecast backtesting through `backtest_forecast()`.
+
+* Added `GMMGridSearch`, a lightweight specification-search scaffold that repeatedly calls existing validated GMM builders and runners.
+
+* Added `GMMSearchResult` for structured GMM specification-search outputs.
+
+* Added a reviewer-facing ML workflow smoke script:
+
+  ```bash
+  python scripts/ml/run_ml_workflow_smoke.py --outdir artifacts/ml_workflow
+  ```
+
+* Added ML workflow smoke artifacts under `artifacts/ml_workflow`, including:
+
+  * `static_panel.csv`;
+  * `dynamic_panel.csv`;
+  * `ols_predictions_residuals.csv`;
+  * `panel_cv_scores.csv`;
+  * `model_comparison.csv`;
+  * `gmm_grid_search.csv`;
+  * `forecast.csv`;
+  * `forecast_backtest.csv`;
+  * `summary.json`;
+  * `README.md`.
+
+* Added ML workflow documentation in `docs/ml_workflow.md`.
+
+* Added `examples/ml_workflow_example.py` demonstrating prediction, residuals, cross-validation, model comparison, forecasting, backtesting, and GMM grid-search scaffolding.
+
+* Added focused test coverage for the ML workflow layer:
+
+  * `test_ml_workflow.py`;
+  * `test_ml_workflow_integration.py`;
+  * `test_ml_model_compare.py`;
+  * `test_ml_forecast.py`;
+  * `test_ml_backtest.py`;
+  * `test_ml_workflow_smoke_script.py`.
+
+### Changed
+
+* Expanded the package positioning from estimation, post-estimation, and visualization toward a fuller empirical workflow:
+
+  ```text
+  estimate → diagnose → predict → validate → compare → forecast → backtest → report
+  ```
+
+* Documented `systemgmmkit.ml` as an additive workflow layer rather than a replacement for machine-learning libraries.
+
+* Clarified that the ML-style workflow layer operates around already fitted econometric result objects.
+
+* Kept the ML workflow API separate from the existing top-level post-estimation API to avoid collisions with existing public functions such as `predict()`.
+
+* Updated README documentation to include the ML-style workflow layer.
+
+* Updated citation metadata for version `0.5.11`.
+
+* Updated release notes for the `0.5.11` workflow release.
+
+### Fixed
+
+* Fixed a top-level API collision where ML-style `predict()` could shadow the existing public post-estimation `predict()` function.
+* Removed temporary README patch scripts and backup files from the tracked project state.
+* Fixed Ruff lint issues in the new ML workflow files.
+* Fixed import ordering, unused imports, and Python compatibility issues detected by CI linting.
+* Fixed the ML workflow smoke script contract so it:
+
+  * accepts `--outdir`;
+  * prints `PASS`;
+  * writes the expected artifact filenames;
+  * writes `summary.json` with expected row-count metadata.
+
+### Validation
+
+* Added unit tests for ML-style prediction, fitted values, residuals, and regression metrics.
+* Added integration smoke tests confirming that the ML workflow layer works with real `systemgmmkit` OLS result objects.
+* Added tests for panel-aware train/test splitting and expanding-window panel cross-validation.
+* Added tests for `compare_models()` using both synthetic result objects and real OLS results.
+* Added tests for recursive one-lag and two-lag dynamic-panel forecasting.
+* Added tests for static-model forecasting behavior.
+* Added tests for expanding-window forecast backtesting.
+* Added tests for `GMMGridSearch` scaffolding.
+* Added a smoke-script test confirming that the reviewer-facing ML workflow script runs successfully and writes the expected artifacts.
+* Confirmed that the ML workflow layer does not modify estimator internals.
+* Confirmed that the ML workflow layer does not create new estimator-parity claims.
+
+### Documentation
+
+* Added a new ML-style workflow section to the README.
+
+* Added examples for:
+
+  * prediction;
+  * fitted values;
+  * residuals;
+  * panel-aware cross-validation;
+  * model comparison;
+  * recursive forecasting;
+  * forecast backtesting;
+  * GMM specification-search scaffolding.
+
+* Added documentation explaining that `systemgmmkit.ml` is designed for workflow orchestration around fitted econometric models, not for generic machine-learning model estimation.
+
+* Added documentation for reviewer-facing smoke artifacts.
+
+* Updated validation language to distinguish estimator parity from workflow testing.
+
+* Clarified that variable-level and role-level GMM instrument-design extensions remain roadmap items until implemented and validated.
+
+### Validation Boundary
+
+Version `0.5.11` does not introduce new econometric estimators.
+
+The new ML-style workflow layer is validated as a workflow layer. It does not alter or replace the existing validated estimator implementations.
+
+Certified and maintained estimator validation claims remain benchmark-specific and continue to apply only to the maintained parity workflows in the repository.
+
+Not claimed in this release:
+
+* new dynamic-panel estimator theory;
+* replacement of dedicated ML libraries;
+* universal Stata equivalence across all possible specifications;
+* universal bit-for-bit equivalence across all lag windows, missing-data patterns, covariance estimators, or instrument designs;
+* implemented support for role-specific or variable-specific GMM lag windows unless separately completed and validated.
+
+### Roadmap
+
+The next technical extension should focus on variable-level and role-level GMM instrument design.
+
+Planned features:
+
+* role-specific GMM lag windows;
+
+* variable-specific GMM lag windows;
+
+* explicit precedence rule:
+
+  ```text
+  gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
+  ```
+
+* tests confirming exogenous variables remain IV-style unless explicitly handled otherwise;
+
+* Difference GMM and System GMM parity checks using separate `gmm()` blocks;
+
+* instrument-count and instrument-name validation;
+
+* documentation examples;
+
+* Stata comparison scripts.
+
+These features are roadmap items and should not be documented as current functionality until implemented, tested, and validated.
+
+
+---
 
 ## 0.5.10
 

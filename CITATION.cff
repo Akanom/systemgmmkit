@@ -2,13 +2,28 @@ cff-version: 1.2.0
 title: "systemgmmkit: Panel-Data Econometrics and Dynamic-Panel GMM Workflows in Python"
 message: "If you use this software, please cite it as below."
 type: software
+
 authors:
   - family-names: Akanbi
     given-names: Oluwajuwon Mayomi
+
 repository-code: "https://github.com/Akanom/systemgmmkit"
+url: "https://github.com/Akanom/systemgmmkit"
 license: MIT
-version: "0.5.0"
-date-released: "2026-06-12"
+
+version: "0.5.11"
+date-released: "2026-06-23"
+
+abstract: >
+  systemgmmkit is a Python package for applied panel-data econometrics,
+  including OLS, pooled OLS, fixed effects, random effects, panel IV / 2SLS,
+  Difference GMM, System GMM, dynamic-panel diagnostics, post-estimation,
+  visualization, reporting workflows, and ML-style workflow utilities around
+  fitted econometric result objects. Version 0.5.11 adds an additive
+  systemgmmkit.ml workflow layer for prediction, fitted values, residuals,
+  regression metrics, panel-aware validation, model comparison, recursive
+  forecasting, forecast backtesting, and GMM specification-search scaffolding.
+
 keywords:
   - panel data
   - econometrics
@@ -18,7 +33,15 @@ keywords:
   - 2SLS
   - difference GMM
   - system GMM
+  - dynamic panel
   - Arellano-Bond
   - Blundell-Bond
   - xtabond2
+  - Windmeijer correction
+  - post-estimation
+  - model comparison
+  - forecasting
+  - forecast backtesting
+  - panel cross-validation
+  - machine-learning workflow
   - Python

@@ -135,7 +135,7 @@ __all__ = [
     "plot_accessor",
 ]
 
-__version__ = "0.5.9"
+__version__ = "0.5.11"
 
 import contextlib
 
