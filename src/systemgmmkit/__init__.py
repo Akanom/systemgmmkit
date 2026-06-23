@@ -234,4 +234,13 @@ try:
     install_result_plot_accessors()
 except Exception:
     pass
+from .easy import (
+    DynamicGMMWorkflowResult as DynamicGMMWorkflowResult,
+)
+from .easy import (
+    difference_gmm as difference_gmm,
+)
+from .easy import (
+    system_gmm as system_gmm,
+)
 
