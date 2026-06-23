@@ -18,6 +18,7 @@ It provides a unified workflow for:
 * panel estimators;
 * instrumental-variable models;
 * Difference GMM and System GMM;
+* easy dynamic-GMM wrapper APIs;
 * dynamic-panel diagnostics;
 * post-estimation analysis;
 * visualization and diagnostic dashboards;
@@ -74,11 +75,16 @@ The objective is not only to estimate models. The objective is to make modelling
 
 # What's New in 0.5.11
 
-Version `0.5.11` is an **ML-style workflow release**.
+Version `0.5.11` is an **ML-style workflow and usability release**.
 
-It builds on the `0.5.10` visualization and diagnostic-reporting layer by adding an additive workflow namespace, `systemgmmkit.ml`, for prediction, validation, model comparison, forecasting, forecast backtesting, and GMM specification-search scaffolding around already fitted econometric result objects.
+It builds on the `0.5.10` visualization and diagnostic-reporting layer by adding:
+
+* an additive workflow namespace, `systemgmmkit.ml`, for prediction, validation, model comparison, forecasting, forecast backtesting, and GMM specification-search scaffolding around already fitted econometric result objects;
+* easier user-facing wrappers for Difference GMM and System GMM through `difference_gmm()` and `system_gmm()`.
 
 This release does **not** rewrite the validated estimator internals and does **not** introduce new dynamic-panel estimator theory.
+
+---
 
 ## New ML-style workflow namespace
 
@@ -128,6 +134,45 @@ The purpose is not to turn `systemgmmkit` into a generic machine-learning librar
 
 ---
 
+## New easy dynamic-GMM wrapper API
+
+Version `0.5.11` adds easier user-facing wrappers:
+
+```python
+from systemgmmkit import difference_gmm, system_gmm
+```
+
+These wrappers sit on top of the validated lower-level GMM builders and runners.
+
+The intended workflow is:
+
+```text
+easy wrapper
+    ↓
+validated spec builder
+    ↓
+validated GMM runner
+    ↓
+result object
+```
+
+The easy API is designed for users who want a readable one-call workflow while still preserving explicit modelling choices.
+
+The lower-level APIs remain available for advanced users, validation workflows, and parity checks:
+
+```python
+from systemgmmkit import (
+    build_difference_gmm_spec,
+    run_difference_gmm,
+    build_system_gmm_spec,
+    run_system_gmm,
+)
+```
+
+The easy API is a convenience layer. It is not a new estimator.
+
+---
+
 # Current Feature Coverage
 
 ## Linear Models
@@ -148,6 +193,8 @@ The purpose is not to turn `systemgmmkit` into a generic machine-learning librar
 
 * Difference GMM
 * System GMM
+* Easy Difference GMM wrapper through `difference_gmm()`
+* Easy System GMM wrapper through `system_gmm()`
 * One-step estimation
 * Two-step estimation
 * Windmeijer-corrected standard errors
@@ -412,6 +459,244 @@ The recommended workflow is:
 6. Inspect diagnostics before interpreting coefficients.
 7. Export tables and diagnostic figures.
 
+Users can run dynamic-panel GMM through either:
+
+* the easy wrapper API: `difference_gmm()` and `system_gmm()`;
+* the lower-level specification API: `build_difference_gmm_spec()`, `run_difference_gmm()`, `build_system_gmm_spec()`, and `run_system_gmm()`.
+
+---
+
+# Easy Dynamic GMM API
+
+## Easy System GMM
+
+```python
+from systemgmmkit import system_gmm
+
+result = system_gmm(
+    data=df,
+    entity="firm_id",
+    time="year",
+    dependent="y",
+    lagged_dependent=1,
+    regressors=[
+        "investment",
+        "cashflow",
+        "firm_size",
+    ],
+    endogenous=[
+        "investment",
+    ],
+    predetermined=[
+        "cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 2),
+    collapse=True,
+    windmeijer=True,
+)
+```
+
+By default, `lagged_dependent=1` creates a structural lag column named `L1_y`, adds it to the model equation, and classifies it as endogenous.
+
+If the lagged dependent variable should be treated differently, use:
+
+```python
+result = system_gmm(
+    data=df,
+    entity="firm_id",
+    time="year",
+    dependent="y",
+    lagged_dependent=1,
+    lagged_dependent_role="predetermined",
+    regressors=["investment", "firm_size"],
+    endogenous=["investment"],
+    exogenous=["firm_size"],
+    gmm_lags=(2, 2),
+)
+```
+
+Allowed `lagged_dependent_role` values are:
+
+* `"endogenous"`;
+* `"predetermined"`;
+* `"exogenous"`;
+* `"none"`.
+
+Unclassified regressors are treated as exogenous by default for usability, but researchers should classify variables explicitly in serious empirical work.
+
+---
+
+## Easy Difference GMM
+
+```python
+from systemgmmkit import difference_gmm
+
+result = difference_gmm(
+    data=df,
+    entity="firm_id",
+    time="year",
+    dependent="y",
+    lagged_dependent=1,
+    regressors=[
+        "investment",
+        "cashflow",
+        "firm_size",
+    ],
+    endogenous=[
+        "investment",
+    ],
+    predetermined=[
+        "cashflow",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 2),
+    collapse=True,
+)
+```
+
+The easy Difference GMM wrapper follows the same structural-lag and variable-classification logic as the easy System GMM wrapper.
+
+---
+
+## Inspecting the generated workflow
+
+For inspection, set `return_workflow=True`:
+
+```python
+from systemgmmkit import system_gmm
+
+workflow = system_gmm(
+    data=df,
+    entity="firm_id",
+    time="year",
+    dependent="y",
+    regressors=["investment", "firm_size"],
+    endogenous=["investment"],
+    exogenous=["firm_size"],
+    gmm_lags=(2, 2),
+    return_workflow=True,
+)
+
+result = workflow.result
+spec = workflow.spec
+model_data = workflow.data
+```
+
+The workflow object exposes:
+
+* fitted result;
+* generated specification;
+* model dataframe after lag creation and missing-value handling;
+* final regressors;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* GMM lag window;
+* collapse setting;
+* model type.
+
+---
+
+# Advanced Dynamic GMM API
+
+Advanced users can still use the lower-level API directly.
+
+## Difference GMM
+
+```python
+from systemgmmkit import build_difference_gmm_spec, run_difference_gmm
+
+spec = build_difference_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    collapse=True,
+)
+
+result = run_difference_gmm(
+    spec,
+    data=df,
+    entity="firm_id",
+    time="year",
+    backend="auto",
+)
+
+print(result)
+```
+
+Equivalent Stata idea:
+
+```stata
+xtabond2 y L.y investment firm_size, ///
+    gmm(L.y investment, lag(2 4) collapse) ///
+    iv(firm_size) ///
+    robust
+```
+
+---
+
+## System GMM
+
+```python
+from systemgmmkit import build_system_gmm_spec, run_system_gmm
+
+spec = build_system_gmm_spec(
+    dependent="y",
+    regressors=[
+        "L1_y",
+        "investment",
+        "firm_size",
+    ],
+    endogenous=[
+        "L1_y",
+        "investment",
+    ],
+    exogenous=[
+        "firm_size",
+    ],
+    gmm_lags=(2, 4),
+    collapse=True,
+    windmeijer=True,
+)
+
+result = run_system_gmm(
+    spec,
+    data=df,
+    entity="firm_id",
+    time="year",
+    backend="auto",
+)
+
+print(result)
+```
+
+Equivalent Stata idea:
+
+```stata
+xtabond2 y L.y investment firm_size, ///
+    gmm(L.y investment, lag(2 4) collapse) ///
+    iv(firm_size) ///
+    twostep robust small
+```
+
+The lower-level API gives full control over the specification object and remains the reference API for validation and parity workflows.
+
 ---
 
 # Variable Classification Guide
@@ -471,9 +756,9 @@ Use GMM lag-window arguments only to control instrument construction.
 
 ---
 
-# Create Structural Lags Before Estimation
+# Creating Structural Lags
 
-The public API treats lagged regressors as ordinary columns supplied by the user. It does not automatically create structural `L1_` or `L2_` model variables.
+The lower-level API treats lagged regressors as ordinary columns supplied by the user. It does not automatically create structural `L1_` or `L2_` model variables.
 
 ```python
 df = df.sort_values(["firm_id", "year"]).copy()
@@ -481,21 +766,29 @@ df = df.sort_values(["firm_id", "year"]).copy()
 df["L1_y"] = df.groupby("firm_id")["y"].shift(1)
 df["L1_investment"] = df.groupby("firm_id")["investment"].shift(1)
 df["L2_investment"] = df.groupby("firm_id")["investment"].shift(2)
-df["L1_cashflow"] = df.groupby("firm_id")["cashflow"].shift(1)
-df["L2_cashflow"] = df.groupby("firm_id")["cashflow"].shift(2)
-df["L1_firm_size"] = df.groupby("firm_id")["firm_size"].shift(1)
 
 df = df.dropna(
     subset=[
         "L1_y",
         "L1_investment",
         "L2_investment",
-        "L1_cashflow",
-        "L2_cashflow",
-        "L1_firm_size",
     ]
 )
 ```
+
+The easy API can create lagged dependent-variable columns automatically through:
+
+```python
+lagged_dependent=1
+```
+
+or:
+
+```python
+lagged_dependent=2
+```
+
+This convenience applies to the dependent variable only. Other structural lags should still be created explicitly by the user.
 
 ---
 
@@ -553,111 +846,6 @@ Planned precedence rule:
 
 ```text
 gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
-```
-
----
-
-# Difference GMM
-
-Difference GMM is often appropriate when:
-
-* the model contains a lagged dependent variable;
-* regressors may be endogenous or predetermined;
-* unobserved individual effects must be removed;
-* the panel has many entities and relatively few time periods.
-
-```python
-from systemgmmkit import build_difference_gmm_spec, run_difference_gmm
-
-spec = build_difference_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "investment",
-        "firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-        "investment",
-    ],
-    exogenous=[
-        "firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-)
-
-result = run_difference_gmm(
-    spec,
-    data=df,
-    entity="firm_id",
-    time="year",
-    backend="auto",
-)
-
-print(result)
-```
-
-Equivalent Stata idea:
-
-```stata
-xtabond2 y L.y investment firm_size, ///
-    gmm(L.y investment, lag(2 4) collapse) ///
-    iv(firm_size) ///
-    robust
-```
-
----
-
-# System GMM
-
-System GMM extends Difference GMM by combining:
-
-* the differenced equation; and
-* the levels equation.
-
-System GMM is often preferred when variables are highly persistent and lagged levels are weak instruments for differenced variables.
-
-```python
-from systemgmmkit import build_system_gmm_spec, run_system_gmm
-
-spec = build_system_gmm_spec(
-    dependent="y",
-    regressors=[
-        "L1_y",
-        "investment",
-        "firm_size",
-    ],
-    endogenous=[
-        "L1_y",
-        "investment",
-    ],
-    exogenous=[
-        "firm_size",
-    ],
-    gmm_lags=(2, 4),
-    collapse=True,
-    windmeijer=True,
-)
-
-result = run_system_gmm(
-    spec,
-    data=df,
-    entity="firm_id",
-    time="year",
-    backend="auto",
-)
-
-print(result)
-```
-
-Equivalent Stata idea:
-
-```stata
-xtabond2 y L.y investment firm_size, ///
-    gmm(L.y investment, lag(2 4) collapse) ///
-    iv(firm_size) ///
-    twostep robust small
 ```
 
 ---
@@ -1249,6 +1437,7 @@ The goal is not merely to produce estimates. The goal is to provide transparent 
 | Standard graphics gallery  | PASS_TESTED_EXPORT    |
 | Result plot accessors      | PASS_TESTED_EXPORT    |
 | ML workflow smoke script   | PASS_TESTED_WORKFLOW  |
+| Easy dynamic-GMM wrappers  | PASS_TESTED_API       |
 
 Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case.
 
