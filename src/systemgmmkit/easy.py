@@ -7,13 +7,14 @@ they do not replace or rewrite the underlying estimators.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import pandas as pd
 
 LagWindow = tuple[int, int]
+LagMap = Mapping[str, LagWindow]
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,8 @@ class DynamicGMMWorkflowResult:
     predetermined: tuple[str, ...]
     exogenous: tuple[str, ...]
     gmm_lags: LagWindow
+    gmm_lags_by_role: LagMap | None
+    gmm_lags_by_variable: LagMap | None
     collapse: bool
     time_effects: bool
     model: str
@@ -64,6 +67,25 @@ def _validate_lag_window(gmm_lags: LagWindow) -> LagWindow:
         raise ValueError("gmm_lags stop must be >= start.")
 
     return start, stop
+
+
+def _validate_lag_map(name: str, values: LagMap | None) -> dict[str, LagWindow] | None:
+    """Validate optional public lag-window mappings used by the easy API."""
+
+    if values is None:
+        return None
+
+    if not isinstance(values, Mapping):
+        raise TypeError(f"{name} must be a mapping of names to lag-window tuples.")
+
+    out: dict[str, LagWindow] = {}
+
+    for key, window in values.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError(f"{name} keys must be non-empty strings.")
+        out[key] = _validate_lag_window(window)
+
+    return out
 
 
 def _add_lagged_dependent(
@@ -160,6 +182,8 @@ def _run_dynamic_gmm(
     lagged_dependent: Optional[int],
     lagged_dependent_role: str,
     gmm_lags: LagWindow,
+    gmm_lags_by_role: LagMap | None,
+    gmm_lags_by_variable: LagMap | None,
     collapse: bool,
     backend: str,
     windmeijer: Optional[bool],
@@ -169,6 +193,11 @@ def _run_dynamic_gmm(
     spec_options: dict[str, Any],
 ) -> Any:
     gmm_lags = _validate_lag_window(gmm_lags)
+    gmm_lags_by_role = _validate_lag_map("gmm_lags_by_role", gmm_lags_by_role)
+    gmm_lags_by_variable = _validate_lag_map(
+        "gmm_lags_by_variable",
+        gmm_lags_by_variable,
+    )
 
     model_data, lagged_cols = _add_lagged_dependent(
         data,
@@ -204,6 +233,8 @@ def _run_dynamic_gmm(
         "predetermined": list(final_predetermined),
         "exogenous": list(final_exogenous),
         "gmm_lags": gmm_lags,
+        "gmm_lags_by_role": gmm_lags_by_role,
+        "gmm_lags_by_variable": gmm_lags_by_variable,
         "collapse": collapse,
         "time_dummies": time_effects,
     }
@@ -260,6 +291,8 @@ def _run_dynamic_gmm(
         predetermined=final_predetermined,
         exogenous=final_exogenous,
         gmm_lags=gmm_lags,
+        gmm_lags_by_role=gmm_lags_by_role,
+        gmm_lags_by_variable=gmm_lags_by_variable,
         collapse=collapse,
         time_effects=time_effects,
         model=model,
@@ -280,6 +313,8 @@ def system_gmm(
     lagged_dependent: Optional[int] = 1,
     lagged_dependent_role: str = "endogenous",
     gmm_lags: LagWindow = (2, 2),
+    gmm_lags_by_role: LagMap | None = None,
+    gmm_lags_by_variable: LagMap | None = None,
     collapse: bool = True,
     backend: str = "auto",
     windmeijer: Optional[bool] = True,
@@ -315,6 +350,8 @@ def system_gmm(
         lagged_dependent=lagged_dependent,
         lagged_dependent_role=lagged_dependent_role,
         gmm_lags=gmm_lags,
+        gmm_lags_by_role=gmm_lags_by_role,
+        gmm_lags_by_variable=gmm_lags_by_variable,
         collapse=collapse,
         backend=backend,
         windmeijer=windmeijer,
@@ -339,6 +376,8 @@ def difference_gmm(
     lagged_dependent: Optional[int] = 1,
     lagged_dependent_role: str = "endogenous",
     gmm_lags: LagWindow = (2, 2),
+    gmm_lags_by_role: LagMap | None = None,
+    gmm_lags_by_variable: LagMap | None = None,
     collapse: bool = True,
     backend: str = "auto",
     windmeijer: Optional[bool] = None,
@@ -368,6 +407,8 @@ def difference_gmm(
         lagged_dependent=lagged_dependent,
         lagged_dependent_role=lagged_dependent_role,
         gmm_lags=gmm_lags,
+        gmm_lags_by_role=gmm_lags_by_role,
+        gmm_lags_by_variable=gmm_lags_by_variable,
         collapse=collapse,
         backend=backend,
         windmeijer=windmeijer,
