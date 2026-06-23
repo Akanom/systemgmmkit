@@ -65,6 +65,35 @@ def _format_regressor(var: str) -> str:
     return var
 
 
+
+def _valid_p_value(value: object) -> float | None:
+    """Return a valid p-value in [0, 1], otherwise None.
+
+    Some backend objects may expose non-p-value sentinels or malformed
+    diagnostic values. Public result objects should not report impossible
+    p-values such as 2.0.
+    """
+
+    if value is None:
+        return None
+
+    try:
+        if isinstance(value, (list, tuple)) and len(value) == 1:
+            value = value[0]
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if out != out:
+        return None
+    if out == float("inf") or out == float("-inf"):
+        return None
+    if out < 0.0 or out > 1.0:
+        return None
+
+    return out
+
+
 def _format_gmm(block: GMMStyle, collapse: bool) -> str:
     """Format a pydynpd GMM block."""
     _ = collapse
@@ -425,48 +454,116 @@ def _extract_number_from_output(patterns: Sequence[str], output: str) -> float |
 
 def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
     nobs = _to_int_or_none(_first_existing_attr(raw, ["nobs", "n_obs", "N", "num_obs"]))
+
     n_groups = _to_int_or_none(
         _first_existing_attr(raw, ["n_groups", "N_g", "num_groups", "groups"])
     )
+
     n_instruments = _to_int_or_none(
-        _first_existing_attr(raw, ["n_instruments", "num_instruments", "j", "instrument_count"])
+        _first_existing_attr(
+            raw,
+            ["n_instruments", "num_instruments", "j", "instrument_count"],
+        )
     )
-    hansen_p = _to_float_or_none(_first_existing_attr(raw, ["hansen_p", "hansen", "hansen_pvalue"]))
-    sargan_p = _to_float_or_none(_first_existing_attr(raw, ["sargan_p", "sargan", "sargan_pvalue"]))
-    ar1_p = _to_float_or_none(_first_existing_attr(raw, ["ar1_p", "ar1", "ar1_pvalue"]))
-    ar2_p = _to_float_or_none(_first_existing_attr(raw, ["ar2_p", "ar2", "ar2_pvalue"]))
+
+    hansen_p = _valid_p_value(
+        _to_float_or_none(
+            _first_existing_attr(raw, ["hansen_p", "hansen", "hansen_pvalue"])
+        )
+    )
+
+    sargan_p = _valid_p_value(
+        _to_float_or_none(
+            _first_existing_attr(raw, ["sargan_p", "sargan", "sargan_pvalue"])
+        )
+    )
+
+    ar1_p = _valid_p_value(
+        _to_float_or_none(
+            _first_existing_attr(raw, ["ar1_p", "ar1", "ar1_pvalue", "m1_p", "m1_pvalue"])
+        )
+    )
+
+    ar2_p = _valid_p_value(
+        _to_float_or_none(
+            _first_existing_attr(raw, ["ar2_p", "ar2", "ar2_pvalue", "m2_p", "m2_pvalue"])
+        )
+    )
 
     if nobs is None:
         nobs = _to_int_or_none(
-            _extract_number_from_output([r"number of obs\w*\s*[:=]\s*([0-9.]+)"], output)
+            _extract_number_from_output(
+                [
+                    r"number of obs(?:ervations)?\s*[=:]\s*([0-9]+)",
+                    r"obs(?:ervations)?\s*[=:]\s*([0-9]+)",
+                ],
+                output,
+            )
         )
+
     if n_groups is None:
         n_groups = _to_int_or_none(
-            _extract_number_from_output([r"number of groups\s*[:=]\s*([0-9.]+)"], output)
+            _extract_number_from_output(
+                [
+                    r"number of groups\s*[=:]\s*([0-9]+)",
+                    r"groups\s*[=:]\s*([0-9]+)",
+                ],
+                output,
+            )
         )
+
     if n_instruments is None:
         n_instruments = _to_int_or_none(
-            _extract_number_from_output([r"number of instruments\s*[:=]\s*([0-9.]+)"], output)
+            _extract_number_from_output(
+                [
+                    r"number of instruments\s*[=:]\s*([0-9]+)",
+                    r"instruments\s*[=:]\s*([0-9]+)",
+                ],
+                output,
+            )
         )
+
     if hansen_p is None:
-        hansen_p = _extract_number_from_output([r"hansen[^\n]*p[^0-9.]*([0-9]*\.?[0-9]+)"], output)
+        hansen_p = _valid_p_value(
+            _extract_number_from_output(
+                [r"hansen[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)"],
+                output,
+            )
+        )
+
     if sargan_p is None:
-        sargan_p = _extract_number_from_output([r"sargan[^\n]*p[^0-9.]*([0-9]*\.?[0-9]+)"], output)
+        sargan_p = _valid_p_value(
+            _extract_number_from_output(
+                [r"sargan[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)"],
+                output,
+            )
+        )
+
     if ar1_p is None:
-        ar1_p = _extract_number_from_output([r"ar\(?1\)?[^\n]*p[^0-9.]*([0-9]*\.?[0-9]+)"], output)
+        ar1_p = _valid_p_value(
+            _extract_number_from_output(
+                [r"ar\s*\(?1\)?[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)"],
+                output,
+            )
+        )
+
     if ar2_p is None:
-        ar2_p = _extract_number_from_output([r"ar\(?2\)?[^\n]*p[^0-9.]*([0-9]*\.?[0-9]+)"], output)
+        ar2_p = _valid_p_value(
+            _extract_number_from_output(
+                [r"ar\s*\(?2\)?[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)"],
+                output,
+            )
+        )
 
     return {
         "nobs": nobs,
         "n_groups": n_groups,
         "n_instruments": n_instruments,
-        "hansen_p": hansen_p,
-        "sargan_p": sargan_p,
-        "ar1_p": ar1_p,
-        "ar2_p": ar2_p,
+        "hansen_p": _valid_p_value(hansen_p),
+        "sargan_p": _valid_p_value(sargan_p),
+        "ar1_p": _valid_p_value(ar1_p),
+        "ar2_p": _valid_p_value(ar2_p),
     }
-
 
 def _debug_summarize_pydynpd_value(value: Any, *, depth: int = 0, max_depth: int = 4) -> Any:
     """Return a JSON-safe structural summary of a pydynpd object/value."""
@@ -623,10 +720,10 @@ def _adapt_pydynpd_result(raw: Any, *, command: str, raw_output: str) -> Pydynpd
         nobs=meta["nobs"],
         n_groups=meta["n_groups"],
         n_instruments=meta["n_instruments"],
-        hansen_p=meta["hansen_p"],
-        sargan_p=meta["sargan_p"],
-        ar1_p=meta["ar1_p"],
-        ar2_p=meta["ar2_p"],
+        hansen_p=_valid_p_value(meta["hansen_p"]),
+        sargan_p=_valid_p_value(meta["sargan_p"]),
+        ar1_p=_valid_p_value(meta["ar1_p"]),
+        ar2_p=_valid_p_value(meta["ar2_p"]),
         command=command,
         raw_output=raw_output,
         raw_result=raw,

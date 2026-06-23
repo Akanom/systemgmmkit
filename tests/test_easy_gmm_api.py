@@ -57,6 +57,7 @@ def test_system_gmm_easy_api_creates_lag_and_defaults_unclassified_to_exogenous(
     assert "x" in captured["spec_kwargs"]["exogenous"]
     assert "z" in captured["spec_kwargs"]["exogenous"]
     assert captured["spec_kwargs"]["gmm_lags"] == (2, 2)
+    assert captured["spec_kwargs"]["time_dummies"] is False
     assert captured["run"]["windmeijer"] is True
     assert len(captured["run"]["data"]) == 4
 
@@ -90,6 +91,7 @@ def test_difference_gmm_easy_api_can_return_workflow(monkeypatch):
     assert workflow.result == {"model": "difference", "rows": 4}
     assert workflow.model == "difference"
     assert workflow.gmm_lags == (2, 3)
+    assert workflow.time_effects is False
     assert "L1_y" in workflow.regressors
     assert "L1_y" in workflow.endogenous
     assert "L1_y" in workflow.data.columns

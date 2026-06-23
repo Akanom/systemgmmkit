@@ -32,6 +32,7 @@ class DynamicGMMWorkflowResult:
     exogenous: tuple[str, ...]
     gmm_lags: LagWindow
     collapse: bool
+    time_effects: bool
     model: str
 
 
@@ -162,6 +163,7 @@ def _run_dynamic_gmm(
     collapse: bool,
     backend: str,
     windmeijer: Optional[bool],
+    time_effects: bool,
     drop_missing: bool,
     return_workflow: bool,
     spec_options: dict[str, Any],
@@ -203,6 +205,7 @@ def _run_dynamic_gmm(
         "exogenous": list(final_exogenous),
         "gmm_lags": gmm_lags,
         "collapse": collapse,
+        "time_dummies": time_effects,
     }
     spec_kwargs.update(spec_options)
 
@@ -258,6 +261,7 @@ def _run_dynamic_gmm(
         exogenous=final_exogenous,
         gmm_lags=gmm_lags,
         collapse=collapse,
+        time_effects=time_effects,
         model=model,
     )
 
@@ -279,6 +283,7 @@ def system_gmm(
     collapse: bool = True,
     backend: str = "auto",
     windmeijer: Optional[bool] = True,
+    time_effects: bool = False,
     drop_missing: bool = True,
     return_workflow: bool = False,
     **spec_options: Any,
@@ -288,6 +293,12 @@ def system_gmm(
     Unclassified regressors are treated as exogenous by default. If
     ``lagged_dependent=1``, a column named ``L1_<dependent>`` is created,
     added to the model equation, and classified as endogenous by default.
+    Time effects are disabled by default in the easy API to avoid
+    high-dimensional time-dummy expansion in long-T panels. Set
+    ``time_effects=True`` when time dummies are theoretically required.
+    Time effects are disabled by default in the easy API to avoid
+    high-dimensional time-dummy expansion in long-T panels. Set
+    ``time_effects=True`` when time dummies are theoretically required.
     """
 
     return _run_dynamic_gmm(
@@ -307,6 +318,7 @@ def system_gmm(
         collapse=collapse,
         backend=backend,
         windmeijer=windmeijer,
+        time_effects=time_effects,
         drop_missing=drop_missing,
         return_workflow=return_workflow,
         spec_options=spec_options,
@@ -330,6 +342,7 @@ def difference_gmm(
     collapse: bool = True,
     backend: str = "auto",
     windmeijer: Optional[bool] = None,
+    time_effects: bool = False,
     drop_missing: bool = True,
     return_workflow: bool = False,
     **spec_options: Any,
@@ -358,6 +371,7 @@ def difference_gmm(
         collapse=collapse,
         backend=backend,
         windmeijer=windmeijer,
+        time_effects=time_effects,
         drop_missing=drop_missing,
         return_workflow=return_workflow,
         spec_options=spec_options,
