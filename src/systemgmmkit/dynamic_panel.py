@@ -242,18 +242,18 @@ def run_dynamic_panel_gmm(
 
     if is_system:
         warnings.warn(
-            "Native System GMM has coefficient and Windmeijer-SE parity on the "
-            "maintained xtabond2 benchmark, but Sargan/AR diagnostic parity remains "
-            "uncertified. Use backend='auto' or backend='validated' when full "
-            "external-backend validation is required.",
+            "Native System GMM has coefficient, Windmeijer-SE, Hansen/Sargan, "
+            "and signed AR diagnostic parity on the maintained xtabond2 benchmark "
+            "suite. Use backend='auto' or backend='validated' when an external "
+            "backend is explicitly required for independent replication.",
             RuntimeWarning,
             stacklevel=2,
         )
         _append_result_note(
             result,
-            "Native System GMM coefficient and Windmeijer-SE parity are certified "
-            "on the maintained xtabond2 benchmark; Sargan/AR diagnostic parity "
-            "remains uncertified.",
+            "Native System GMM coefficient, Windmeijer-SE, Hansen/Sargan, "
+            "and signed AR diagnostic parity are certified on the maintained "
+            "xtabond2 benchmark suite.",
         )
 
     return result

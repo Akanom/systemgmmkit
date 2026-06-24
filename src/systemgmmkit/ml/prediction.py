@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from .adapter import adapt_result
-
 
 _CONST_NAMES = ("const", "_cons", "_con", "intercept", "Intercept")
 
@@ -24,9 +23,7 @@ def _prepare_design(
     for name in names:
         if name in data.columns:
             X[name] = pd.to_numeric(data[name], errors="raise")
-        elif name in _CONST_NAMES:
-            X[name] = 1.0
-        elif add_constant and name.lower() in {c.lower() for c in _CONST_NAMES}:
+        elif name in _CONST_NAMES or add_constant and name.lower() in {c.lower() for c in _CONST_NAMES}:
             X[name] = 1.0
         elif strict:
             raise KeyError(
@@ -83,7 +80,7 @@ def fitted_values(
 
     Uses native fitted values where available. Otherwise requires data.
     """
-    adapter = adapt_result(result)
+    adapt_result(result)
 
     for name in ("fitted_values", "fittedvalues", "fitted", "yhat"):
         if hasattr(result, name):

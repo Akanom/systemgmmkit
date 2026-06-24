@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Any
 
 import pandas as pd
 
@@ -65,7 +66,7 @@ class GMMGridSearch:
                 return False
             if op == "<=" and not value <= threshold:
                 return False
-            if op == "==" and not value == threshold:
+            if op == "==" and value != threshold:
                 return False
 
         return True

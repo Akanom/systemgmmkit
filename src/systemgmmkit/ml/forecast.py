@@ -8,7 +8,6 @@ import pandas as pd
 
 from .adapter import adapt_result
 
-
 _CONST_NAMES = {"const", "_cons", "_con", "intercept", "Intercept"}
 
 

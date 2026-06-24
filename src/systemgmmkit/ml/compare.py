@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any, Iterable
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 import pandas as pd
 

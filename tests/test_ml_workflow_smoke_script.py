@@ -1,7 +1,6 @@
 import json
 import subprocess
 import sys
-from pathlib import Path
 
 
 def test_ml_workflow_smoke_script_runs(tmp_path):

@@ -8,24 +8,28 @@
 
 ---
 
-# systemgmmkit 0.5.11
+# systemgmmkit
 
 `systemgmmkit` is a Python package for applied panel-data econometrics and dynamic-panel GMM workflows.
 
 It provides a unified workflow for:
 
 * baseline linear models;
-* panel estimators;
-* instrumental-variable models;
+* pooled OLS, fixed-effects, and random-effects models;
+* panel IV / 2SLS;
 * Difference GMM and System GMM;
 * easy dynamic-GMM wrapper APIs;
+* explicit GMM instrument design;
+* global, role-specific, and variable-specific GMM lag windows;
 * dynamic-panel diagnostics;
 * post-estimation analysis;
-* visualization and diagnostic dashboards;
+* diagnostic visualization;
 * ML-style workflow utilities around fitted econometric models;
 * reproducible reporting and export.
 
 The package is designed for empirical researchers working in economics, finance, management, operations, productivity analysis, public policy, development economics, political economy, industrial organization, and other panel-data settings.
+
+The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
 ---
 
@@ -37,139 +41,126 @@ Applied panel-data work often requires several disconnected tools:
 * fixed-effects and random-effects estimators;
 * panel IV / 2SLS;
 * Difference GMM and System GMM;
-* overidentification and serial-correlation diagnostics;
+* overidentification diagnostics;
+* serial-correlation diagnostics;
 * post-estimation analysis;
 * coefficient tables;
 * diagnostic plots;
 * model comparison;
 * forecasting and backtesting;
-* reproducible outputs.
+* reproducible output pipelines.
 
 `systemgmmkit` aims to bring these pieces into a consistent Python workflow.
 
-The package is built around five principles:
+The package is built around five principles.
 
-1. **Explicit model specification**
+## 1. Explicit model specification
 
-   Model assumptions should be visible in the code, not hidden inside estimation defaults.
+Model assumptions should be visible in the code, not hidden inside estimation defaults.
 
-2. **Reproducible empirical workflows**
+Users should be able to see:
 
-   Estimation, diagnostics, post-estimation, visualization, validation, forecasting, and reporting should be easy to rerun and inspect.
+* the dependent variable;
+* structural regressors;
+* lagged dependent variables;
+* endogenous variables;
+* predetermined variables;
+* exogenous variables;
+* GMM-style instruments;
+* IV-style instruments;
+* lag-window design;
+* collapsed instrument settings;
+* backend metadata;
+* diagnostic outputs.
 
-3. **Transparent dynamic-panel diagnostics**
+## 2. Reproducible empirical workflows
 
-   Dynamic-panel GMM results should expose sample size, group count, instrument count, AR tests, Hansen/Sargan tests, covariance type, backend metadata, and instrument architecture.
+Estimation, diagnostics, post-estimation, visualization, validation, forecasting, and reporting should be easy to rerun and inspect.
 
-4. **Verification against reference implementations**
+## 3. Transparent dynamic-panel diagnostics
 
-   Estimators are benchmarked against established Stata implementations where practical.
+Dynamic-panel GMM results should expose:
 
-5. **Publication-oriented communication**
+* sample size;
+* group count;
+* instrument count;
+* instrument/group ratio;
+* Hansen diagnostics;
+* Sargan diagnostics;
+* Arellano-Bond AR(1) diagnostics;
+* Arellano-Bond AR(2) diagnostics;
+* covariance type;
+* Windmeijer correction status;
+* backend metadata;
+* instrument architecture.
 
-   Results should be interpretable not only as coefficient tables, but also through diagnostics, model-health dashboards, persistence plots, instrument-architecture displays, prediction outputs, validation tables, forecast outputs, and report-ready graphics.
+## 4. Verification against reference implementations
 
-The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
+Where practical, estimators are benchmarked against established Stata implementations, including `regress`, `xtreg`, `ivregress`, `xtabond2`, and `xtdpdgmm`.
 
----
+## 5. Publication-oriented communication
 
-# What's New in 0.5.11
-
-Version `0.5.11` is an **ML-style workflow and usability release**.
-
-It builds on the `0.5.10` visualization and diagnostic-reporting layer by adding:
-
-* an additive workflow namespace, `systemgmmkit.ml`, for prediction, validation, model comparison, forecasting, forecast backtesting, and GMM specification-search scaffolding around already fitted econometric result objects;
-* easier user-facing wrappers for Difference GMM and System GMM through `difference_gmm()` and `system_gmm()`.
-
-This release does **not** rewrite the validated estimator internals and does **not** introduce new dynamic-panel estimator theory.
-
----
-
-## New ML-style workflow namespace
-
-```python
-from systemgmmkit.ml import (
-    ResultAdapter,
-    adapt_result,
-    predict,
-    fitted_values,
-    residuals,
-    regression_metrics,
-    panel_train_test_split,
-    PanelTimeSeriesSplit,
-    cross_validate_panel,
-    compare_models,
-    forecast,
-    backtest_forecast,
-    GMMGridSearch,
-    GMMSearchResult,
-)
-```
-
-The intended design is:
-
-```text
-validated econometric estimator
-        ↓
-result object
-        ↓
-ML-style workflow utilities
-```
-
-The ML workflow layer supports:
-
-* prediction from fitted result objects;
-* fitted-value extraction;
-* residual extraction;
-* regression metrics;
-* time-respecting panel train/test splitting;
-* expanding-window panel cross-validation;
-* model comparison across fitted estimators;
-* recursive forecasting from dynamic-panel results;
-* forecast backtesting;
-* GMM specification-search scaffolding.
-
-The purpose is not to turn `systemgmmkit` into a generic machine-learning library. The purpose is to make validated econometric models usable in modern prediction, validation, forecasting, comparison, and reporting workflows.
+Results should be interpretable not only as coefficient tables, but also through diagnostics, model-health dashboards, persistence plots, instrument-architecture displays, prediction outputs, validation tables, forecast outputs, and report-ready graphics.
 
 ---
 
-## New easy dynamic-GMM wrapper API
+# Current Development Focus
 
-Version `0.5.11` adds easier user-facing wrappers:
+The current development line strengthens the dynamic-GMM user workflow.
+
+The main improvements are:
+
+* easy Difference GMM and System GMM wrappers;
+* compact default easy-GMM specifications;
+* clean structural lag handling through `L1_<dependent>` columns;
+* no duplicated `L1.y` / `L1_y` lagged-dependent notation in easy workflows;
+* explicit global GMM lag windows through `gmm_lags`;
+* explicit role-specific GMM lag windows through `gmm_lags_by_role`;
+* explicit variable-specific GMM lag windows through `gmm_lags_by_variable`;
+* deterministic lag-window precedence;
+* tests confirming exogenous variables remain IV-style by default;
+* Difference GMM and System GMM validation using separate `gmm()` blocks;
+* deterministic instrument-name and instrument-count validation;
+* FD001 real-data validation for easy dynamic-GMM lag-window workflows;
+* sanitized diagnostic p-values so impossible backend p-values are not reported as valid diagnostics.
+
+The easy API remains a convenience layer. It does not introduce a new estimator. It builds on the validated lower-level specification and runner APIs.
+
+---
+
+# Installation
+
+Stable release:
+
+```bash
+pip install systemgmmkit
+```
+
+Development version:
+
+```bash
+pip install git+https://github.com/Akanom/systemgmmkit.git
+```
+
+Local development installation:
+
+```bash
+pip install -e ".[dev,all]"
+```
+
+For graphics support, ensure `matplotlib` is available:
+
+```bash
+pip install matplotlib
+```
+
+Check the installed version:
 
 ```python
-from systemgmmkit import difference_gmm, system_gmm
+import systemgmmkit
+
+print(systemgmmkit.__version__)
 ```
-
-These wrappers sit on top of the validated lower-level GMM builders and runners.
-
-The intended workflow is:
-
-```text
-easy wrapper
-    ↓
-validated spec builder
-    ↓
-validated GMM runner
-    ↓
-result object
-```
-
-The easy API is designed for users who want a readable one-call workflow while still preserving explicit modelling choices.
-
-The lower-level APIs remain available for advanced users, validation workflows, and parity checks:
-
-```python
-from systemgmmkit import (
-    build_difference_gmm_spec,
-    run_difference_gmm,
-    build_system_gmm_spec,
-    run_system_gmm,
-)
-```
-
-The easy API is a convenience layer. It is not a new estimator.
 
 ---
 
@@ -200,10 +191,15 @@ The easy API is a convenience layer. It is not a new estimator.
 * Windmeijer-corrected standard errors
 * Collapsed instruments
 * Restricted global GMM lag windows
+* Role-specific GMM lag windows
+* Variable-specific GMM lag windows
+* Deterministic GMM lag-window precedence
 * Hansen diagnostics
 * Sargan diagnostics
 * Arellano-Bond AR(1) diagnostics
 * Arellano-Bond AR(2) diagnostics
+* Instrument-name validation
+* Instrument-count validation
 
 ## Post-Estimation
 
@@ -257,42 +253,6 @@ The easy API is a convenience layer. It is not a new estimator.
 * HTML figure galleries
 * Structured result objects
 * Integration with `universal-output-hub`
-
----
-
-# Installation
-
-Stable release:
-
-```bash
-pip install systemgmmkit
-```
-
-Development version:
-
-```bash
-pip install git+https://github.com/Akanom/systemgmmkit.git
-```
-
-Local development installation:
-
-```bash
-pip install -e ".[dev,all]"
-```
-
-For graphics support, ensure `matplotlib` is available:
-
-```bash
-pip install matplotlib
-```
-
-Check the installed version:
-
-```python
-import systemgmmkit
-
-print(systemgmmkit.__version__)
-```
 
 ---
 
@@ -381,8 +341,6 @@ xtset firm_id year
 xtreg y x1 x2 z1, fe
 ```
 
-For two-way fixed effects, use the time-effect option supported by the installed version and confirm the returned model metadata before reporting results.
-
 ---
 
 ## Random Effects
@@ -452,12 +410,13 @@ ivregress 2sls y x1 z1 (x2 = z2)
 The recommended workflow is:
 
 1. Define the structural model.
-2. Create any lagged variables that should enter the model equation.
+2. Create or request structural lagged variables.
 3. Classify regressors as endogenous, predetermined, or exogenous.
 4. Define the GMM instrument strategy.
-5. Run the estimator.
-6. Inspect diagnostics before interpreting coefficients.
-7. Export tables and diagnostic figures.
+5. Control the lag windows and collapsed-instrument design.
+6. Run the estimator.
+7. Inspect diagnostics before interpreting coefficients.
+8. Export tables and diagnostic figures.
 
 Users can run dynamic-panel GMM through either:
 
@@ -467,6 +426,26 @@ Users can run dynamic-panel GMM through either:
 ---
 
 # Easy Dynamic GMM API
+
+The easy API is designed for readable one-call workflows while preserving explicit modelling choices.
+
+```python
+from systemgmmkit import difference_gmm, system_gmm
+```
+
+The easy API handles:
+
+* sorting panel data by entity and time;
+* creating lagged dependent-variable columns such as `L1_y`;
+* adding the lagged dependent variable to the structural equation;
+* classifying the lagged dependent variable as endogenous, predetermined, exogenous, or excluded from GMM-style treatment;
+* applying global, role-specific, and variable-specific GMM lag windows;
+* keeping exogenous variables IV-style by default;
+* returning either the fitted result or a full workflow object.
+
+The easy API does not create arbitrary structural lags for other regressors. Users should create those manually.
+
+---
 
 ## Easy System GMM
 
@@ -501,31 +480,17 @@ result = system_gmm(
 
 By default, `lagged_dependent=1` creates a structural lag column named `L1_y`, adds it to the model equation, and classifies it as endogenous.
 
-If the lagged dependent variable should be treated differently, use:
+The easy API intentionally avoids duplicated lag notation. It should generate a command architecture like:
 
-```python
-result = system_gmm(
-    data=df,
-    entity="firm_id",
-    time="year",
-    dependent="y",
-    lagged_dependent=1,
-    lagged_dependent_role="predetermined",
-    regressors=["investment", "firm_size"],
-    endogenous=["investment"],
-    exogenous=["firm_size"],
-    gmm_lags=(2, 2),
-)
+```text
+y investment cashflow firm_size L1_y | gmm(L1_y, 2:2) ...
 ```
 
-Allowed `lagged_dependent_role` values are:
+not:
 
-* `"endogenous"`;
-* `"predetermined"`;
-* `"exogenous"`;
-* `"none"`.
-
-Unclassified regressors are treated as exogenous by default for usability, but researchers should classify variables explicitly in serious empirical work.
+```text
+y L1.y investment cashflow firm_size L1_y | gmm(y, 2:2) gmm(L1_y, 2:2) ...
+```
 
 ---
 
@@ -563,9 +528,39 @@ The easy Difference GMM wrapper follows the same structural-lag and variable-cla
 
 ---
 
+## Lagged dependent-variable role
+
+The lagged dependent variable can be classified through `lagged_dependent_role`.
+
+```python
+result = system_gmm(
+    data=df,
+    entity="firm_id",
+    time="year",
+    dependent="y",
+    lagged_dependent=1,
+    lagged_dependent_role="predetermined",
+    regressors=["investment", "firm_size"],
+    endogenous=["investment"],
+    exogenous=["firm_size"],
+    gmm_lags=(2, 2),
+)
+```
+
+Allowed values are:
+
+* `"endogenous"`;
+* `"predetermined"`;
+* `"exogenous"`;
+* `"none"`.
+
+Unclassified regressors are treated as exogenous by default for usability, but researchers should classify variables explicitly in serious empirical work.
+
+---
+
 ## Inspecting the generated workflow
 
-For inspection, set `return_workflow=True`:
+For inspection, set `return_workflow=True`.
 
 ```python
 from systemgmmkit import system_gmm
@@ -596,15 +591,18 @@ The workflow object exposes:
 * endogenous variables;
 * predetermined variables;
 * exogenous variables;
-* GMM lag window;
+* global GMM lag window;
+* role-specific GMM lag windows;
+* variable-specific GMM lag windows;
 * collapse setting;
+* time-effect setting;
 * model type.
 
 ---
 
 # Advanced Dynamic GMM API
 
-Advanced users can still use the lower-level API directly.
+Advanced users can use the lower-level API directly.
 
 ## Difference GMM
 
@@ -715,7 +713,7 @@ Researchers should perform robustness checks using alternative classifications w
 
 # Structural Lags vs Instrument Lags
 
-Dynamic GMM has two different uses of lags. They must not be confused.
+Dynamic GMM has two different uses of lags.
 
 | Use                          | Meaning                                               | Example                         |
 | ---------------------------- | ----------------------------------------------------- | ------------------------------- |
@@ -794,29 +792,65 @@ This convenience applies to the dependent variable only. Other structural lags s
 
 # GMM Lag-Window Strategy
 
-The current public GMM lag-window control is the global GMM lag window:
+`systemgmmkit` supports three layers of GMM lag-window control.
+
+## 1. Global GMM lag window
 
 ```python
 gmm_lags = (2, 4)
 ```
 
-This means GMM-style instruments are constructed using lags 2 through 4 for GMM-style variables.
+This means GMM-style variables use lags 2 through 4 unless overridden by a more specific rule.
+
+## 2. Role-specific GMM lag windows
+
+```python
+gmm_lags_by_role = {
+    "endogenous": (2, 3),
+    "predetermined": (1, 2),
+}
+```
+
+This allows endogenous and predetermined variables to use different lag windows.
+
+## 3. Variable-specific GMM lag windows
+
+```python
+gmm_lags_by_variable = {
+    "L1_y": (2, 2),
+    "cashflow": (1, 2),
+}
+```
+
+This gives specific variables their own instrument lag window.
+
+## Precedence rule
+
+The precedence rule is deterministic:
+
+```text
+gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
+```
+
+Variable-specific settings override role-specific settings. Role-specific settings override the global setting.
 
 Example:
 
 ```python
-from systemgmmkit import build_system_gmm_spec
+from systemgmmkit import system_gmm
 
-spec = build_system_gmm_spec(
+result = system_gmm(
+    data=df,
+    entity="firm_id",
+    time="year",
     dependent="y",
+    lagged_dependent=1,
     regressors=[
-        "L1_y",
         "investment",
         "cashflow",
         "firm_size",
     ],
     endogenous=[
-        "L1_y",
         "investment",
     ],
     predetermined=[
@@ -825,28 +859,26 @@ spec = build_system_gmm_spec(
     exogenous=[
         "firm_size",
     ],
-    gmm_lags=(2, 4),
+    gmm_lags=(2, 2),
+    gmm_lags_by_role={
+        "endogenous": (2, 3),
+        "predetermined": (1, 2),
+    },
+    gmm_lags_by_variable={
+        "L1_y": (2, 2),
+        "cashflow": (1, 3),
+    },
     collapse=True,
-    windmeijer=True,
 )
 ```
 
-Equivalent Stata idea:
+Under this design:
 
-```stata
-xtabond2 y L.y investment cashflow firm_size, ///
-    gmm(L.y investment cashflow, lag(2 4) collapse) ///
-    iv(firm_size) ///
-    twostep robust small
-```
-
-Role-specific and variable-specific GMM lag-window designs are planned roadmap items. They should not be documented as current functionality until implemented, tested, and validated.
-
-Planned precedence rule:
-
-```text
-gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
-```
+* `L1_y` uses `(2, 2)` because variable-specific settings win;
+* `cashflow` uses `(1, 3)` because variable-specific settings win;
+* other endogenous variables use `(2, 3)`;
+* other predetermined variables use `(1, 2)`;
+* any remaining GMM-style variables use the global `gmm_lags`.
 
 ---
 
@@ -861,7 +893,7 @@ exogenous = [
 ]
 ```
 
-The package should not force exogenous variables into GMM-style instrumentation.
+The package does not force exogenous variables into GMM-style instrumentation.
 
 If users need lagged exogenous variables in the model equation, they should create those structural lags manually:
 
@@ -896,7 +928,10 @@ Recommended practice:
 * keep the instrument count below the number of groups where possible;
 * use collapsed instruments when appropriate;
 * restrict global GMM lag windows;
+* use role-specific lag windows where theoretically justified;
+* use variable-specific lag windows where identification requires finer control;
 * report the number of instruments;
+* report the instrument/group ratio;
 * report AR(1), AR(2), Hansen, and Sargan diagnostics;
 * compare alternative lag-window choices as robustness checks.
 
@@ -1196,7 +1231,7 @@ result object
 ML-style workflow utilities
 ```
 
-It does **not** replace the econometric estimators and does **not** rewrite the validated estimation core.
+It does not replace the econometric estimators and does not rewrite the validated estimation core.
 
 ## Public API
 
@@ -1415,29 +1450,34 @@ The goal is not merely to produce estimates. The goal is to provide transparent 
 
 # Current Validation Status
 
-| Component                  | Status                |
-| -------------------------- | --------------------- |
-| OLS                        | PASS_STATA_PARITY     |
-| Robust OLS                 | PASS_STATA_PARITY     |
-| Clustered OLS              | PASS_STATA_PARITY     |
-| Confidence intervals       | PASS_STATA_PARITY     |
-| `lincom`                   | PASS_STATA_PARITY     |
-| Wald / F tests             | PASS_STATA_PARITY     |
-| Fixed Effects              | PASS_STATA_COMPARISON |
-| Random Effects             | PASS_STATA_COMPARISON |
-| Panel IV / 2SLS            | PASS_STATA_COMPARISON |
-| Difference GMM             | PASS_XTABOND2_PARITY  |
-| System GMM                 | PASS_XTABOND2_PARITY  |
-| Windmeijer standard errors | PASS_XTABOND2_PARITY  |
-| Hansen diagnostics         | PASS_XTABOND2_PARITY  |
-| Sargan diagnostics         | PASS_XTABOND2_PARITY  |
-| AR(1) diagnostics          | PASS_XTABOND2_PARITY  |
-| AR(2) diagnostics          | PASS_XTABOND2_PARITY  |
-| SGM-Viz dashboards         | PASS_TESTED_EXPORT    |
-| Standard graphics gallery  | PASS_TESTED_EXPORT    |
-| Result plot accessors      | PASS_TESTED_EXPORT    |
-| ML workflow smoke script   | PASS_TESTED_WORKFLOW  |
-| Easy dynamic-GMM wrappers  | PASS_TESTED_API       |
+| Component                            | Status                   |
+| ------------------------------------ | ------------------------ |
+| OLS                                  | PASS_STATA_PARITY        |
+| Robust OLS                           | PASS_STATA_PARITY        |
+| Clustered OLS                        | PASS_STATA_PARITY        |
+| Confidence intervals                 | PASS_STATA_PARITY        |
+| `lincom`                             | PASS_STATA_PARITY        |
+| Wald / F tests                       | PASS_STATA_PARITY        |
+| Fixed Effects                        | PASS_STATA_COMPARISON    |
+| Random Effects                       | PASS_STATA_COMPARISON    |
+| Panel IV / 2SLS                      | PASS_STATA_COMPARISON    |
+| Difference GMM                       | PASS_XTABOND2_PARITY     |
+| System GMM                           | PASS_XTABOND2_PARITY     |
+| Windmeijer standard errors           | PASS_XTABOND2_PARITY     |
+| Hansen diagnostics                   | PASS_XTABOND2_PARITY     |
+| Sargan diagnostics                   | PASS_XTABOND2_PARITY     |
+| AR(1) diagnostics                    | PASS_XTABOND2_PARITY     |
+| AR(2) diagnostics                    | PASS_XTABOND2_PARITY     |
+| SGM-Viz dashboards                   | PASS_TESTED_EXPORT       |
+| Standard graphics gallery            | PASS_TESTED_EXPORT       |
+| Result plot accessors                | PASS_TESTED_EXPORT       |
+| ML workflow smoke script             | PASS_TESTED_WORKFLOW     |
+| Easy dynamic-GMM wrappers            | PASS_TESTED_API          |
+| Role-specific GMM lag windows        | PASS_TESTED_API          |
+| Variable-specific GMM lag windows    | PASS_TESTED_API          |
+| GMM instrument-name validation       | PASS_TESTED_VALIDATION   |
+| GMM instrument-count validation      | PASS_TESTED_VALIDATION   |
+| FD001 easy-GMM lag-window validation | PASS_REALDATA_VALIDATION |
 
 Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case.
 
@@ -1472,6 +1512,58 @@ Under this maintained benchmark, the native implementation reproduces the `xtabo
 
 ---
 
+# FD001 Easy-GMM Lag-Window Validation
+
+The easy GMM lag-window workflow was validated on CMAPSS FD001 real-data panel specifications.
+
+Panel structure:
+
+```text
+entity = unit
+time   = cycle
+```
+
+Target model:
+
+```text
+risk ~ L1_risk + degradation_index + sensor_mean_z + pc2 + op_setting1 + op_setting2
+```
+
+Variable classification:
+
+| Variable            | Classification |
+| ------------------- | -------------- |
+| `L1_risk`           | Endogenous     |
+| `degradation_index` | Predetermined  |
+| `sensor_mean_z`     | Predetermined  |
+| `pc2`               | Predetermined  |
+| `op_setting1`       | Exogenous      |
+| `op_setting2`       | Exogenous      |
+
+The validation confirms:
+
+* no duplicated symbolic lag notation;
+* no `L1.risk` / `L1_risk` duplication in easy commands;
+* no duplicated `gmm(risk, ...)` plus `gmm(L1_risk, ...)` instrumentation;
+* exact agreement between actual and expected compact instrument counts;
+* correct Difference GMM and System GMM command construction;
+* correct global, role-specific, and variable-specific lag-window precedence.
+
+Observed validation results:
+
+| Scenario                          |      Estimator | Actual instruments | Expected compact instruments | Status |
+| --------------------------------- | -------------: | -----------------: | ---------------------------: | ------ |
+| `global_compact_22`               | Difference GMM |                  6 |                            6 | PASS   |
+| `global_compact_22`               |     System GMM |                 11 |                           11 | PASS   |
+| `role_endog_23_predet_12`         | Difference GMM |                 10 |                           10 | PASS   |
+| `role_endog_23_predet_12`         |     System GMM |                 15 |                           15 | PASS   |
+| `variable_override_sensor_l1risk` | Difference GMM |                  9 |                            9 | PASS   |
+| `variable_override_sensor_l1risk` |     System GMM |                 14 |                           14 | PASS   |
+
+The FD001 validation is a real-data application check. The controlled `xtabond2` benchmark remains the strict certification benchmark.
+
+---
+
 # External CMAPSS FD001 Validation
 
 In addition to the controlled benchmark, System GMM was externally validated on CMAPSS FD001 publication-style panel specifications.
@@ -1490,7 +1582,7 @@ Degradation model:
 degradation_index ~ L1.degradation_index + sensor_mean_z + pc2 + pc3 + op_setting1 + op_setting2
 ```
 
-Across both FD001 validation models, `systemgmmkit` reproduces `xtabond2` results for:
+Across the maintained FD001 validation models, `systemgmmkit` reproduces reference results for:
 
 * coefficient estimates;
 * Windmeijer-corrected standard errors;
@@ -1594,6 +1686,7 @@ Recommended practice:
 
 * use `collapse=True`;
 * restrict `gmm_lags`;
+* use role-specific and variable-specific lag windows where justified;
 * report instrument count;
 * compare instrument count with number of groups;
 * check whether Hansen p-values are suspiciously high;
@@ -1627,14 +1720,18 @@ For published research, report:
 * number of groups;
 * estimator type;
 * transformation;
-* lagged dependent variable treatment;
+* lagged dependent-variable treatment;
 * endogenous variables;
 * predetermined variables;
 * exogenous variables;
 * structural lags included in the model;
-* GMM lag window;
+* GMM lag-window design;
+* global lag windows;
+* role-specific lag windows;
+* variable-specific lag windows;
 * collapse setting;
 * number of instruments;
+* instrument/group ratio;
 * AR(1) diagnostic;
 * AR(2) diagnostic;
 * Hansen test;
@@ -1649,25 +1746,21 @@ For published research, report:
 
 # Roadmap
 
-The next technical extension should focus on variable-level and role-level GMM instrument design.
+The next technical extensions should focus on robustness, reviewer-facing validation, and production usability.
 
-Planned features:
+Planned work includes:
 
-* role-specific GMM lag windows;
-* variable-specific GMM lag windows;
-* explicit precedence rule:
+* preflight feasibility checks for impossible lag windows on short panels;
+* clearer validation errors when requested GMM lags exceed usable panel depth;
+* stronger handling of unknown variables in `gmm_lags_by_variable`;
+* explicit rejection or warning when users try to apply GMM lag windows to exogenous-only variables;
+* additional Stata comparison scripts for role-specific and variable-specific lag-window specifications;
+* deeper documentation examples for instrument architecture;
+* more post-estimation coverage for nonlinear combinations and richer marginal-effects workflows;
+* additional real-data examples;
+* further integration with `universal-output-hub`.
 
-```text
-gmm_lags_by_variable > gmm_lags_by_role > gmm_lags
-```
-
-* tests confirming exogenous variables remain IV-style unless explicitly handled otherwise;
-* Difference GMM and System GMM parity checks using separate `gmm()` blocks;
-* instrument-count and instrument-name validation;
-* documentation examples;
-* Stata comparison scripts.
-
-These features should not be documented as current functionality until implemented and validated.
+Implemented and validated features should remain in the current-feature sections, not in the roadmap.
 
 ---
 
@@ -1681,8 +1774,6 @@ Akanbi, Oluwajuwon Mayomi.
 systemgmmkit:
 Panel-Data Econometrics and Dynamic-Panel GMM Workflows in Python.
 
-Version 0.5.11.
-
 https://github.com/Akanom/systemgmmkit
 ```
 
@@ -1693,8 +1784,7 @@ BibTeX:
   author = {Akanbi, Oluwajuwon Mayomi},
   title = {systemgmmkit: Panel-Data Econometrics and Dynamic-Panel GMM Workflows in Python},
   year = {2026},
-  url = {https://github.com/Akanom/systemgmmkit},
-  version = {0.5.11}
+  url = {https://github.com/Akanom/systemgmmkit}
 }
 ```
 

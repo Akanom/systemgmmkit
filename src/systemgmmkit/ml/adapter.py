@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
 
 import numpy as np
 import pandas as pd
-
 
 _PARAM_NAMES = ("params", "coef", "coefficients", "beta", "parameter")
 _COV_NAMES = ("cov", "covariance", "cov_params", "vcov")

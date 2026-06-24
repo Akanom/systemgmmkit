@@ -32,8 +32,8 @@ class DynamicGMMWorkflowResult:
     predetermined: tuple[str, ...]
     exogenous: tuple[str, ...]
     gmm_lags: LagWindow
-    gmm_lags_by_role: LagMap | None
-    gmm_lags_by_variable: LagMap | None
+    gmm_lags_by_role: Optional[dict[str, LagWindow]]
+    gmm_lags_by_variable: Optional[dict[str, LagWindow]]
     collapse: bool
     time_effects: bool
     model: str
@@ -48,10 +48,12 @@ def _as_tuple(values: Optional[Sequence[str]]) -> tuple[str, ...]:
 def _unique(values: Sequence[str]) -> tuple[str, ...]:
     seen: set[str] = set()
     out: list[str] = []
+
     for value in values:
         if value not in seen:
             out.append(value)
             seen.add(value)
+
     return tuple(out)
 
 
@@ -69,7 +71,7 @@ def _validate_lag_window(gmm_lags: LagWindow) -> LagWindow:
     return start, stop
 
 
-def _validate_lag_map(name: str, values: LagMap | None) -> dict[str, LagWindow] | None:
+def _validate_lag_map(name: str, values: Optional[LagMap]) -> Optional[dict[str, LagWindow]]:
     """Validate optional public lag-window mappings used by the easy API."""
 
     if values is None:
@@ -122,6 +124,7 @@ def _prepare_roles(
     lagged_dependent_role: str,
 ) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
     allowed_roles = {"endogenous", "predetermined", "exogenous", "none"}
+
     if lagged_dependent_role not in allowed_roles:
         raise ValueError(
             "lagged_dependent_role must be one of "
@@ -182,8 +185,8 @@ def _run_dynamic_gmm(
     lagged_dependent: Optional[int],
     lagged_dependent_role: str,
     gmm_lags: LagWindow,
-    gmm_lags_by_role: LagMap | None,
-    gmm_lags_by_variable: LagMap | None,
+    gmm_lags_by_role: Optional[LagMap],
+    gmm_lags_by_variable: Optional[LagMap],
     collapse: bool,
     backend: str,
     windmeijer: Optional[bool],
@@ -193,11 +196,8 @@ def _run_dynamic_gmm(
     spec_options: dict[str, Any],
 ) -> Any:
     gmm_lags = _validate_lag_window(gmm_lags)
-    gmm_lags_by_role = _validate_lag_map("gmm_lags_by_role", gmm_lags_by_role)
-    gmm_lags_by_variable = _validate_lag_map(
-        "gmm_lags_by_variable",
-        gmm_lags_by_variable,
-    )
+    role_lags = _validate_lag_map("gmm_lags_by_role", gmm_lags_by_role)
+    variable_lags = _validate_lag_map("gmm_lags_by_variable", gmm_lags_by_variable)
 
     model_data, lagged_cols = _add_lagged_dependent(
         data,
@@ -233,12 +233,21 @@ def _run_dynamic_gmm(
         "predetermined": list(final_predetermined),
         "exogenous": list(final_exogenous),
         "gmm_lags": gmm_lags,
-        "gmm_lags_by_role": gmm_lags_by_role,
-        "gmm_lags_by_variable": gmm_lags_by_variable,
+        "gmm_lags_by_role": role_lags,
+        "gmm_lags_by_variable": variable_lags,
         "collapse": collapse,
         "time_dummies": time_effects,
+        # The easy API creates concrete Lk_<dependent> columns itself.
+        # Prevent the lower builder from also adding symbolic Lk.<dependent>
+        # regressors, which would duplicate the lagged dependent term.
+        "lagged_dependent": False,
     }
     spec_kwargs.update(spec_options)
+
+    # The easy API creates concrete Lk_<dependent> columns itself.
+    # The lower builder must not also add symbolic Lk.<dependent>
+    # regressors or a dependent-variable GMM block.
+    spec_kwargs["lagged_dependent"] = False
 
     if model == "system":
         from systemgmmkit import build_system_gmm_spec, run_system_gmm
@@ -254,8 +263,10 @@ def _run_dynamic_gmm(
             "time": time,
             "backend": backend,
         }
+
         if windmeijer is not None:
             run_kwargs["windmeijer"] = windmeijer
+
         result = run_system_gmm(**run_kwargs)
 
     elif model == "difference":
@@ -269,8 +280,10 @@ def _run_dynamic_gmm(
             "time": time,
             "backend": backend,
         }
+
         if windmeijer is not None:
             run_kwargs["windmeijer"] = windmeijer
+
         result = run_difference_gmm(**run_kwargs)
 
     else:
@@ -291,8 +304,8 @@ def _run_dynamic_gmm(
         predetermined=final_predetermined,
         exogenous=final_exogenous,
         gmm_lags=gmm_lags,
-        gmm_lags_by_role=gmm_lags_by_role,
-        gmm_lags_by_variable=gmm_lags_by_variable,
+        gmm_lags_by_role=role_lags,
+        gmm_lags_by_variable=variable_lags,
         collapse=collapse,
         time_effects=time_effects,
         model=model,
@@ -313,8 +326,8 @@ def system_gmm(
     lagged_dependent: Optional[int] = 1,
     lagged_dependent_role: str = "endogenous",
     gmm_lags: LagWindow = (2, 2),
-    gmm_lags_by_role: LagMap | None = None,
-    gmm_lags_by_variable: LagMap | None = None,
+    gmm_lags_by_role: Optional[LagMap] = None,
+    gmm_lags_by_variable: Optional[LagMap] = None,
     collapse: bool = True,
     backend: str = "auto",
     windmeijer: Optional[bool] = True,
@@ -328,9 +341,7 @@ def system_gmm(
     Unclassified regressors are treated as exogenous by default. If
     ``lagged_dependent=1``, a column named ``L1_<dependent>`` is created,
     added to the model equation, and classified as endogenous by default.
-    Time effects are disabled by default in the easy API to avoid
-    high-dimensional time-dummy expansion in long-T panels. Set
-    ``time_effects=True`` when time dummies are theoretically required.
+
     Time effects are disabled by default in the easy API to avoid
     high-dimensional time-dummy expansion in long-T panels. Set
     ``time_effects=True`` when time dummies are theoretically required.
@@ -376,8 +387,8 @@ def difference_gmm(
     lagged_dependent: Optional[int] = 1,
     lagged_dependent_role: str = "endogenous",
     gmm_lags: LagWindow = (2, 2),
-    gmm_lags_by_role: LagMap | None = None,
-    gmm_lags_by_variable: LagMap | None = None,
+    gmm_lags_by_role: Optional[LagMap] = None,
+    gmm_lags_by_variable: Optional[LagMap] = None,
     collapse: bool = True,
     backend: str = "auto",
     windmeijer: Optional[bool] = None,

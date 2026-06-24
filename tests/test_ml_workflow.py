@@ -5,8 +5,8 @@ from systemgmmkit.ml import (
     PanelTimeSeriesSplit,
     panel_train_test_split,
     predict,
-    residuals,
     regression_metrics,
+    residuals,
 )
 
 
