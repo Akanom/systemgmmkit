@@ -52,7 +52,7 @@ def main() -> None:
     for lag in range(1, 7):
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
             if not diff_mask[i]:
                 continue
             z[i] = safe_lookup(y_map, entity, time - lag)
@@ -63,7 +63,7 @@ def main() -> None:
     for lag in range(1, 7):
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
             if not diff_mask[i]:
                 continue
             z[i] = safe_lookup(x_map, entity, time - lag)
@@ -89,7 +89,7 @@ def main() -> None:
     for name, (left_lag, right_lag) in level_candidates.items():
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
             if not level_mask[i]:
                 continue
 
@@ -109,7 +109,7 @@ def main() -> None:
     for name, (left_lag, right_lag) in level_x_candidates.items():
         z = np.zeros(len(meta), dtype=float)
 
-        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
+        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
             if not level_mask[i]:
                 continue
 

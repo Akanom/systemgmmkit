@@ -97,7 +97,7 @@ def main() -> None:
                     for policy in missing_policies:
                         z = np.zeros(len(meta), dtype=float)
 
-                        for i, (entity, time) in enumerate(zip(entity_arr, time_arr, strict=False)):
+                        for i, (entity, time) in enumerate(zip(entity_arr, time_arr)):
                             if not level_mask[i]:
                                 continue
 

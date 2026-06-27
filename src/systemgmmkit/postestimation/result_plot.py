@@ -133,7 +133,7 @@ def _params_as_mapping(result: Any) -> dict[str, float]:
 
     if hasattr(params, "index") and hasattr(params, "values"):
         out: dict[str, float] = {}
-        for key, value in zip(params.index, params.values, strict=False):
+        for key, value in zip(params.index, params.values):
             v = _optional_float(value)
             if v is not None:
                 out[str(key)] = v
@@ -592,7 +592,7 @@ def model_comparison_dashboard_v2(
         labels = [f"Model {i + 1}" for i in range(len(results))]
 
     rows = []
-    for label, result in zip(labels, results, strict=False):
+    for label, result in zip(labels, results):
         m = extract_health_metrics(result)
         rows.append(
             {
@@ -631,7 +631,7 @@ def model_comparison_dashboard_v2(
     xs = [0.03, 0.36, 0.51, 0.66, 0.81]
 
     y = 0.78
-    for x, header in zip(xs, headers, strict=False):
+    for x, header in zip(xs, headers):
         ax.text(x, y, header, fontsize=9, fontweight="bold", ha="left", va="center")
 
     y -= 0.07
@@ -644,7 +644,7 @@ def model_comparison_dashboard_v2(
             _fmt(row["ar2"]),
             _fmt(row["ratio"]),
         ]
-        for x, value in zip(xs, values, strict=False):
+        for x, value in zip(xs, values):
             ax.text(x, y, value, fontsize=8.7, ha="left", va="center")
         y -= 0.055
 

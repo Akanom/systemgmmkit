@@ -957,7 +957,7 @@ def _draw_parameter_impact(ax: Axes, result: Any, *, max_terms: int = 8) -> None
         return
 
     mask = np.isfinite(beta)
-    terms = [t for t, keep in zip(terms, mask, strict=False) if keep]
+    terms = [t for t, keep in zip(terms, mask) if keep]
     beta = beta[mask]
     if se is not None:
         se = se[mask]
@@ -1117,7 +1117,7 @@ def publication_panel_v2(
 
 def _infer_lag_coefficient(result: Any) -> float:
     terms, beta, _ = _extract_params(result)
-    for term, value in zip(terms, beta, strict=False):
+    for term, value in zip(terms, beta):
         lower = term.lower().replace(" ", "")
         if (lower.startswith("l1.") or lower.startswith("l.") or "lag" in lower) and np.isfinite(
             value

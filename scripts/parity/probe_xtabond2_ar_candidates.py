@@ -71,7 +71,7 @@ def _abs_z_from_p(p: float) -> float:
 
 def _load_beta(path: Path) -> dict[str, float]:
     df = pd.read_csv(path)
-    return dict(zip(df["param"].astype(str), df["native_coef"].astype(float), strict=False))
+    return dict(zip(df["param"].astype(str), df["native_coef"].astype(float)))
 
 
 def _level_residuals(

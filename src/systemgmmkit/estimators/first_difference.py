@@ -179,8 +179,8 @@ def first_difference(
     else:
         se_arr = np.full(k, np.nan)
 
-    params = {name: float(value) for name, value in zip(x_list, beta, strict=False)}
-    std_errors = {name: float(value) for name, value in zip(x_list, se_arr, strict=False)}
+    params = {name: float(value) for name, value in zip(x_list, beta)}
+    std_errors = {name: float(value) for name, value in zip(x_list, se_arr)}
 
     t_stats: dict[str, float] = {}
     p_values: dict[str, float] = {}
