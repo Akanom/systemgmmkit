@@ -15,7 +15,13 @@ Keep accepted estimators stable; build workflow capabilities around them.
 - `panel_train_test_split`
 - `PanelTimeSeriesSplit`
 - `cross_validate_panel`
+- `quick_postestimation`
+- `quick_forecast`
+- `quick_ml`
 - `GMMGridSearch`
+- `DynamicGMMHybridSearch`
+- `auto_dynamic_gmm`
+- `dynamic_gmm_candidate_grid`
 
 ## Basic usage
 
@@ -45,6 +51,55 @@ Keep accepted estimators stable; build workflow capabilities around them.
 
 The split is time-respecting. It does not randomly split panel rows.
 
+## Simple wrapper UI
+
+For common fitted-result workflows, the quick helpers bundle the usual steps
+without changing estimator behavior.
+
+    from systemgmmkit import lincom, wald_test
+    from systemgmmkit.ml import quick_postestimation, quick_forecast, quick_ml
+
+    post = quick_postestimation(
+        result,
+        df,
+        y="growth_rate",
+    )
+
+    post.metrics
+    post.confidence_intervals
+    post.marginal_effects
+
+    total_effect = lincom(result, "investment + trade_open")
+    joint_test = wald_test(result, "investment = 0, trade_open = 0")
+
+    post_with_tests = quick_postestimation(
+        result,
+        df,
+        y="growth_rate",
+        lincoms={"total_effect": "investment + trade_open"},
+        wald_tests={"joint_zero": "investment = 0, trade_open = 0"},
+    )
+
+    fc = quick_forecast(
+        result,
+        history=df,
+        y="growth_rate",
+        entity="country",
+        time="year",
+        horizon=4,
+        future_exog=future_controls,
+    )
+
+    workflow = quick_ml(
+        result,
+        df,
+        y="growth_rate",
+        entity="country",
+        time="year",
+        horizon=4,
+        future_exog=future_controls,
+    )
+
 ## GMM specification search
 
     from systemgmmkit.ml import GMMGridSearch
@@ -67,6 +122,59 @@ The split is time-respecting. It does not randomly split panel rows.
     )
 
     result = search.fit(df)
+
+`GMMGridSearch` remains a generic scaffold: users supply the specification
+builder and model runner, and the search layer only orchestrates fitting,
+diagnostics, prediction metrics, ranking, and reporting.
+
+For the simplest native Dynamic GMM workflow, use the one-call helper. It
+searches around the public `system_gmm` and `difference_gmm` easy APIs without
+changing estimator internals.
+
+    from systemgmmkit.ml import auto_dynamic_gmm
+
+    result = auto_dynamic_gmm(
+        df,
+        y="growth_rate",
+        entity="country",
+        time="year",
+        regressors=["investment", "trade_open"],
+        endogenous=["investment"],
+        exogenous=["trade_open"],
+        test_size=2,
+    )
+
+    best_result = result.best_result
+    best_spec = result.best_spec
+    report = result.to_markdown()
+
+For more control, instantiate the hybrid loop directly.
+
+    from systemgmmkit.ml import DynamicGMMHybridSearch
+
+    search = DynamicGMMHybridSearch(
+        y="growth_rate",
+        entity="country",
+        time="year",
+        regressors=["investment", "trade_open"],
+        endogenous=["investment"],
+        exogenous=["trade_open"],
+        lag_windows=[(2, 2), (2, 3), (3, 4)],
+        models=["system", "difference"],
+        steps=["twostep", "onestep"],
+        transformations=["fod", "fd"],
+        test_size=2,
+    )
+
+    result = search.fit(df)
+
+    best_result = result.best_result
+    best_spec = result.best_spec
+    report = result.to_markdown()
+
+The hybrid loop rejects candidates before ranking when diagnostics fail,
+including AR(2), Hansen, convergence, and excessive instrument-count checks.
+Prediction quality is used only after econometric validity screening.
 
 ## Why this matters
 

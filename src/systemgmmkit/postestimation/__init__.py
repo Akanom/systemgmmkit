@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -101,10 +102,13 @@ __all__ = [
     "fitted_values",
     "residuals",
     "vcov",
+    "estat_vce",
     "confint",
     "lincom",
     "wald_test",
     "marginal_effects",
+    "margins",
+    "predict_stata",
     "HealthMetrics",
     "InstrumentArchitecture",
     "PersistenceAnalytics",
@@ -251,11 +255,61 @@ def _normal_crit(alpha: float = 0.05) -> float:
         return 1.959963984540054
 
 
+def _alpha_from_level(alpha: float = 0.05, level: float | None = None) -> float:
+    if level is None:
+        return float(alpha)
+
+    value = float(level)
+    if value > 1.0:
+        value = value / 100.0
+
+    if value <= 0.0 or value >= 1.0:
+        raise ValueError("level must be between 0 and 1, or between 0 and 100.")
+
+    return float(1.0 - value)
+
+
 def _normal_pvalue(z: float) -> float:
     z = float(z)
     if not math.isfinite(z):
         return float("nan")
     return float(2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(z) / math.sqrt(2.0)))))
+
+
+def _inference_df(result: Any) -> float | None:
+    for name in ("df_inference", "df_resid"):
+        value = _value_attr(result, [name])
+        if value is None:
+            continue
+        try:
+            out = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(out) and out > 0:
+            return out
+    return None
+
+
+def _critical_value(alpha: float, df: float | None) -> float:
+    try:
+        from scipy import stats
+
+        if df is not None:
+            return float(stats.t.ppf(1.0 - alpha / 2.0, df))
+        return float(stats.norm.ppf(1.0 - alpha / 2.0))
+    except Exception:
+        return _normal_crit(alpha)
+
+
+def _two_sided_pvalue(statistic: float, df: float | None) -> float:
+    try:
+        from scipy import stats
+
+        if df is not None:
+            return float(2.0 * stats.t.sf(abs(statistic), df))
+    except Exception:
+        pass
+    return _normal_pvalue(statistic)
 
 
 def predict(result: Any, data: Any | None = None, **kwargs: Any) -> Any:
@@ -270,6 +324,46 @@ def predict(result: Any, data: Any | None = None, **kwargs: Any) -> Any:
     if data is not None:
         raise NotImplementedError("This result object does not support out-of-sample prediction.")
     return fit
+
+
+def predict_stata(
+    result: Any,
+    data: Any | None = None,
+    *,
+    option: str = "xb",
+    y: str | Sequence[float] | pd.Series | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Stata-style post-estimation prediction wrapper.
+
+    Supported options are ``xb``/``fitted`` for linear predictions and
+    ``residuals``/``resid`` for residuals. The helper composes existing
+    post-estimation functions and does not modify fitted result objects.
+    """
+
+    option_value = str(option).strip().lower()
+
+    if option_value in {"xb", "x", "linear", "prediction", "predictions"}:
+        return predict(result, data, **kwargs)
+
+    if option_value in {"fitted", "fitted_values", "fit", "yhat"}:
+        if data is None:
+            return fitted_values(result, **kwargs)
+        return predict(result, data, **kwargs)
+
+    if option_value in {"residual", "residuals", "resid", "e"}:
+        out = residuals(result)
+        if data is not None and y is not None:
+            if isinstance(y, str):
+                y_values = pd.to_numeric(data[y], errors="raise")
+            else:
+                y_values = pd.Series(y, index=getattr(data, "index", None), dtype=float)
+            fit = predict(result, data, **kwargs)
+            out = y_values.astype(float) - pd.Series(fit, index=y_values.index).astype(float)
+            out.name = "residual"
+        return out
+
+    raise ValueError("option must be one of: xb, fitted, residuals, resid.")
 
 
 def fitted_values(result: Any, **kwargs: Any) -> Any:
@@ -326,7 +420,19 @@ def vcov(result: Any) -> pd.DataFrame:
     return _vcov_frame(result)
 
 
-def confint(result: Any, alpha: float = 0.05) -> pd.DataFrame:
+def estat_vce(result: Any) -> pd.DataFrame:
+    """Stata-style alias for the variance-covariance matrix."""
+
+    return vcov(result)
+
+
+def confint(
+    result: Any,
+    alpha: float = 0.05,
+    *,
+    level: float | None = None,
+) -> pd.DataFrame:
+    alpha = _alpha_from_level(alpha, level)
     params = _params_series(result)
     se = _std_errors_series(result, params)
     crit = _normal_crit(alpha)
@@ -341,15 +447,157 @@ def confint(result: Any, alpha: float = 0.05) -> pd.DataFrame:
     return out
 
 
+def _is_number(value: str) -> bool:
+    try:
+        float(value)
+    except ValueError:
+        return False
+    return True
+
+
+def _split_linear_terms(expression: str) -> list[tuple[float, str]]:
+    text = expression.strip()
+    if not text:
+        raise ValueError("Linear expression cannot be empty.")
+
+    terms: list[tuple[float, str]] = []
+    for match in re.finditer(r"([+-]?)\s*([^+-]+)", text):
+        sign_text, raw_term = match.groups()
+        sign = -1.0 if sign_text == "-" else 1.0
+        term = raw_term.strip()
+
+        if not term:
+            continue
+
+        if "*" in term:
+            left, right = [part.strip() for part in term.split("*", 1)]
+            if _is_number(left):
+                coefficient = float(left)
+                name = right
+            elif _is_number(right):
+                coefficient = float(right)
+                name = left
+            else:
+                raise ValueError(f"Could not parse linear term {term!r}.")
+        else:
+            parts = term.split()
+            if len(parts) == 1:
+                coefficient = 1.0
+                name = parts[0]
+            elif len(parts) == 2 and _is_number(parts[0]):
+                coefficient = float(parts[0])
+                name = parts[1]
+            else:
+                raise ValueError(f"Could not parse linear term {term!r}.")
+
+        if not name:
+            raise ValueError(f"Could not parse coefficient name from {term!r}.")
+
+        terms.append((sign * coefficient, name))
+
+    if not terms:
+        raise ValueError("Linear expression did not contain any coefficient names.")
+
+    return terms
+
+
+def _linear_expression_to_weights(expression: str, params: pd.Series) -> tuple[pd.Series, float | None]:
+    lhs, sep, rhs = expression.partition("=")
+    w = pd.Series(0.0, index=params.index, dtype=float)
+
+    for coefficient, name in _split_linear_terms(lhs):
+        if name not in w.index:
+            raise KeyError(f"Unknown coefficient in linear expression: {name!r}")
+        w.loc[name] += float(coefficient)
+
+    value = None
+    if sep:
+        rhs_text = rhs.strip()
+        if not _is_number(rhs_text):
+            raise ValueError(
+                "Right-hand side of a linear constraint must be a numeric value."
+            )
+        value = float(rhs_text)
+
+    return w, value
+
+
+def _weights_from_expression(
+    expression: Mapping[str, float] | Sequence[float] | str,
+    params: pd.Series,
+) -> tuple[pd.Series, float | None]:
+    if isinstance(expression, str):
+        return _linear_expression_to_weights(expression, params)
+
+    if isinstance(expression, Mapping):
+        w = pd.Series(0.0, index=params.index, dtype=float)
+        for name, weight in expression.items():
+            if name not in w.index:
+                raise KeyError(f"Unknown coefficient in lincom expression: {name!r}")
+            w.loc[name] = float(weight)
+        return w, None
+
+    arr = np.asarray(expression, dtype=float).reshape(-1)
+    if arr.size != params.size:
+        raise ValueError(
+            f"Linear-combination vector has length {arr.size}, "
+            f"but result has {params.size} parameters."
+        )
+    return pd.Series(arr, index=params.index, dtype=float), None
+
+
+def _split_constraints(text: str) -> list[str]:
+    text = text.strip()
+    if text.lower().startswith("test "):
+        text = text[5:].strip()
+    if text.startswith("(") and text.endswith(")"):
+        text = re.sub(r"\)\s*\(", ";\n", text[1:-1])
+    parts = [
+        part.strip()
+        for part in re.split(r"[;\n,]+", text)
+        if part.strip()
+    ]
+    if not parts:
+        raise ValueError("Constraint expression cannot be empty.")
+    return parts
+
+
+def _constraints_to_matrices(
+    constraints: Sequence[str] | str,
+    params: pd.Series,
+) -> tuple[np.ndarray, np.ndarray]:
+    expressions = _split_constraints(constraints) if isinstance(constraints, str) else list(constraints)
+
+    rows: list[np.ndarray] = []
+    values: list[float] = []
+
+    for expression in expressions:
+        if expression in params.index:
+            w = pd.Series(0.0, index=params.index, dtype=float)
+            w.loc[expression] = 1.0
+            value = 0.0
+        else:
+            w, parsed_value = _linear_expression_to_weights(str(expression), params)
+            value = 0.0 if parsed_value is None else parsed_value
+
+        rows.append(w.to_numpy(dtype=float))
+        values.append(float(value))
+
+    return np.vstack(rows), np.asarray(values, dtype=float)
+
+
 def lincom(
     result: Any,
-    expression: Mapping[str, float] | Sequence[float] | None = None,
+    expression: Mapping[str, float] | Sequence[float] | str | None = None,
     *,
-    weights: Mapping[str, float] | Sequence[float] | None = None,
+    weights: Mapping[str, float] | Sequence[float] | str | None = None,
     value: float = 0.0,
     alpha: float = 0.05,
+    level: float | None = None,
     **kwargs: Any,
 ) -> dict[str, float]:
+    alpha = _alpha_from_level(alpha, level)
+
     if expression is None:
         expression = weights
 
@@ -358,51 +606,44 @@ def lincom(
 
     params = _params_series(result)
     V = _vcov_frame(result, params)
-
-    if isinstance(expression, Mapping):
-        w = pd.Series(0.0, index=params.index, dtype=float)
-        for name, weight in expression.items():
-            if name not in w.index:
-                raise KeyError(f"Unknown coefficient in lincom expression: {name!r}")
-            w.loc[name] = float(weight)
-    else:
-        arr = np.asarray(expression, dtype=float).reshape(-1)
-        if arr.size != params.size:
-            raise ValueError(
-                f"Linear-combination vector has length {arr.size}, "
-                f"but result has {params.size} parameters."
-            )
-        w = pd.Series(arr, index=params.index, dtype=float)
+    w, parsed_value = _weights_from_expression(expression, params)
+    if parsed_value is not None:
+        value = parsed_value
 
     estimate = float(w.to_numpy() @ params.to_numpy())
     variance = float(w.to_numpy() @ V.loc[params.index, params.index].to_numpy() @ w.to_numpy())
     std_error = math.sqrt(max(variance, 0.0))
 
     statistic = float((estimate - float(value)) / std_error) if std_error > 0 else float("nan")
-    p_value = _normal_pvalue(statistic)
-    crit = _normal_crit(alpha)
+    df = _inference_df(result)
+    p_value = _two_sided_pvalue(statistic, df)
+    crit = _critical_value(alpha, df)
+    distribution = "t" if df is not None else "z"
 
     return {
         "estimate": estimate,
         "std_error": std_error,
         "statistic": statistic,
-        "z": statistic,
+        "z": statistic if distribution == "z" else float("nan"),
         "t": statistic,
         "p_value": p_value,
         "ci_low": float(estimate - crit * std_error),
         "ci_high": float(estimate + crit * std_error),
         "value": float(value),
         "alpha": float(alpha),
+        "df": float(df) if df is not None else float("nan"),
+        "df_resid": float(df) if df is not None else float("nan"),
+        "distribution": distribution,
     }
 
 
 def wald_test(
     result: Any,
-    R: Sequence[Sequence[float]] | Sequence[float] | Sequence[str] | None = None,
+    R: Sequence[Sequence[float]] | Sequence[float] | Sequence[str] | str | None = None,
     q: Sequence[float] | float | None = None,
     *,
     variables: Sequence[str] | None = None,
-    constraints: Sequence[Sequence[float]] | Sequence[float] | Sequence[str] | None = None,
+    constraints: Sequence[Sequence[float]] | Sequence[float] | Sequence[str] | str | None = None,
     alpha: float = 0.05,
     **kwargs: Any,
 ) -> dict[str, float]:
@@ -417,14 +658,27 @@ def wald_test(
     if R is None and constraints is not None:
         R = constraints
 
-    if (
+    parsed_q: np.ndarray | None = None
+    if variables is None and isinstance(R, str):
+        Rmat, parsed_q = _constraints_to_matrices(R, params)
+        R = None
+
+    elif (
         variables is None
         and isinstance(R, Sequence)
         and not isinstance(R, np.ndarray)
         and all(isinstance(item, str) for item in R)
     ):
-        variables = list(R)  # type: ignore[arg-type]
-        R = None
+        string_items = list(R)  # type: ignore[arg-type]
+        if all(item in params.index for item in string_items):
+            variables = string_items
+            R = None
+        else:
+            Rmat, parsed_q = _constraints_to_matrices(string_items, params)
+            R = None
+
+    if variables is not None:
+        variables = list(variables)
 
     if variables is not None:
         rows = []
@@ -447,10 +701,15 @@ def wald_test(
                 f"but result has {params.size} parameters."
             )
 
+    elif parsed_q is not None:
+        pass
+
     else:
         raise TypeError("wald_test() requires R, constraints, or variables.")
 
-    if q is None:
+    if parsed_q is not None and q is None:
+        qvec = parsed_q
+    elif q is None:
         qvec = np.zeros(Rmat.shape[0])
     else:
         qvec = np.asarray(q, dtype=float).reshape(-1)
@@ -468,15 +727,31 @@ def wald_test(
 
     statistic = float(diff.T @ inv_middle @ diff)
     df_constraints = float(Rmat.shape[0])
-    p_value = float(stats.chi2.sf(statistic, df_constraints)) if stats is not None else float("nan")
+    df_inference = _inference_df(result)
+
+    if stats is not None and df_inference is not None:
+        f_statistic = statistic / df_constraints
+        p_value = float(stats.f.sf(f_statistic, df_constraints, df_inference))
+        display_statistic = float(f_statistic)
+        distribution = "F"
+    else:
+        f_statistic = float("nan")
+        p_value = float(stats.chi2.sf(statistic, df_constraints)) if stats is not None else float("nan")
+        display_statistic = statistic
+        distribution = "chi2"
 
     return {
-        "statistic": statistic,
+        "statistic": display_statistic,
         "chi2": statistic,
+        "f": f_statistic,
+        "F": f_statistic,
         "df": df_constraints,
         "df_constraints": df_constraints,
+        "df_denom": float(df_inference) if df_inference is not None else float("nan"),
+        "df_resid": float(df_inference) if df_inference is not None else float("nan"),
         "p_value": p_value,
         "alpha": float(alpha),
+        "distribution": distribution,
     }
 
 
@@ -484,8 +759,11 @@ def marginal_effects(
     result: Any,
     variables: Sequence[str] | None = None,
     alpha: float = 0.05,
+    *,
+    level: float | None = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
+    alpha = _alpha_from_level(alpha, level)
     params = _params_series(result)
     se = _std_errors_series(result, params)
 
@@ -512,6 +790,7 @@ def marginal_effects(
                 "variable": name,
                 "term": name,
                 "effect": effect,
+                "dy_dx": effect,
                 "estimate": effect,
                 "std_error": std_error,
                 "statistic": statistic,
@@ -528,3 +807,30 @@ def marginal_effects(
         out.index.name = "term"
 
     return out
+
+
+def margins(
+    result: Any,
+    dydx: Sequence[str] | str | None = None,
+    *,
+    variables: Sequence[str] | None = None,
+    alpha: float = 0.05,
+    level: float | None = None,
+    **kwargs: Any,
+) -> pd.DataFrame:
+    """Stata-style alias for linear marginal effects.
+
+    For linear models, ``margins, dydx(x z)`` is equivalent to returning the
+    relevant slope coefficients with standard errors and confidence intervals.
+    """
+
+    if variables is None and dydx is not None:
+        variables = [dydx] if isinstance(dydx, str) else list(dydx)
+
+    return marginal_effects(
+        result,
+        variables=variables,
+        alpha=alpha,
+        level=level,
+        **kwargs,
+    )

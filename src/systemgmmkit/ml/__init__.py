@@ -10,8 +10,24 @@ This layer is intentionally additive:
 from .adapter import ResultAdapter, adapt_result
 from .backtest import backtest_forecast
 from .compare import compare_models
+from .easy import (
+    ForecastSummary,
+    MLWorkflowSummary,
+    PostEstimationSummary,
+    quick_forecast,
+    quick_ml,
+    quick_postestimation,
+)
 from .forecast import forecast
-from .gmm_search import GMMGridSearch, GMMSearchResult
+from .gmm_search import (
+    DynamicGMMHybridSearch,
+    GMMGridSearch,
+    GMMRankingWeights,
+    GMMSearchResult,
+    GMMValidityRules,
+    auto_dynamic_gmm,
+    dynamic_gmm_candidate_grid,
+)
 from .metrics import regression_metrics
 from .prediction import fitted_values, predict, residuals
 from .split import PanelTimeSeriesSplit, panel_train_test_split
@@ -27,8 +43,19 @@ __all__ = [
     "panel_train_test_split",
     "PanelTimeSeriesSplit",
     "cross_validate_panel",
+    "PostEstimationSummary",
+    "ForecastSummary",
+    "MLWorkflowSummary",
+    "quick_postestimation",
+    "quick_forecast",
+    "quick_ml",
     "GMMGridSearch",
     "GMMSearchResult",
+    "GMMValidityRules",
+    "GMMRankingWeights",
+    "DynamicGMMHybridSearch",
+    "auto_dynamic_gmm",
+    "dynamic_gmm_candidate_grid",
     "compare_models",
     "forecast",
     "backtest_forecast",

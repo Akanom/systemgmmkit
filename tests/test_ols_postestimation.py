@@ -5,10 +5,13 @@ from systemgmmkit import (
     OLSSpec,
     PooledOLSSpec,
     confint,
+    estat_vce,
     fitted_values,
     lincom,
     marginal_effects,
+    margins,
     predict,
+    predict_stata,
     residuals,
     run_ols,
     run_pooled_ols,
@@ -132,6 +135,72 @@ def test_lincom_and_wald_test():
 
     assert wt["df_constraints"] == 2.0
     assert wt["p_value"] < 0.001
+
+
+def test_lincom_and_wald_test_accept_simple_strings():
+    df = make_data()
+
+    spec = OLSSpec(
+        dependent="y",
+        regressors=["x", "z"],
+        covariance="robust",
+    )
+
+    result = run_ols(spec, df)
+
+    lc = lincom(result, "x + z")
+    lc_with_null = lincom(result, "x + z = 1.5")
+
+    assert abs(lc["estimate"] - 1.5) < 0.06
+    assert abs(lc_with_null["value"] - 1.5) < 1e-12
+    assert abs(lc_with_null["statistic"]) < 3.0
+    assert lc["distribution"] == "t"
+    assert lc["df_resid"] == float(result.df_inference)
+
+    wt = wald_test(result, "x = 0, z = 0")
+    wt_parentheses = wald_test(result, "test (x = 0) (z = 0)")
+    wt_combo = wald_test(result, "x + z = 1.5")
+
+    assert wt["df_constraints"] == 2.0
+    assert wt["distribution"] == "F"
+    assert wt["df_denom"] == float(result.df_inference)
+    assert wt["p_value"] < 0.001
+    assert wt_parentheses["df_constraints"] == 2.0
+    assert wt_parentheses["distribution"] == "F"
+    assert wt_combo["df_constraints"] == 1.0
+
+
+def test_stata_style_postestimation_aliases_and_level_option():
+    df = make_data()
+
+    spec = OLSSpec(
+        dependent="y",
+        regressors=["x", "z"],
+        covariance="robust",
+    )
+
+    result = run_ols(spec, df)
+
+    ci95 = confint(result, level=95)
+    ci90 = confint(result, level=90)
+
+    assert (ci90["upper"] - ci90["lower"]).lt(ci95["upper"] - ci95["lower"]).all()
+    assert estat_vce(result).equals(vcov(result))
+
+    xb = predict_stata(result, option="xb")
+    fit = predict_stata(result, option="fitted")
+    resid = predict_stata(result, option="resid")
+
+    assert len(xb) == len(df)
+    assert np.allclose(xb, fit)
+    assert np.allclose(resid, residuals(result))
+
+    me = margins(result, dydx=["x"], level=90)
+    assert me["variable"].tolist() == ["x"]
+    assert "dy_dx" in me.columns
+
+    lc90 = lincom(result, "x + z", level=90)
+    assert abs(lc90["alpha"] - 0.1) < 1e-12
 
 
 def test_predict_new_data():

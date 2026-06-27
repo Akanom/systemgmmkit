@@ -128,6 +128,61 @@ The easy API remains a convenience layer. It does not introduce a new estimator.
 
 ---
 
+# Quick User Path
+
+Most users can start from the top-level package namespace:
+
+```python
+import systemgmmkit as sgk
+
+workflow = sgk.system_gmm(
+    data=df,
+    entity="firm",
+    time="year",
+    dependent="growth",
+    regressors=["investment", "leverage"],
+    endogenous=["investment"],
+    exogenous=["leverage"],
+    return_workflow=True,
+)
+
+post = sgk.quick_postestimation(
+    workflow.result,
+    workflow.data,
+    y="growth",
+    lincoms={"total_effect": "investment + leverage"},
+    wald_tests={"joint_zero": "investment = 0, leverage = 0"},
+)
+
+post.metrics
+post.linear_combinations
+post.wald_tests
+post.to_markdown()
+```
+
+For automatic dynamic-GMM specification search:
+
+```python
+search = sgk.auto_dynamic_gmm(
+    df,
+    y="growth",
+    entity="firm",
+    time="year",
+    regressors=["investment", "leverage"],
+    endogenous=["investment"],
+    exogenous=["leverage"],
+)
+
+search.best_spec
+search.best_result
+search.to_markdown()
+```
+
+These are wrapper APIs. They compose the accepted estimators, post-estimation
+helpers, forecasting tools, and diagnostics without changing estimator internals.
+
+---
+
 # Installation
 
 Stable release:
@@ -972,10 +1027,13 @@ from systemgmmkit import (
     fitted_values,
     residuals,
     vcov,
+    estat_vce,
     confint,
     lincom,
     wald_test,
     marginal_effects,
+    margins,
+    predict_stata,
 )
 ```
 
@@ -1007,67 +1065,85 @@ resid = residuals(result)
 
 ```python
 V = vcov(result)
+V = estat_vce(result)
 ```
 
 ## Confidence Intervals
 
 ```python
 ci = confint(result)
+ci90 = confint(result, level=90)
 ```
 
 ## Linear Combinations
 
-Equivalent Stata idea:
+Stata-style syntax is supported:
 
 ```stata
 lincom x1 + x2
+lincom x1 + x2 = 0
 ```
 
 Python:
 
 ```python
-effect = lincom(
-    result,
-    {
-        "x1": 1,
-        "x2": 1,
-    },
-)
+effect = lincom(result, "x1 + x2")
+effect_against_null = lincom(result, "x1 + x2 = 0")
+effect90 = lincom(result, "x1 + x2", level=90)
 
 print(effect)
 ```
 
+If the result exposes inference degrees of freedom, `lincom` reports t-style
+p-values and confidence intervals. Otherwise it falls back to z-style inference.
+
 ## Wald Tests
 
-Equivalent Stata idea:
+Stata-style syntax is supported:
 
 ```stata
 test x1 x2
+test (x1 = 0) (x2 = 0)
+test x1 + x2 = 0
 ```
 
 Python:
 
 ```python
-test_result = wald_test(
-    result,
-    R=[
-        [0, 1, 0],
-        [0, 0, 1],
-    ],
-)
+test_result = wald_test(result, "x1 = 0, x2 = 0")
+same_test = wald_test(result, "test (x1 = 0) (x2 = 0)")
+combo_test = wald_test(result, "x1 + x2 = 0")
 
 print(test_result)
 ```
+
+If the result exposes inference degrees of freedom, `wald_test` reports
+Stata-like F tests. Otherwise it falls back to chi-squared Wald tests.
 
 ## Marginal Effects
 
 ```python
 me = marginal_effects(result)
+mfx = margins(result, dydx=["x1", "x2"], level=90)
 
 print(me)
 ```
 
 For linear estimators, marginal effects correspond to estimated slopes.
+
+## Stata-Style Prediction
+
+```stata
+predict xbhat, xb
+predict ehat, residuals
+```
+
+Python:
+
+```python
+xbhat = predict_stata(result, option="xb")
+ehat = predict_stata(result, option="residuals")
+```
 
 ---
 
@@ -1247,9 +1323,15 @@ from systemgmmkit.ml import (
     PanelTimeSeriesSplit,
     cross_validate_panel,
     compare_models,
+    quick_postestimation,
+    quick_forecast,
+    quick_ml,
     forecast,
     backtest_forecast,
     GMMGridSearch,
+    DynamicGMMHybridSearch,
+    auto_dynamic_gmm,
+    dynamic_gmm_candidate_grid,
     GMMSearchResult,
 )
 ```
@@ -1337,6 +1419,49 @@ comparison = compare_models(
 
 The comparison table reports prediction metrics such as MAE, MSE, RMSE, MAPE, SMAPE, and R². Where available, scalar diagnostics are also included with a `diag_` prefix.
 
+## Simple wrapper UI
+
+```python
+from systemgmmkit import lincom, wald_test
+from systemgmmkit.ml import quick_postestimation, quick_forecast, quick_ml
+
+post = quick_postestimation(
+    result,
+    df,
+    y="growth_rate",
+)
+
+post.metrics
+post.confidence_intervals
+post.marginal_effects
+
+total_effect = lincom(result, "investment + trade_open")
+joint_test = wald_test(result, "investment = 0, trade_open = 0")
+
+fc = quick_forecast(
+    result,
+    history=df,
+    y="growth_rate",
+    entity="country",
+    time="year",
+    horizon=4,
+    future_exog=future_controls,
+)
+
+workflow = quick_ml(
+    result,
+    df,
+    y="growth_rate",
+    entity="country",
+    time="year",
+    horizon=4,
+    future_exog=future_controls,
+)
+```
+
+These helpers only compose the accepted post-estimation, forecasting, and ML
+utilities. They do not re-estimate models or modify estimator internals.
+
 ## Recursive forecasting
 
 ```python
@@ -1406,6 +1531,59 @@ search = GMMGridSearch(
 
 search_result = search.fit(df)
 ```
+
+## Dynamic GMM Hybrid Loop
+
+```python
+from systemgmmkit.ml import auto_dynamic_gmm
+
+hybrid_result = auto_dynamic_gmm(
+    df,
+    y="growth_rate",
+    entity="country",
+    time="year",
+    regressors=["investment", "trade_open"],
+    endogenous=["investment"],
+    exogenous=["trade_open"],
+    test_size=2,
+)
+
+best_result = hybrid_result.best_result
+best_spec = hybrid_result.best_spec
+report = hybrid_result.to_markdown()
+```
+
+For advanced control, instantiate the search object directly:
+
+```python
+from systemgmmkit.ml import DynamicGMMHybridSearch
+
+search = DynamicGMMHybridSearch(
+    y="growth_rate",
+    entity="country",
+    time="year",
+    regressors=["investment", "trade_open"],
+    endogenous=["investment"],
+    exogenous=["trade_open"],
+    models=["system", "difference"],
+    steps=["twostep", "onestep"],
+    lag_windows=[(2, 2), (2, 3), (3, 4)],
+    transformations=["fod", "fd"],
+    test_size=2,
+)
+
+hybrid_result = search.fit(df)
+
+best_result = hybrid_result.best_result
+best_spec = hybrid_result.best_spec
+report = hybrid_result.to_markdown()
+```
+
+The hybrid loop generates candidate Difference/System GMM specifications,
+estimates them through the existing easy API, rejects diagnostically unsafe
+models, ranks the surviving candidates, and produces a compact Markdown report.
+Econometric validity comes before prediction quality: AR(2), Hansen,
+convergence, and instrument-proliferation failures are not recommended.
 
 The search layer repeatedly calls existing validated estimators. It does not implement a new GMM estimator.
 

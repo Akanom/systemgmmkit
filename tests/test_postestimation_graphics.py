@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -188,15 +189,19 @@ def test_high_quality_postestimation_plots_smoke(tmp_path):
         surface_3d_plot(surface, x="techshare", y="polity", z="pred", style=style)
         effect_surface_plot(surface, x="techshare", y="polity", z="pred", style=style)
         dynamic_persistence_plot(0.62, style=style)
+        plt.close("all")
 
     saved = plot_all_diagnostics(result, output_dir=tmp_path, style="sgm", prefix="dummy")
+    plt.close("all")
     assert "coefplot" in saved
     assert "hansen_ar" in saved
 
     bundle = sgm_plot_bundle(result, output_dir=tmp_path / "bundle", prefix="sgm")
+    plt.close("all")
     assert "coefplot" in bundle
 
     gallery = export_postestimation_gallery(saved, output_html=tmp_path / "gallery.html")
+    plt.close("all")
     assert gallery.exists()
     assert (tmp_path / "journal_coef.png").exists()
     assert (tmp_path / "journal_me.png").exists()
