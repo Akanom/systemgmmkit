@@ -1,0 +1,287 @@
+---------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\omoko\OneDrive\Papers\Dynamic_Panel_Econometrics\Results/stata/22_clean_xtabo
+> nd2_from_workflow.log
+  log type:  text
+ opened on:   5 Jul 2023, 02:08:16
+
+. 
+. capture which xtabond2
+
+. if _rc {
+.     ssc install xtabond2, replace
+. }
+
+. 
+. ********************************************************************************
+. * Difference GMM
+. ********************************************************************************
+. 
+. clear
+
+. import delimited "Artifacts/Joss/tables/22_debug_workflow/difference_gmm_data.csv", clear varname
+> s(1)
+(encoding automatically selected: ISO-8859-1)
+(8 vars, 1,080 obs)
+
+. 
+. capture confirm variable l1_y
+
+. if _rc {
+.     capture confirm variable L1_y
+.     if !_rc rename L1_y l1_y
+. }
+
+. 
+. xtset id time
+
+Panel variable: id (strongly balanced)
+ Time variable: time, 2 to 10
+         Delta: 1 unit
+
+. 
+. display "======================================================================"
+======================================================================
+
+. display "Difference GMM: noleveleq, default IV scope"
+Difference GMM: noleveleq, default IV scope
+
+. display "======================================================================"
+======================================================================
+
+. 
+. xtabond2 y x_pred x_exog l1_y if time >= 4, ///
+>     gmmstyle(l1_y, lag(2 3) collapse) ///
+>     gmmstyle(x_pred, lag(2 3) collapse) ///
+>     ivstyle(x_exog) ///
+>     noleveleq ///
+>     twostep robust small
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+
+Dynamic panel-data estimation, two-step difference GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =       840
+Time variable : time                            Number of groups   =       120
+Number of instruments = 5                       Obs per group: min =         7
+F(3, 120)     =     33.65                                      avg =      7.00
+Prob > F      =     0.000                                      max =         7
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      x_pred |   .2486761   .2546397     0.98   0.331    -.2554927     .752845
+      x_exog |   .2535231   .0519268     4.88   0.000     .1507116    .3563345
+        l1_y |   .7331832    .311135     2.36   0.020     .1171575    1.349209
+------------------------------------------------------------------------------
+Instruments for first differences equation
+  Standard
+    D.x_exog
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L(2/3).x_pred collapsed
+    L(2/3).l1_y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -2.84  Pr > z =  0.004
+Arellano-Bond test for AR(2) in first differences: z =  -1.18  Pr > z =  0.238
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(2)    =   1.07  Prob > chi2 =  0.584
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(2)    =   1.30  Prob > chi2 =  0.523
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  gmm(l1_y, collapse lag(2 3))
+    Hansen test excluding group:     chi2(0)    =   0.00  Prob > chi2 =      .
+    Difference (null H = exogenous): chi2(2)    =   1.30  Prob > chi2 =  0.523
+  gmm(x_pred, collapse lag(2 3))
+    Hansen test excluding group:     chi2(0)    =   0.00  Prob > chi2 =      .
+    Difference (null H = exogenous): chi2(2)    =   1.30  Prob > chi2 =  0.523
+  iv(x_exog)
+    Hansen test excluding group:     chi2(1)    =   0.85  Prob > chi2 =  0.356
+    Difference (null H = exogenous): chi2(1)    =   0.45  Prob > chi2 =  0.504
+
+
+. 
+. tempfile diffcoef
+
+. tempname dh
+
+. 
+. postfile `dh' str30 model str30 term double coefficient double std_error double z_value double p_
+> value using "`diffcoef'", replace
+(file C:\Users\omoko\AppData\Local\Temp\ST_6f9c_000001.tmp not found)
+
+. 
+. foreach v in x_pred x_exog l1_y {
+  2.     capture scalar b = _b[`v']
+  3.     if !_rc {
+  4.         scalar se = _se[`v']
+  5.         scalar z = b / se
+  6.         scalar p = 2 * normal(-abs(z))
+  7.         post `dh' ("Difference GMM") ("`v'") (b) (se) (z) (p)
+  8.     }
+  9. }
+
+. 
+. postclose `dh'
+
+. 
+. use "`diffcoef'", clear
+
+. export delimited using "Results/stata/22_clean_stata_difference_gmm_coefficients.csv", replace
+file Results/stata/22_clean_stata_difference_gmm_coefficients.csv saved
+
+. copy "Results/stata/22_clean_stata_difference_gmm_coefficients.csv" "Artifacts/Joss/tables/22_sta
+> ta_difference_gmm_coefficients.csv", replace
+
+. copy "Results/stata/22_clean_stata_difference_gmm_coefficients.csv" "Artifacts/Joss/tables/22_cle
+> an_stata_difference_gmm_coefficients.csv", replace
+
+. 
+. ********************************************************************************
+. * System GMM
+. ********************************************************************************
+. 
+. clear
+
+. import delimited "Artifacts/Joss/tables/22_debug_workflow/system_gmm_data.csv", clear varnames(1)
+(encoding automatically selected: ISO-8859-1)
+(8 vars, 1,080 obs)
+
+. 
+. capture confirm variable l1_y
+
+. if _rc {
+.     capture confirm variable L1_y
+.     if !_rc rename L1_y l1_y
+. }
+
+. 
+. xtset id time
+
+Panel variable: id (strongly balanced)
+ Time variable: time, 2 to 10
+         Delta: 1 unit
+
+. 
+. display "======================================================================"
+======================================================================
+
+. display "System GMM: level equation included, x_exog as level-equation IV"
+System GMM: level equation included, x_exog as level-equation IV
+
+. display "======================================================================"
+======================================================================
+
+. 
+. xtabond2 y x_pred x_exog l1_y if time >= 3, ///
+>     gmmstyle(l1_y, lag(2 3) collapse) ///
+>     gmmstyle(x_pred, lag(2 3) collapse) ///
+>     ivstyle(x_exog, equation(level)) ///
+>     twostep robust small
+Favoring space over speed. To switch, type or click on mata: mata set matafavor speed, perm.
+
+Dynamic panel-data estimation, two-step system GMM
+------------------------------------------------------------------------------
+Group variable: id                              Number of obs      =       960
+Time variable : time                            Number of groups   =       120
+Number of instruments = 8                       Obs per group: min =         8
+F(3, 119)     =    616.02                                      avg =      8.00
+Prob > F      =     0.000                                      max =         8
+------------------------------------------------------------------------------
+             |              Corrected
+           y | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      x_pred |   .0558769    .137906     0.41   0.686    -.2171908    .3289445
+      x_exog |   .2423543   .0196909    12.31   0.000     .2033644    .2813443
+        l1_y |   .9292108   .0422931    21.97   0.000     .8454663    1.012955
+       _cons |   .1294962   .0350864     3.69   0.000     .0600216    .1989709
+------------------------------------------------------------------------------
+Instruments for first differences equation
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    L(2/3).x_pred collapsed
+    L(2/3).l1_y collapsed
+Instruments for levels equation
+  Standard
+    x_exog
+    _cons
+  GMM-type (missing=0, separate instruments for each period unless collapsed)
+    DL.x_pred collapsed
+    DL.l1_y collapsed
+------------------------------------------------------------------------------
+Arellano-Bond test for AR(1) in first differences: z =  -6.88  Pr > z =  0.000
+Arellano-Bond test for AR(2) in first differences: z =  -0.53  Pr > z =  0.595
+------------------------------------------------------------------------------
+Sargan test of overid. restrictions: chi2(4)    =   1.60  Prob > chi2 =  0.808
+  (Not robust, but not weakened by many instruments.)
+Hansen test of overid. restrictions: chi2(4)    =   1.68  Prob > chi2 =  0.794
+  (Robust, but weakened by many instruments.)
+
+Difference-in-Hansen tests of exogeneity of instrument subsets:
+  GMM instruments for levels
+    Hansen test excluding group:     chi2(2)    =   0.93  Prob > chi2 =  0.629
+    Difference (null H = exogenous): chi2(2)    =   0.76  Prob > chi2 =  0.685
+  gmm(l1_y, collapse lag(2 3))
+    Hansen test excluding group:     chi2(1)    =   0.13  Prob > chi2 =  0.719
+    Difference (null H = exogenous): chi2(3)    =   1.55  Prob > chi2 =  0.670
+  gmm(x_pred, collapse lag(2 3))
+    Hansen test excluding group:     chi2(1)    =   0.10  Prob > chi2 =  0.755
+    Difference (null H = exogenous): chi2(3)    =   1.59  Prob > chi2 =  0.662
+  iv(x_exog, eq(level))
+    Hansen test excluding group:     chi2(3)    =   0.92  Prob > chi2 =  0.821
+    Difference (null H = exogenous): chi2(1)    =   0.76  Prob > chi2 =  0.382
+
+
+. 
+. tempfile syscoef
+
+. tempname sh
+
+. 
+. postfile `sh' str30 model str30 term double coefficient double std_error double z_value double p_
+> value using "`syscoef'", replace
+(file C:\Users\omoko\AppData\Local\Temp\ST_6f9c_000002.tmp not found)
+
+. 
+. foreach v in x_pred x_exog l1_y {
+  2.     capture scalar b = _b[`v']
+  3.     if !_rc {
+  4.         scalar se = _se[`v']
+  5.         scalar z = b / se
+  6.         scalar p = 2 * normal(-abs(z))
+  7.         post `sh' ("System GMM") ("`v'") (b) (se) (z) (p)
+  8.     }
+  9. }
+
+. 
+. capture scalar b = _b[_cons]
+
+. if !_rc {
+.     scalar se = _se[_cons]
+.     scalar z = b / se
+.     scalar p = 2 * normal(-abs(z))
+.     post `sh' ("System GMM") ("const") (b) (se) (z) (p)
+. }
+
+. 
+. postclose `sh'
+
+. 
+. use "`syscoef'", clear
+
+. export delimited using "Results/stata/22_clean_stata_system_gmm_coefficients.csv", replace
+file Results/stata/22_clean_stata_system_gmm_coefficients.csv saved
+
+. copy "Results/stata/22_clean_stata_system_gmm_coefficients.csv" "Artifacts/Joss/tables/22_stata_s
+> ystem_gmm_coefficients.csv", replace
+
+. copy "Results/stata/22_clean_stata_system_gmm_coefficients.csv" "Artifacts/Joss/tables/22_clean_s
+> tata_system_gmm_coefficients.csv", replace
+
+. 
+. log close
+      name:  <unnamed>
+       log:  C:\Users\omoko\OneDrive\Papers\Dynamic_Panel_Econometrics\Results/stata/22_clean_xtabo
+> nd2_from_workflow.log
+  log type:  text
+ closed on:   5 Jul 2023, 02:08:18
+---------------------------------------------------------------------------------------------------

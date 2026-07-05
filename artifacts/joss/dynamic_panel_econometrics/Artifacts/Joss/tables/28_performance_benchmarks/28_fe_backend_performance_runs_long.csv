@@ -1,0 +1,19 @@
+benchmark,backend,size_label,n_entities,n_periods,n_rows_raw,n_rows_static,rep,status,elapsed_seconds,peak_memory_mb,result_type
+Fixed Effects,native,small,120,10,1200,1080,1,OK,0.7123044000181835,3.1392717361450195,FixedEffectsResult
+Fixed Effects,native,small,120,10,1200,1080,2,OK,0.593171499989694,3.1270885467529297,FixedEffectsResult
+Fixed Effects,native,small,120,10,1200,1080,3,OK,0.5818054999981541,3.1294336318969727,FixedEffectsResult
+Fixed Effects,linearmodels,small,120,10,1200,1080,1,OK,1.4577762999979313,13.472140312194824,PanelEffectsResults
+Fixed Effects,linearmodels,small,120,10,1200,1080,2,OK,0.10546200000680983,0.588627815246582,PanelEffectsResults
+Fixed Effects,linearmodels,small,120,10,1200,1080,3,OK,0.15407209997647442,0.5842065811157227,PanelEffectsResults
+Fixed Effects,native,medium,300,12,3600,3300,1,OK,25.174705999990692,23.069591522216797,FixedEffectsResult
+Fixed Effects,native,medium,300,12,3600,3300,2,OK,27.02176080000936,23.05624008178711,FixedEffectsResult
+Fixed Effects,native,medium,300,12,3600,3300,3,OK,32.52577089998522,23.06507396697998,FixedEffectsResult
+Fixed Effects,linearmodels,medium,300,12,3600,3300,1,OK,0.07884369997191243,1.5307531356811523,PanelEffectsResults
+Fixed Effects,linearmodels,medium,300,12,3600,3300,2,OK,0.08364329999312758,1.5294618606567383,PanelEffectsResults
+Fixed Effects,linearmodels,medium,300,12,3600,3300,3,OK,0.09094709999044426,1.5287113189697266,PanelEffectsResults
+Fixed Effects,native,large,600,15,9000,8400,1,OK,326.5325482999906,116.21004104614258,FixedEffectsResult
+Fixed Effects,native,large,600,15,9000,8400,2,OK,401.37718899999163,116.21921253204346,FixedEffectsResult
+Fixed Effects,native,large,600,15,9000,8400,3,OK,392.28795919998083,116.23738098144531,FixedEffectsResult
+Fixed Effects,linearmodels,large,600,15,9000,8400,1,OK,0.0919071999960579,3.699225425720215,PanelEffectsResults
+Fixed Effects,linearmodels,large,600,15,9000,8400,2,OK,0.08879300000262447,3.694377899169922,PanelEffectsResults
+Fixed Effects,linearmodels,large,600,15,9000,8400,3,OK,0.08500769999227487,3.694437026977539,PanelEffectsResults

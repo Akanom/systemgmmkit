@@ -1,0 +1,17 @@
+{
+  "artifact": "25",
+  "purpose": "Cross-software result comparison for Python/R/Stata dynamic-panel workflows.",
+  "reference": {
+    "Difference GMM": "systemgmmkit",
+    "System GMM": "systemgmmkit"
+  },
+  "numeric_tolerance": {
+    "coef": 1e-06,
+    "se": 1e-06
+  },
+  "tolerant_auxiliary_tolerance": {
+    "coef": 0.025,
+    "se": 0.05
+  },
+  "important_boundary": "Cross-software equality is not expected unless sample construction, instrument matrix, equation scope, finite-sample correction, and covariance scaling are explicitly aligned."
+}

@@ -1,0 +1,5 @@
+nobs,n_groups,n_instruments,covariance_type,hansen_p,sargan_p,ar1_p,ar2_p,benchmark,backend,size_label,rep,status
+210,30,5,robust-clustered-two-step-uncorrected,0.18070961639668237,0.5940912495239935,2.417392005228002e-06,0.47327106532784036,Difference GMM,native,tiny,1,OK
+240,30,8,robust-clustered-two-step-windmeijer,0.310644610261789,0.4291668502378708,,,System GMM,native,tiny,1,OK
+420,60,5,robust-clustered-two-step-uncorrected,0.7449141226066521,0.8776751906727948,6.773732275117311e-13,0.03954534805166442,Difference GMM,native,small,1,OK
+480,60,8,robust-clustered-two-step-windmeijer,0.5498987291474708,0.5480382722768526,,,System GMM,native,small,1,OK

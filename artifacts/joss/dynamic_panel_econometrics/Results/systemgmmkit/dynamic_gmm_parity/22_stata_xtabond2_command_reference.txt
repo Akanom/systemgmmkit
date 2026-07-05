@@ -1,0 +1,7 @@
+difference_gmm_controlled:
+xtset id time
+xtabond2 y L1.y x_pred x_exog, gmmstyle(y, lag(2 3) collapse) gmmstyle(x_pred, lag(2 3) collapse) ivstyle(x_exog) noleveleq twostep robust small
+
+system_gmm_controlled:
+xtset id time
+xtabond2 y L1.y x_pred x_exog, gmmstyle(y, lag(2 3) collapse) gmmstyle(x_pred, lag(2 3) collapse) ivstyle(x_exog) twostep robust small

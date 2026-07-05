@@ -1,0 +1,3 @@
+model,sgk_file,stata_file,common_terms,sgk_only_terms,stata_only_terms,max_abs_coef_diff,max_abs_se_diff,max_abs_p_diff,status
+Difference GMM,Artifacts\Joss\tables\22_difference_gmm_results.csv,Artifacts\Joss\tables\22_stata_difference_gmm_coefficients.csv,3,0,0,0.02180297811263543,0.04618636700697831,0.0948838362290445,PASS_TOLERANT_AUXILIARY
+System GMM,Artifacts\Joss\tables\22_system_gmm_results.csv,Artifacts\Joss\tables\22_stata_system_gmm_coefficients.csv,4,0,0,2.4921344994599526e-08,5.715353200985707e-07,1.3670593155268307e-06,PASS_NUMERIC

@@ -1,0 +1,3 @@
+model_clean,common_terms,sgk_only_terms,stata_only_terms,max_abs_coef_diff,max_abs_se_diff,max_abs_p_diff,status
+Difference GMM,3,0,0,0.0218029781126354,0.0461863670069783,0.0948838362290445,PASS_TOLERANT_AUXILIARY
+System GMM,4,0,0,2.492134499459953e-08,5.715353200985707e-07,1.367059315526831e-06,PASS_NUMERIC

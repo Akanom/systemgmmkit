@@ -1,0 +1,4 @@
+model,function,n_values,mean,std,min,max,status
+systemgmmkit_run_fixed_effects_spec,fitted_values,,,,,,SKIPPED: maximum recursion depth exceeded
+systemgmmkit_run_fixed_effects_spec,residuals,,,,,,SKIPPED: Result object does not expose residuals.
+systemgmmkit_run_fixed_effects_spec,predict,,,,,,SKIPPED: maximum recursion depth exceeded

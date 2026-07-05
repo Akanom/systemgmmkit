@@ -1,0 +1,2 @@
+spec,status,matched_terms,native_only_terms,max_abs_coef_diff,mean_abs_coef_diff,max_abs_se_diff,mean_abs_se_diff,coef_tol,se_tol,message
+system_gmm_baseline_controls,PASS_XTABOND2_PARITY,3,_con,2.1446371412103812e-07,8.344293846625679e-08,2.844474576990663e-07,1.1207080123411724e-07,1e-06,1e-06,Native System GMM matches xtabond2 on compared structural coefficients and Windmeijer standard errors. Native-only terms are not included in the strict xtabond2 comparison metric.

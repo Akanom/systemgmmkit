@@ -1,0 +1,17 @@
+{
+  "artifact": "22",
+  "description": "Controlled Stata/systemgmmkit comparison using aligned effective samples.",
+  "numeric_tolerance": {
+    "coef": 1e-06,
+    "se": 1e-06
+  },
+  "tolerant_auxiliary_tolerance": {
+    "coef": 0.025,
+    "se": 0.05
+  },
+  "interpretation": {
+    "PASS_NUMERIC": "Numerical agreement within strict tolerance.",
+    "PASS_TOLERANT_AUXILIARY": "Agreement within predefined auxiliary tolerance band.",
+    "REVIEW": "Outside auxiliary tolerance band."
+  }
+}

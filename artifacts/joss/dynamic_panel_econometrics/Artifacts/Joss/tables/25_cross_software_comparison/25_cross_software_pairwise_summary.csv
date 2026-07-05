@@ -1,0 +1,7 @@
+model,reference,comparison_software,common_terms,reference_only_terms,comparison_only_terms,max_abs_coef_diff,max_abs_se_diff,status
+Difference GMM,systemgmmkit,Stata xtabond2,3,0,0,0.02180297811263543,0.04618636700697831,PASS_TOLERANT_AUXILIARY
+Difference GMM,systemgmmkit,plm::pgmm,3,0,0,0.05059344843103997,0.0578330699188111,REVIEW
+Difference GMM,systemgmmkit,pydynpd,3,0,0,0.050863512357002594,0.06747241605320281,REVIEW
+System GMM,systemgmmkit,Stata xtabond2,4,0,0,2.4921344994599526e-08,5.715353200985707e-07,PASS_NUMERIC
+System GMM,systemgmmkit,plm::pgmm,3,1,0,0.1423613885316802,0.04493891816909501,REVIEW
+System GMM,systemgmmkit,pydynpd,4,0,0,0.06455952086065489,0.037761541856483505,REVIEW
