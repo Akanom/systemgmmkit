@@ -112,7 +112,17 @@ Fixed-effects performance depends strongly on backend choice. The native backend
 
 # Availability and Reproducibility
 
+
+The source repository is available at `https://github.com/Akanom/systemgmmkit`. The cross-software comparison and validation artifacts are stored with the repository, including dynamic-GMM parity artifacts under `artifacts/parity/` and JOSS validation tables under `artifacts/joss/tables/`. These include the controlled Stata comparisons, the maintained `xtabond2` parity certificate, Python/R/Stata static comparison tables, performance benchmarks, and post-estimation / ML workflow audits.
+
 The package is available as a Python package and is developed in a public source repository. Validation artifacts include controlled data audits, cross-software comparison outputs, parity certificates, performance summaries, and workflow-coverage audits. These artifacts are intended to make the package reviewable not only as software, but also as a reproducible econometric workflow.
+
+
+# AI Usage Disclosure
+
+Generative AI tools, including OpenAI ChatGPT, were used to assist with software development workflow planning, code review support, validation-script drafting, artifact summarization, and manuscript drafting/editing. AI assistance was applied to code scaffolding, documentation wording, PowerShell workflow generation, and paper-section drafting.
+
+All AI-assisted content was reviewed, modified, and validated by the author. The author made the primary design, architectural, econometric, validation, and interpretation decisions, executed the software and comparison workflows, inspected the generated artifacts, and remains responsible for the accuracy, originality, licensing compliance, and ethical/legal compliance of the submitted work.
 
 # Acknowledgements
 
