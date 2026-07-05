@@ -37,7 +37,7 @@ The main contributions are:
 | Dynamic-panel GMM | Difference GMM and System GMM workflows with controlled Stata-oriented validation |
 | Cross-software validation | Comparison artifacts against Stata, R, and Python reference implementations |
 | Post-estimation layer | Variance-covariance extraction, confidence intervals, prediction, fitted values, residuals, linear combinations, Wald tests, marginal effects, and margins |
-| ML-style workflow layer | Result adaptation, regression metrics, time-aware panel train/test splitting, model comparison, forecasting/backtesting interfaces, and dynamic-GMM search helpers |
+| ML-style workflow layer | Result adaptation, regression metrics, time-aware panel train/test splitting, expanding-window panel cross-validation, model comparison, forecasting/backtesting interfaces, GMM grid-search scaffolding, and Dynamic GMM hybrid search through `GMMGridSearch`, `DynamicGMMHybridSearch`, and `auto_dynamic_gmm` |
 | Visualization layer | Coefficient, marginal-effect, margins, interaction, residual, fixed-effect, instrument, Hansen/AR diagnostic, model-health, counterfactual, surface, and dynamic-persistence plots |
 | Reproducible reporting | Markdown, CSV, LaTeX-oriented tables, validation summaries, and artifact indexes for review and replication |
 
@@ -112,10 +112,17 @@ Artifact 27 extends the static validation layer across Python, R, Stata, and `sy
 
 # Post-Estimation, ML Workflow, and Visualization Layers
 
+A distinctive contribution of `systemgmmkit` is its diagnostic-first dynamic-GMM search layer. `GMMGridSearch`, `DynamicGMMHybridSearch`, and `auto_dynamic_gmm` organize candidate Difference GMM and System GMM specifications over lag windows, collapse choices, estimation steps, transformations, and diagnostic rules. Unlike generic hyperparameter search, this layer prioritizes econometric admissibility: candidates with unsafe AR(2), Hansen, convergence, or instrument-proliferation diagnostics are filtered before model ranking. The layer does not introduce a new GMM estimator; instead, it repeatedly calls the validated estimators and provides a reproducible framework for specification exploration, diagnostic filtering, forecasting-oriented assessment, and report generation.
+
+These features are presented as workflow-level contributions rather than claims of a new estimator: they integrate panel/time-aware ML utilities with dynamic-panel econometric diagnostics, post-estimation, visualization, and reproducible validation artifacts.
+
+
 Beyond model estimation, `systemgmmkit` includes a Stata-style post-estimation layer and a panel-aware ML-style workflow layer. The post-estimation layer supports variance-covariance extraction, confidence intervals, prediction, fitted values, residuals, linear combinations, Wald tests, marginal effects, and margins. These functions are designed to make fitted econometric results usable for interpretation, reporting, and downstream diagnostics without requiring users to manually reconstruct common post-estimation calculations.
 
 The ML-style layer is not a claim that `systemgmmkit` introduces a new machine-learning estimator. Rather, it provides workflow utilities around econometric results, including result adaptation, prediction utilities, regression metrics, time-aware panel train/test splitting, model comparison, forecasting/backtesting interfaces, and dynamic-GMM search helpers. This is important for panel and time-indexed prediction workflows because random row-level splitting can break temporal ordering and place dependent observations into both training and test sets. For dependent or non-stationary data, standard cross-validation requires additional care, and temporally ordered out-of-sample evaluation is often preferred when the goal is forecasting or temporal generalization [@bergmeir2018note; @cerqueira2019evaluating; @roberts2017crossvalidation]. The package therefore emphasizes workflows that respect panel structure and temporal ordering.
 
+
+The ML-style workflow layer also includes a GMM specification-search scaffold. `GMMGridSearch` allows users to define candidate GMM specifications over lag windows, collapse settings, transformations, and diagnostic rules, then compare surviving candidates under reproducible criteria. `DynamicGMMHybridSearch` and `auto_dynamic_gmm` provide a higher-level hybrid loop that generates candidate Difference GMM and System GMM specifications, estimates them through the existing validated estimator APIs, rejects diagnostically unsafe candidates, and ranks the remaining models using diagnostic and predictive information. This search layer does not introduce a new GMM estimator; it repeatedly calls the validated estimators and organizes specification exploration, diagnostic filtering, and report generation.
 The visualization layer extends the package from estimation to interpretation. It includes coefficient plots, marginal-effect plots, margins plots, interaction and conditional-effect plots, residual and QQ diagnostics, fixed-effect and spaghetti plots, instrument diagnostics, Hansen/AR diagnostic plots, model-health summaries, counterfactual plots, response surfaces, and dynamic-persistence visualizations. These plotting tools are intended to support empirical interpretation, validation reporting, and publication-oriented workflows.
 
 # Performance Benchmarks
@@ -139,6 +146,8 @@ Performance benchmarks were run on synthetic panels for static, panel, IV, and d
 Fixed-effects performance depends strongly on backend choice. The native backend is correct but slow on larger fixed-effects panels, while the `linearmodels` backend is substantially faster and is recommended for larger fixed-effects workloads. These results are reported as reproducibility-oriented benchmarks, not hardware-independent speed claims.
 
 # Availability and Reproducibility
+
+The committed ML workflow artifacts include evidence for result adaptation, prediction utilities, regression metrics, panel-aware splitting, quick workflow helpers, and discovery of extended interfaces including `PanelTimeSeriesSplit`, `cross_validate_panel`, `compare_models`, `forecast`, `backtest_forecast`, `GMMGridSearch`, `DynamicGMMHybridSearch`, and `auto_dynamic_gmm`.
 
 Full validation evidence is included as repository-relative supplementary artifacts. Dynamic-GMM parity certificates and maintained Stata-oriented comparison outputs are stored under `artifacts/parity/`. The broader JOSS validation bundle is stored under `artifacts/joss/`, with an artifact index in `artifacts/joss/README.md` and `artifacts/joss/joss_artifact_file_index.csv`. These artifacts include cross-software comparison outputs, post-estimation validation summaries, ML workflow checks, performance summaries, logs, and artifact indexes.
 
