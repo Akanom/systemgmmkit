@@ -1774,32 +1774,24 @@ The FD001 validation is used as an independent application check. The controlled
 
 ---
 
-# Verified OLS Benchmark
+# Verified OLS and Pooled OLS Benchmarks
 
-The OLS and pooled OLS implementations have been verified against Stata using a real FD001 panel-data benchmark.
+The OLS and pooled OLS implementations are validated against established Python, R, and Stata reference implementations under aligned benchmark specifications.
 
-Benchmark model:
+Committed validation artifacts report:
 
-```text
-risk ~ degradation_index + sensor_mean_z + pc2 + op_setting1 + op_setting2
-```
+| Model | Reference | Maximum coefficient difference | Maximum standard-error difference | Status |
+|---|---|---:|---:|---|
+| Pooled OLS | Python linearmodels | 8.88178e-16 | 6.93889e-18 | PASS_NUMERIC |
+| Pooled OLS | R plm | 1.22125e-15 | 1.00614e-16 | PASS_NUMERIC |
+| Pooled OLS | Stata | 2.15841e-08 | 4.01439e-10 | PASS_COEFFICIENTS |
 
-Panel structure:
+These results indicate numerical agreement with established reference implementations under the maintained benchmark specifications. Stata comparisons are reported with the precision available from the exported Stata results, so the Stata comparison is conservatively reported as coefficient-level agreement rather than overstated as universal machine-precision parity.
 
-```text
-entity = unit
-time = cycle
-```
+The corresponding validation artifacts are stored under:
 
-Observed agreement:
-
-| Metric                            |   Result |
-| --------------------------------- | -------: |
-| Maximum coefficient difference    | 4.64e-14 |
-| Maximum standard-error difference | 2.04e-14 |
-
-These differences represent machine-precision agreement with Stata under the maintained benchmark specification.
-
+- artifacts/joss/tables/26_static_postestimation_comparison/
+- artifacts/joss/tables/27_static_cross_software_comparison/
 ---
 
 # Reporting and Export
