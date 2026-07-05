@@ -147,19 +147,15 @@ Fixed-effects performance depends strongly on backend choice. The native backend
 
 # Availability and Reproducibility
 
-The committed ML workflow artifacts include evidence for result adaptation, prediction utilities, regression metrics, panel-aware splitting, quick workflow helpers, and discovery of extended interfaces including `PanelTimeSeriesSplit`, `cross_validate_panel`, `compare_models`, `forecast`, `backtest_forecast`, `GMMGridSearch`, `DynamicGMMHybridSearch`, and `auto_dynamic_gmm`.
+The source repository is available at `https://github.com/Akanom/systemgmmkit`.
 
-Full validation evidence is included as repository-relative supplementary artifacts. Dynamic-GMM parity certificates and maintained Stata-oriented comparison outputs are stored under `artifacts/parity/`. The broader JOSS validation bundle is stored under `artifacts/joss/`, with an artifact index in `artifacts/joss/README.md` and `artifacts/joss/joss_artifact_file_index.csv`. These artifacts include cross-software comparison outputs, post-estimation validation summaries, ML workflow checks, performance summaries, logs, and artifact indexes.
+Full validation evidence is included as repository-relative supplementary artifacts. Dynamic-GMM parity certificates and maintained Stata-oriented comparison outputs are stored under `artifacts/parity/`. The broader JOSS validation bundle is stored under `artifacts/joss/`, with an artifact index in `artifacts/joss/README.md` and `artifacts/joss/joss_artifact_file_index.csv`.
 
+The committed validation artifacts include controlled Stata comparisons, the maintained `xtabond2` parity certificate, Python/R/Stata static comparison tables, post-estimation validation summaries, ML workflow checks, visualization-related workflow evidence, performance summaries, logs, and artifact indexes.
 
-The JOSS-facing validation artifacts are committed under `artifacts/joss/`, including tables, logs, and summary outputs generated from the cross-software comparison, post-estimation validation, ML workflow checks, visualization-related workflow evidence, and performance benchmarks. Dynamic-GMM parity artifacts are maintained under `artifacts/parity/`.
+The ML workflow artifacts include evidence for result adaptation, prediction utilities, regression metrics, panel-aware splitting, quick workflow helpers, and discovery of extended interfaces including `PanelTimeSeriesSplit`, `cross_validate_panel`, `compare_models`, `forecast`, `backtest_forecast`, `GMMGridSearch`, `DynamicGMMHybridSearch`, and `auto_dynamic_gmm`.
 
-
-
-The source repository is available at `https://github.com/Akanom/systemgmmkit`. The cross-software comparison and validation artifacts are stored with the repository, including dynamic-GMM parity artifacts under `artifacts/parity/` and JOSS validation tables under `artifacts/joss/tables/`. These include the controlled Stata comparisons, the maintained `xtabond2` parity certificate, Python/R/Stata static comparison tables, performance benchmarks, and post-estimation / ML workflow audits.
-
-The package is available as a Python package and is developed in a public source repository. Validation artifacts include controlled data audits, cross-software comparison outputs, parity certificates, performance summaries, and workflow-coverage audits. These artifacts are intended to make the package reviewable not only as software, but also as a reproducible econometric workflow.
-
+These artifacts are intended to make the package reviewable not only as software, but also as a reproducible econometric workflow.
 
 # AI Usage Disclosure
 
