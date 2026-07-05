@@ -26,11 +26,29 @@ The package is designed for researchers and applied analysts who need reproducib
 
 # Statement of Need
 
-Panel-data and dynamic-panel models are widely used in applied economics, finance, management, political economy, development studies, and operational research. Stata commands such as `xtabond2`, `xtdpdgmm`, `xtreg`, and `ivregress` are common reference points for many empirical researchers, while R packages such as `plm` and Python packages such as `linearmodels`, `statsmodels`, and `pydynpd` cover important parts of the same econometric space.
+Panel-data and dynamic-panel models are widely used in applied economics, finance, management, political economy, development studies, and operational research [@arellano1991some; @blundell1998initial; @bond2002dynamic]. Stata commands such as `xtabond2`, `xtdpdgmm`, `xtreg`, and `ivregress` are common reference points for many empirical researchers [@roodman2009xtabond2], while R packages such as `plm` [@croissant2008panel] and Python packages such as `linearmodels`, `statsmodels`, and `pydynpd` cover important parts of the same econometric space [@seabold2010statsmodels; @sheppard2024linearmodels; @pydynpd].
 
 However, applied workflows often require more than estimator calls. Researchers need consistent data preparation, estimator interfaces, diagnostics, cross-software validation, post-estimation tools, forecasting, model comparison, and reproducible reporting artifacts. `systemgmmkit` addresses this gap by integrating static panel estimators, instrumental-variable estimation, dynamic-panel GMM, diagnostics, Stata-style post-estimation, ML-style prediction workflows, validation artifacts, visualization, and publication-oriented outputs in one Python workflow.
 
 The contribution of `systemgmmkit` is therefore not that it is the first Python implementation of dynamic-panel GMM. Related tools such as `pydynpd`, R `plm::pgmm`, R `pdynmc`, Stata `xtabond2`, and Stata `xtdpdgmm` already provide important dynamic-panel GMM functionality. The contribution of `systemgmmkit` is its integrated, verification-oriented workflow: estimation, diagnostics, post-estimation, validation, forecasting, visualization, and reporting are treated as connected parts of one reproducible econometric pipeline.
+
+
+# State of the Field and Comparison Scope
+
+Dynamic-panel GMM is a mature econometric method used for panels with lagged dependent variables, persistence, unobserved heterogeneity, and endogenous or predetermined regressors [@arellano1991some; @blundell1998initial; @bond2002dynamic]. In applied research, Stata implementations such as `xtabond2` are widely used reference points for Difference GMM and System GMM workflows [@roodman2009xtabond2]. R packages such as `plm` provide important panel-data and GMM functionality [@croissant2008panel], while Python packages such as `statsmodels`, `linearmodels`, and `pydynpd` cover complementary parts of the econometric software ecosystem [@seabold2010statsmodels; @sheppard2024linearmodels; @pydynpd].
+
+`systemgmmkit` is positioned as an integrated Python workflow package rather than as a replacement for every existing econometric tool. Its contribution is the combination of panel-data validation, static panel estimators, IV estimation, dynamic-panel GMM, Stata-style post-estimation, ML-style workflow utilities, reporting/export support, and reproducible cross-software validation artifacts in one package.
+
+| Software / package | Main role in the ecosystem | Role in this paper |
+|---|---|---|
+| Stata `xtabond2` / `xtdpdgmm` | Established applied reference for dynamic-panel GMM workflows | Primary reference for aligned dynamic-GMM parity and controlled comparison artifacts |
+| R `plm` / `pgmm` | Widely used R panel-data and dynamic-panel GMM implementation | Ecosystem comparison for static and dynamic panel workflows |
+| Python `statsmodels` | Established Python statistical-modeling package | Reference comparison for OLS-style estimators |
+| Python `linearmodels` | Python package for panel models and IV estimation | Reference comparison for fixed effects, random effects, pooled OLS, and 2SLS |
+| Python `pydynpd` | Python dynamic-panel GMM package | Ecosystem comparison for dynamic-panel GMM behavior |
+| `systemgmmkit` | Integrated panel, IV, dynamic-GMM, post-estimation, ML-workflow, and reporting package | Subject package validated against aligned external references |
+
+The comparison claims in this paper are deliberately scoped. Strict numerical parity is claimed only for aligned reference specifications where estimator definitions, instrument construction, covariance choices, and sample handling are controlled. Broader R/Python/Stata comparisons are reported as ecosystem checks because defaults, finite-sample corrections, instrument matrices, and covariance scaling can differ across packages.
 
 # Software Architecture
 
