@@ -1,5 +1,5 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 paper = Path("paper/paper.md")
 text = paper.read_text(encoding="utf-8")
