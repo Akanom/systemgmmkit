@@ -24,6 +24,25 @@ bibliography: paper.bib
 
 The package is designed for researchers and applied analysts who need reproducible panel-data workflows in Python, especially when comparing Python results against established Stata and R implementations. Its emphasis is not only estimation, but also validation, auditability, diagnostics, and workflow integration.
 
+
+# Core Contributions
+
+`systemgmmkit` contributes an integrated econometric workflow for panel-data and dynamic-panel GMM analysis in Python. The package is not presented as a replacement for every specialized econometric package. Instead, its contribution is to combine estimation, validation, post-estimation, panel-aware ML utilities, visualization, and reproducible artifact generation in one workflow.
+
+The main contributions are:
+
+| Contribution area | What `systemgmmkit` provides |
+|---|---|
+| Static and panel estimators | OLS, pooled OLS, fixed effects, random effects, and IV/2SLS workflows |
+| Dynamic-panel GMM | Difference GMM and System GMM workflows with controlled Stata-oriented validation |
+| Cross-software validation | Comparison artifacts against Stata, R, and Python reference implementations |
+| Post-estimation layer | Variance-covariance extraction, confidence intervals, prediction, fitted values, residuals, linear combinations, Wald tests, marginal effects, and margins |
+| ML-style workflow layer | Result adaptation, regression metrics, time-aware panel train/test splitting, model comparison, forecasting/backtesting interfaces, and dynamic-GMM search helpers |
+| Visualization layer | Coefficient, marginal-effect, margins, interaction, residual, fixed-effect, instrument, Hansen/AR diagnostic, model-health, counterfactual, surface, and dynamic-persistence plots |
+| Reproducible reporting | Markdown, CSV, LaTeX-oriented tables, validation summaries, and artifact indexes for review and replication |
+
+Several individual capabilities are available in existing tools such as Stata `xtabond2`, R `plm`, Python `statsmodels`, Python `linearmodels`, and Python `pydynpd` [@roodman2009xtabond2; @croissant2008panel; @seabold2010statsmodels; @sheppard2024linearmodels; @pydynpd]. The package contribution is the integration of these workflow stages into a Python package designed around panel-data validation, dynamic-GMM estimation, post-estimation, panel/time-aware workflow utilities, visualization, and reproducible cross-software comparison artifacts.
+
 # Statement of Need
 
 Panel-data and dynamic-panel models are widely used in applied economics, finance, management, political economy, development studies, and operational research [@arellano1991some; @blundell1998initial; @bond2002dynamic]. Stata commands such as `xtabond2`, `xtdpdgmm`, `xtreg`, and `ivregress` are common reference points for many empirical researchers [@roodman2009xtabond2], while R packages such as `plm` [@croissant2008panel] and Python packages such as `linearmodels`, `statsmodels`, and `pydynpd` cover important parts of the same econometric space [@seabold2010statsmodels; @sheppard2024linearmodels; @pydynpd].
@@ -90,23 +109,14 @@ Artifact 26 validates static and post-estimation workflows against Python refere
 
 Artifact 27 extends the static validation layer across Python, R, Stata, and `systemgmmkit`. OLS, pooled OLS, fixed effects, random effects, and 2SLS are compared term by term. Fixed-effects intercepts are excluded from strict parity because intercept normalization differs across implementations.
 
-# Post-Estimation and ML Workflow Layer
 
-<!-- POSTESTIMATION_ML_TABLE_START -->
+# Post-Estimation, ML Workflow, and Visualization Layers
 
-| Layer | Capabilities checked | Result |
-|---|---|---|
-| Post-estimation | `vcov`, `confint`, `predict`, fitted values, residuals | OK |
-| Stata-style post-estimation | `lincom`, Wald tests, marginal effects, margins | OK |
-| ML-style workflow | result adaptation, prediction, residuals, regression metrics, panel split | OK |
-| Extended ML interfaces | model comparison, forecasting, backtesting, dynamic-GMM search | API discovered |
+Beyond model estimation, `systemgmmkit` includes a Stata-style post-estimation layer and a panel-aware ML-style workflow layer. The post-estimation layer supports variance-covariance extraction, confidence intervals, prediction, fitted values, residuals, linear combinations, Wald tests, marginal effects, and margins. These functions are designed to make fitted econometric results usable for interpretation, reporting, and downstream diagnostics without requiring users to manually reconstruct common post-estimation calculations.
 
-<!-- POSTESTIMATION_ML_TABLE_END -->
+The ML-style layer is not a claim that `systemgmmkit` introduces a new machine-learning estimator. Rather, it provides workflow utilities around econometric results, including result adaptation, prediction utilities, regression metrics, time-aware panel train/test splitting, model comparison, forecasting/backtesting interfaces, and dynamic-GMM search helpers. This is important for panel data because random row-level splitting is usually inappropriate when observations are ordered by entity and time. The package therefore emphasizes workflows that respect panel structure and temporal ordering.
 
-
-`systemgmmkit` also provides a post-estimation and ML-style workflow layer. The post-estimation layer supports variance-covariance extraction, confidence intervals, prediction, fitted values, residuals, linear combinations, Wald tests, marginal effects, and margins.
-
-The ML-style layer includes result adaptation, prediction utilities, regression metrics, time-aware panel train/test splitting, model comparison, forecasting/backtesting interfaces, and dynamic-GMM search helpers. These capabilities are reported as workflow coverage, while numerical parity claims are restricted to the dedicated validation artifacts.
+The visualization layer extends the package from estimation to interpretation. It includes coefficient plots, marginal-effect plots, margins plots, interaction and conditional-effect plots, residual and QQ diagnostics, fixed-effect and spaghetti plots, instrument diagnostics, Hansen/AR diagnostic plots, model-health summaries, counterfactual plots, response surfaces, and dynamic-persistence visualizations. These plotting tools are intended to support empirical interpretation, validation reporting, and publication-oriented workflows.
 
 # Performance Benchmarks
 
@@ -129,6 +139,9 @@ Performance benchmarks were run on synthetic panels for static, panel, IV, and d
 Fixed-effects performance depends strongly on backend choice. The native backend is correct but slow on larger fixed-effects panels, while the `linearmodels` backend is substantially faster and is recommended for larger fixed-effects workloads. These results are reported as reproducibility-oriented benchmarks, not hardware-independent speed claims.
 
 # Availability and Reproducibility
+
+The JOSS-facing validation artifacts are committed under `artifacts/joss/`, including tables, logs, and summary outputs generated from the cross-software comparison, post-estimation validation, ML workflow checks, visualization-related workflow evidence, and performance benchmarks. Dynamic-GMM parity artifacts are maintained under `artifacts/parity/`.
+
 
 
 The source repository is available at `https://github.com/Akanom/systemgmmkit`. The cross-software comparison and validation artifacts are stored with the repository, including dynamic-GMM parity artifacts under `artifacts/parity/` and JOSS validation tables under `artifacts/joss/tables/`. These include the controlled Stata comparisons, the maintained `xtabond2` parity certificate, Python/R/Stata static comparison tables, performance benchmarks, and post-estimation / ML workflow audits.
