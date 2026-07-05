@@ -1,0 +1,4 @@
+"model","package","term","coefficient","std_error","statistic","p_value","term_norm"
+"Difference GMM","plm","lag(y, 1)",0.711988928297237,0.226993127200633,0.711988928297237,0.00170913269484757,"L1_y"
+"Difference GMM","plm","x_pred",0.316246358912628,0.165331489112228,0.316246358912628,0.0557734392125974,"x_pred"
+"Difference GMM","plm","x_exog",0.249023851532029,0.0288339551039319,0.249023851532029,5.79719843773921e-18,"x_exog"

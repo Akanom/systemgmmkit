@@ -1,0 +1,14 @@
+{
+  "raw_rows": 1200,
+  "static_rows": 1080,
+  "iv_rows": 960,
+  "n_entities": 120,
+  "n_periods": 10,
+  "static_terms": [
+    "L1_y",
+    "x_pred",
+    "x_exog"
+  ],
+  "iv_endogenous": "x_pred",
+  "iv_instrument": "L2_x_pred"
+}

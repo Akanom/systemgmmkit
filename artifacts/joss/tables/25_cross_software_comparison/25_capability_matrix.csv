@@ -1,0 +1,9 @@
+tool,language,comparison_role,difference_gmm,system_gmm,windmeijer_se,ar_tests,hansen_sargan,collapsed_instruments,postestimation,visualization,publication_tables,validation_artifacts,notes
+systemgmmkit,Python,target_package,yes,yes,yes,yes,yes,yes,yes,yes,yes,yes,"Integrated workflow: estimation, diagnostics, Stata-style post-estimation, validation artifacts, visualization, forecasting, and publication reporting."
+pydynpd,Python,dynamic_gmm_reference,yes,yes,yes,yes,yes,yes,limited,limited,limited,limited,"Established Python dynamic-panel GMM package. Important comparator; systemgmmkit should not claim first Python dynamic-GMM implementation."
+plm::pgmm,R,dynamic_gmm_reference,yes,yes,robust_summary,partial,yes,yes,limited,no,limited,no,"Mature R panel-econometrics GMM function using formula-based model and instrument specification."
+pdynmc,R,dynamic_gmm_reference,yes,yes,yes,yes,yes,yes,limited,limited,limited,no,"R package focused on dynamic-panel GMM with linear and nonlinear moment conditions."
+statsmodels,Python,static_baseline,no,no,no,no,no,no,yes,yes,limited,no,"Useful for OLS/static regression baselines, not a dynamic-panel GMM comparator."
+linearmodels,Python,panel_static_baseline,no,no,no,no,no,no,yes,limited,limited,no,"Useful for panel/static estimators if installed; not the core dynamic-GMM benchmark."
+Stata xtabond2,Stata,primary_numerical_reference,yes,yes,yes,yes,yes,yes,no,no,no,yes,"Primary external reference for maintained System GMM and Difference GMM parity checks."
+Stata xtdpdgmm,Stata,primary_numerical_reference,yes,yes,yes,yes,yes,yes,no,no,no,yes,"Primary external reference for FOD Difference GMM validation."

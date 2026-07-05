@@ -1,0 +1,2 @@
+model,validation_design,n_eval,rmse,mae,smape,r2,train_rows,test_rows,train_max_cycle,test_min_cycle,test_max_cycle
+pooled_dynamic_ols,time_holdout_train_cycle_le_70,133,8.071071245956952e-16,6.569515190827054e-16,7.51748718408459e-16,1.0,414,133,70,71,100

@@ -1,0 +1,5 @@
+model,software,language,term,coefficient,std_error,statistic,p_value,term_norm
+Fixed Effects,Stata,Stata,L1_y,.53784996,.019782143,27.18866,0,L1_y
+Fixed Effects,Stata,Stata,x_pred,.34858796,.020325096,17.150618,0,x_pred
+Fixed Effects,Stata,Stata,x_exog,.21907587,.016315848,13.427183,0,x_exog
+Fixed Effects,Stata,Stata,_cons,.35975006,.01916421,18.771975,0,const

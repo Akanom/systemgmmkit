@@ -1,0 +1,31 @@
+{
+  "dataset": "N-CMAPSS DS01 dev unit-cycle panel",
+  "entity": "unit",
+  "time": "cycle",
+  "dependent": "risk",
+  "structural_model": "risk_it = rho * risk_i,t-1 + beta1 * degradation_index_it + beta2 * sensor_mean_z_it + beta3 * pc2_it + gamma' * operating_conditions_it + unit_effect_i + error_it",
+  "dynamic_gmm_role_suggestion": {
+    "endogenous": [
+      "L1_risk"
+    ],
+    "predetermined": [
+      "degradation_index",
+      "sensor_mean_z",
+      "pc2"
+    ],
+    "exogenous": [
+      "op_setting1",
+      "op_setting2",
+      "op_setting3",
+      "op_setting4",
+      "Fc",
+      "hs"
+    ],
+    "recommended_gmm_lags": {
+      "L1_risk": "2:3",
+      "predetermined_sensor_features": "1:2 or 2:3"
+    },
+    "collapse_instruments": true,
+    "note": "N-CMAPSS DS01 has 6 units after unit-cycle aggregation. Use this as a workflow/data-processing smoke artifact. Use controlled benchmarks or classic FD001 for formal dynamic-GMM parity."
+  }
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "model": "Difference GMM",
+    "status": "OK",
+    "command": "y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse nolevel",
+    "output": "Artifacts\\Joss\\tables\\25_cross_software_comparison\\25_python_pydynpd_difference_gmm_results.csv",
+    "message": "pydynpd run completed"
+  },
+  {
+    "model": "System GMM",
+    "status": "OK",
+    "command": "y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse",
+    "output": "Artifacts\\Joss\\tables\\25_cross_software_comparison\\25_python_pydynpd_system_gmm_results.csv",
+    "message": "pydynpd run completed"
+  }
+]

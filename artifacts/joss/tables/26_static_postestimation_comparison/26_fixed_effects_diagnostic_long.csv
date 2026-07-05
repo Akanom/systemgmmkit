@@ -1,0 +1,15 @@
+software,variant,term,coefficient,std_error,term_norm
+linearmodels,entity_fe_no_explicit_constant,L1_y,0.5378499759921932,0.019782141855688485,L1_y
+linearmodels,entity_fe_no_explicit_constant,x_pred,0.3485879555431388,0.02032509679651366,x_pred
+linearmodels,entity_fe_no_explicit_constant,x_exog,0.21907588112230783,0.016315848005692572,x_exog
+linearmodels,entity_fe_with_explicit_constant,const,0.35975004844667396,0.01916421016931884,const
+linearmodels,entity_fe_with_explicit_constant,L1_y,0.537849975992193,0.019782141855688485,L1_y
+linearmodels,entity_fe_with_explicit_constant,x_pred,0.34858795554313876,0.020325096796513654,x_pred
+linearmodels,entity_fe_with_explicit_constant,x_exog,0.2190758811223079,0.016315848005692562,x_exog
+systemgmmkit,entity_fe_native_backend,const,-1.3918321195312988,0.17818982685121967,const
+systemgmmkit,entity_fe_native_backend,L1_y,0.5378499759921924,0.019782141855688492,L1_y
+systemgmmkit,entity_fe_native_backend,x_pred,0.3485879555431417,0.02032509679651367,x_pred
+systemgmmkit,entity_fe_native_backend,x_exog,0.2190758811223077,0.016315848005692524,x_exog
+systemgmmkit,entity_fe_linearmodels_backend,L1_y,0.5378499759921932,0.019782141855688485,L1_y
+systemgmmkit,entity_fe_linearmodels_backend,x_pred,0.3485879555431388,0.02032509679651366,x_pred
+systemgmmkit,entity_fe_linearmodels_backend,x_exog,0.21907588112230783,0.016315848005692572,x_exog

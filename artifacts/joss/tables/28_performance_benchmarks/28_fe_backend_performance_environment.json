@@ -1,0 +1,24 @@
+{
+  "python": "3.14.5",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "systemgmmkit_version": "0.5.11",
+  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py",
+  "repetitions": 3,
+  "sizes": [
+    {
+      "label": "small",
+      "n_entities": 120,
+      "n_periods": 10
+    },
+    {
+      "label": "medium",
+      "n_entities": 300,
+      "n_periods": 12
+    },
+    {
+      "label": "large",
+      "n_entities": 600,
+      "n_periods": 15
+    }
+  ]
+}

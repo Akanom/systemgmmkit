@@ -1,0 +1,29 @@
+{
+  "artifact": "26",
+  "purpose": "Static estimator and post-estimation validation.",
+  "models": [
+    "OLS",
+    "Pooled OLS",
+    "Fixed Effects",
+    "Random Effects",
+    "2SLS"
+  ],
+  "reference_software": {
+    "OLS": "statsmodels",
+    "Pooled OLS": "linearmodels",
+    "Fixed Effects": "linearmodels",
+    "Random Effects": "linearmodels",
+    "2SLS": "linearmodels"
+  },
+  "sample_files": [
+    "26_static_model_sample.csv",
+    "26_iv_model_sample.csv"
+  ],
+  "outputs": [
+    "Artifacts\\Joss\\tables\\26_static_postestimation_comparison\\26_static_model_results_long.csv",
+    "Artifacts\\Joss\\tables\\26_static_postestimation_comparison\\26_static_model_pairwise_summary.csv",
+    "Artifacts\\Joss\\tables\\26_static_postestimation_comparison\\26_static_model_pairwise_detail.csv",
+    "Artifacts\\Joss\\tables\\26_static_postestimation_comparison\\26_postestimation_audit.csv",
+    "Artifacts\\Joss\\tables\\26_static_postestimation_comparison\\26_static_postestimation_summary.md"
+  ]
+}

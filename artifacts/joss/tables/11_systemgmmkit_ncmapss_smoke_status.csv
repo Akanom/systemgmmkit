@@ -1,0 +1,4 @@
+model,status,result_type
+systemgmmkit_run_ols_spec,PASS,LinearModelResult
+systemgmmkit_run_pooled_ols_spec,PASS,LinearModelResult
+systemgmmkit_run_fixed_effects_spec,PASS,FixedEffectsResult

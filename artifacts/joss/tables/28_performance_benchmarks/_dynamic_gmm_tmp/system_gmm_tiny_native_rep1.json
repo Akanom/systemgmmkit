@@ -1,0 +1,20 @@
+{
+  "row": {
+    "benchmark": "System GMM",
+    "backend": "native",
+    "status": "OK",
+    "elapsed_seconds": 0.6986564999970142,
+    "peak_memory_mb": 0.8176307678222656,
+    "result_type": "NativeGMMResult"
+  },
+  "diagnostics": {
+    "nobs": 240,
+    "n_groups": 30,
+    "n_instruments": 8,
+    "covariance_type": "robust-clustered-two-step-windmeijer",
+    "hansen_p": 0.310644610261789,
+    "sargan_p": 0.4291668502378708,
+    "ar1_p": null,
+    "ar2_p": null
+  }
+}

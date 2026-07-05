@@ -47,6 +47,19 @@ Major workflow layers include:
 
 # Validation and Cross-Software Comparison
 
+<!-- VALIDATION_SUMMARY_TABLE_START -->
+
+| Artifact | Scope | Reference software | Result |
+|---|---|---|---|
+| 22 | Controlled dynamic-GMM comparison | Stata `xtabond2` | System GMM `PASS_NUMERIC`; Difference GMM `PASS_TOLERANT_AUXILIARY` |
+| 24 | Maintained System GMM parity certificate | Stata `xtabond2` | `PASS_XTABOND2_PARITY` |
+| 25 | Dynamic-GMM ecosystem comparison | Stata, R, Python | Ecosystem comparison; strict parity limited to aligned Stata benchmarks |
+| 26 | Static and post-estimation validation | `statsmodels`, `linearmodels` | OLS/Pooled/FE `PASS_NUMERIC`; RE/2SLS `PASS_COEFFICIENTS` |
+| 27 | Static cross-software validation | Python, R, Stata | OLS, pooled OLS, FE, RE, and 2SLS pass under aligned specifications |
+
+<!-- VALIDATION_SUMMARY_TABLE_END -->
+
+
 The validation suite is organized into reproducible artifacts.
 
 Artifact 22 provides a controlled Stata / `systemgmmkit` dynamic-GMM comparison. In this benchmark, System GMM reaches numerical agreement against Stata under aligned specifications, while Difference GMM is reported as a tolerant auxiliary comparison due to implementation and sample-alignment sensitivities.
@@ -61,11 +74,37 @@ Artifact 27 extends the static validation layer across Python, R, Stata, and `sy
 
 # Post-Estimation and ML Workflow Layer
 
+<!-- POSTESTIMATION_ML_TABLE_START -->
+
+| Layer | Capabilities checked | Result |
+|---|---|---|
+| Post-estimation | `vcov`, `confint`, `predict`, fitted values, residuals | OK |
+| Stata-style post-estimation | `lincom`, Wald tests, marginal effects, margins | OK |
+| ML-style workflow | result adaptation, prediction, residuals, regression metrics, panel split | OK |
+| Extended ML interfaces | model comparison, forecasting, backtesting, dynamic-GMM search | API discovered |
+
+<!-- POSTESTIMATION_ML_TABLE_END -->
+
+
 `systemgmmkit` also provides a post-estimation and ML-style workflow layer. The post-estimation layer supports variance-covariance extraction, confidence intervals, prediction, fitted values, residuals, linear combinations, Wald tests, marginal effects, and margins.
 
 The ML-style layer includes result adaptation, prediction utilities, regression metrics, time-aware panel train/test splitting, model comparison, forecasting/backtesting interfaces, and dynamic-GMM search helpers. These capabilities are reported as workflow coverage, while numerical parity claims are restricted to the dedicated validation artifacts.
 
 # Performance Benchmarks
+
+<!-- PERFORMANCE_SUMMARY_TABLE_START -->
+
+| Workflow | Tested scale | Result |
+|---|---|---|
+| OLS / pooled OLS / random effects | Up to 9,000 rows | Fast in tested environment |
+| 2SLS | Up to 9,000 rows | Completed successfully; memory rises with size |
+| Fixed effects, native backend | Up to 9,000 rows | Correct but slow at larger sizes |
+| Fixed effects, `linearmodels` backend | Up to 9,000 rows | Recommended for larger FE workloads |
+| Difference GMM | 300--600 rows | Approximately 0.46--0.78 seconds |
+| System GMM | 300--600 rows | Approximately 0.70--1.52 seconds |
+
+<!-- PERFORMANCE_SUMMARY_TABLE_END -->
+
 
 Performance benchmarks were run on synthetic panels for static, panel, IV, and dynamic-GMM workflows. OLS, pooled OLS, random effects, and 2SLS complete quickly on panels up to 9,000 rows in the tested environment. Dynamic-GMM benchmarks complete successfully on controlled panels, with Difference GMM taking approximately 0.46--0.78 seconds and System GMM approximately 0.70--1.52 seconds in the tested native-backend configuration.
 

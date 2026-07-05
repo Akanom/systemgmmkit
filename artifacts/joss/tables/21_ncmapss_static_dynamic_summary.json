@@ -1,0 +1,23 @@
+{
+  "systemgmmkit_version": "0.5.11",
+  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py",
+  "universal_output_hub_used": true,
+  "dataset": "N-CMAPSS DS01 dev unit-cycle panel",
+  "rows": 547,
+  "n_units": 6,
+  "min_cycle": 2,
+  "max_cycle": 100,
+  "models": [
+    "Static OLS",
+    "Dynamic OLS",
+    "Dynamic FE"
+  ],
+  "outputs": {
+    "raw_csv": "Results\\systemgmmkit\\static_dynamic_comparison\\21_ncmapss_static_dynamic_raw_results.csv",
+    "uoh_markdown": "Results\\systemgmmkit\\universal_output\\21_uoh_ncmapss_static_dynamic_comparison.md",
+    "uoh_latex": "Results\\systemgmmkit\\universal_output\\21_uoh_ncmapss_static_dynamic_comparison.tex",
+    "artifact_markdown": "Artifacts/Joss/tables/21_uoh_ncmapss_static_dynamic_comparison.md",
+    "artifact_latex": "Artifacts/Joss/tables/21_uoh_ncmapss_static_dynamic_comparison.tex"
+  },
+  "interpretation_note": "This table is designed to show the difference between static and dynamic baseline specifications in the N-CMAPSS workflow. It validates systemgmmkit estimation and universal-output-hub export, but it is not the formal dynamic-GMM parity benchmark."
+}

@@ -1,0 +1,5 @@
+model,software,language,term,coefficient,std_error,statistic,p_value,term_norm
+Pooled OLS,Stata,Stata,L1_y,.96755159,.010642602,90.913063,0,L1_y
+Pooled OLS,Stata,Stata,x_pred,.23614395,.021881921,10.791738,3.7660100e-27,x_pred
+Pooled OLS,Stata,Stata,x_exog,.2319791,.019086465,12.154116,5.4548847e-34,x_exog
+Pooled OLS,Stata,Stata,_cons,.11479971,.020216975,5.6783819,1.3597485e-08,const

@@ -1,0 +1,4 @@
+model_checked,term,x_pred,x_exog,L1_y
+difference_gmm,x_pred,0.04980242040751784,0.0,0.0
+difference_gmm,x_exog,0.0,0.0019986320051525496,0.0
+difference_gmm,L1_y,0.0,0.0,0.07019779796537651

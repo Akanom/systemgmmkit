@@ -1,0 +1,17 @@
+attribute,type,value
+collapse,bool,true
+data,DataFrame,"{""type"": ""DataFrame"", ""shape"": [1080, 8], ""columns"": [""id"", ""time"", ""y"", ""x_pred"", ""x_exog"", ""alpha_true"", ""eps_true"", ""L1_y""]}"
+dependent,str,"""y"""
+endogenous,tuple,"[""L1_y""]"
+entity,str,"""id"""
+exogenous,tuple,"[""x_exog""]"
+gmm_lags,tuple,"[2, 3]"
+gmm_lags_by_role,NoneType,null
+gmm_lags_by_variable,dict,"{""L1_y"": [2, 3], ""x_pred"": [2, 3]}"
+model,str,"""system"""
+predetermined,tuple,"[""x_pred""]"
+regressors,tuple,"[""x_pred"", ""x_exog"", ""L1_y""]"
+result,NativeGMMResult,"""NativeGMMResult(spec=DynamicPanelSpec(dependent='y', regressors=['x_pred', 'x_exog', 'L1_y'], gmm=[GMMStyle(variable='L1_y', min_lag=2, max_lag=3, eq=None), GMMStyle(variable='x_pred', min_lag=2, max_lag=3, eq=None)], iv=[IVStyle(variable='x_exog', eq=None)], time_dummies=False, system=True, collapse=True, transformation='fd', steps='twostep', name='system_gmm'), nobs=960, n_instruments=8, params=x_pred    0.055877\nx_exog    0.242354\nL1_y      0.929211\n_con      0.129496\nName: coef, dtype: float64, std_errors=x_pred    0.137907\nx_exog    0.019691\nL1_y      0.042293\n_con      0.035087\nName: std_err, dtype: float64, zstats=x_pred     0.405179\nx_exog    12.307877\nL1_y      21.970671\n_con       3.690762\nName: z, dtype: float64, pvalues=x_pred     6.853459e-01\nx_exog     8.215542e-35\nL1_y      5.495096e-107\n_con       2.235830e-04\nName: p_value, dtype: float64, residuals=3      -0.811473\n4       0.730140\n5       0.172092\n6       0.764286\n7       0.230860\n          ... "
+spec,DynamicPanelSpec,"""DynamicPanelSpec(dependent='y', regressors=['x_pred', 'x_exog', 'L1_y'], gmm=[GMMStyle(variable='L1_y', min_lag=2, max_lag=3, eq=None), GMMStyle(variable='x_pred', min_lag=2, max_lag=3, eq=None)], iv=[IVStyle(variable='x_exog', eq=None)], time_dummies=False, system=True, collapse=True, transformation='fd', steps='twostep', name='system_gmm')"""
+time,str,"""time"""
+time_effects,bool,false

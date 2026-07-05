@@ -1,0 +1,30 @@
+attribute,type,value
+ar1_p,NoneType,null
+ar1_z,NoneType,null
+ar2_p,NoneType,null
+ar2_z,NoneType,null
+backend,str,"""native-gmm"""
+covariance_type,str,"""robust-clustered-two-step-windmeijer"""
+hansen_j_error,NoneType,null
+hansen_j_stat,float,1.683652800745976
+hansen_p,float,0.7936849283524519
+instrument_names,list,"[""D:L1_y:L2"", ""D:L1_y:L3"", ""D:x_pred:L2"", ""D:x_pred:L3"", ""IV:x_exog"", ""L:diff:L1_y:L1"", ""L:diff:x_pred:L1"", ""L:constant""]"
+j_stat,float,1.683652800745976
+n_groups,int,120
+n_instruments,int,8
+nobs,int,960
+notes,list,"[""Native dynamic-panel GMM engine."", ""Native System GMM parity with xtabond2 is verified for coefficients, N, groups, instruments, and close Hansen diagnostics on the maintained collapsed benchmark; Sargan and AR diagnostics are certified against xtabond2 for the maintained collapsed two-step System GMM benchmark within declared numerical tolerance."", ""Windmeijer-corrected two-step standard errors are enabled via windmeijer=True using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked."", ""Native System GMM coefficient, Windmeijer-SE, Hansen/Sargan, and signed AR diagnostic parity are certified on the maintained xtabond2 benchmark suite.""]"
+overid_df,int,4
+params,Series,"{""type"": ""Series"", ""shape"": [4], ""index"": [""x_pred"", ""x_exog"", ""L1_y"", ""_con""], ""values"": [0.055876845217169624, 0.2423543285116902, 0.9292107947791655, 0.1294962306498233]}"
+pvalues,Series,"{""type"": ""Series"", ""shape"": [4], ""index"": [""x_pred"", ""x_exog"", ""L1_y"", ""_con""], ""values"": [0.6853459381034319, 8.215541560253457e-35, 5.495096260302545e-107, 0.00022358296072831917]}"
+residuals,Series,"{""type"": ""Series"", ""shape"": [1800], ""index"": [""3"", ""4"", ""5"", ""6"", ""7"", ""8"", ""9"", ""2"", ""3"", ""4"", ""5"", ""6"", ""7"", ""8"", ""9"", ""13"", ""14"", ""15"", ""16"", ""17"", ""18"", ""19"", ""12"", ""13"", ""14"", ""15"", ""16"", ""17"", ""18"", ""19"", ""23"", ""24"", ""25"", ""26"", ""27"", ""28"", ""29"", ""22"", ""23"", ""24"", ""25"", ""26"", ""27"", ""28"", ""29"", ""33"", ""34"", ""35"", ""36"", ""37"", ""38"", ""39"", ""32"", ""33"", ""34"", ""35"", ""36"", ""37"", ""38"", ""39"", ""43"", ""44"", ""45"", ""46"", ""47"", ""48"", ""49"", ""42"", ""43"", ""44"", ""45"", ""46"", ""47"", ""48"", ""49"", ""53"", ""54"", ""55"", ""56"", ""57"", ""58"", ""59"", ""52"", ""53"", ""54"", ""55"", ""56"", ""57"", ""58"", ""59"", ""63"", ""64"", ""65"", ""66"", ""67"", ""68"", ""69"", ""62"", ""63"", ""64"", ""65"", ""66"", ""67"", ""68"", ""69"", ""73"", ""74"", ""75"", ""76"", ""77"", ""78"", ""79"", ""72"", ""73"", ""74"", ""75"", ""76"", ""77"", ""78"", ""79"", ""83"", ""84"", ""85"", ""86"", ""87"", ""88"", ""89"", ""82"", ""83"", ""84"", ""85"", ""86"", ""87"", ""88"", ""89"", ""93"", ""94"", ""95"", ""96"", ""97"", ""98"", ""99"", ""92"", ""93"", ""94"", ""95"", ""96"", ""97"", ""98"", ""99"", ""103"", ""104"", ""105"", ""106"", ""107"", ""108"", ""109"", ""102"", ""103"", ""104"","
+sargan_j_stat,float,1.5824070074743353
+sargan_p,float,0.8119506136055369
+sargan_stat,float,1.683652800745976
+spec,DynamicPanelSpec,"""DynamicPanelSpec(dependent='y', regressors=['x_pred', 'x_exog', 'L1_y'], gmm=[GMMStyle(variable='L1_y', min_lag=2, max_lag=3, eq=None), GMMStyle(variable='x_pred', min_lag=2, max_lag=3, eq=None)], iv=[IVStyle(variable='x_exog', eq=None)], time_dummies=False, system=True, collapse=True, transformation='fd', steps='twostep', name='system_gmm')"""
+std_errors,Series,"{""type"": ""Series"", ""shape"": [4], ""index"": [""x_pred"", ""x_exog"", ""L1_y"", ""_con""], ""values"": [0.13790656684733657, 0.01969099295032627, 0.042293237313942265, 0.03508658065506766]}"
+w_norm,float,3.6213501744528327
+w_shape,tuple,"[8, 8]"
+z_shape,tuple,"[1800, 8]"
+zstats,Series,"{""type"": ""Series"", ""shape"": [4], ""index"": [""x_pred"", ""x_exog"", ""L1_y"", ""_con""], ""values"": [0.4051790026723357, 12.307877470834933, 21.97067081627361, 3.69076234366884]}"
+ztu_norm,float,23.73489434263524

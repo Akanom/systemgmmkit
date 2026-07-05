@@ -1,0 +1,19 @@
+{
+  "systemgmmkit_version": "0.5.11",
+  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py",
+  "status": "PASS",
+  "models": [
+    "Difference GMM",
+    "System GMM"
+  ],
+  "dataset": "Data\\Processed\\22_dynamic_gmm_controlled_panel.csv",
+  "outputs": {
+    "difference_gmm_results": "Artifacts/Joss/tables/22_difference_gmm_results.csv",
+    "system_gmm_results": "Artifacts/Joss/tables/22_system_gmm_results.csv",
+    "health_metrics": "Artifacts/Joss/tables/22_dynamic_gmm_health_metrics.csv",
+    "instrument_architecture": "Artifacts/Joss/tables/22_dynamic_gmm_instrument_architecture.csv",
+    "stata_reference": "Artifacts/Joss/tables/22_stata_xtabond2_parity_reference.do",
+    "uoh_markdown": "Artifacts/Joss/tables/22_uoh_dynamic_gmm_controlled_comparison.md",
+    "uoh_latex": "Artifacts/Joss/tables/22_uoh_dynamic_gmm_controlled_comparison.tex"
+  }
+}

@@ -1,0 +1,2 @@
+model,reference,comparison_software,common_terms,reference_only_terms,comparison_only_terms,max_abs_coef_diff,max_abs_se_diff,status
+2SLS,linearmodels,systemgmmkit,4,0,0,6.5503158452884236e-15,0.00038034094801506213,PASS_COEFFICIENTS

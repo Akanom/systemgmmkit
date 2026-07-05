@@ -1,0 +1,56 @@
+{
+  "collapse": true,
+  "data": {
+    "type": "DataFrame",
+    "shape": [
+      1080,
+      8
+    ],
+    "columns": [
+      "id",
+      "time",
+      "y",
+      "x_pred",
+      "x_exog",
+      "alpha_true",
+      "eps_true",
+      "L1_y"
+    ]
+  },
+  "dependent": "y",
+  "endogenous": [
+    "L1_y"
+  ],
+  "entity": "id",
+  "exogenous": [
+    "x_exog"
+  ],
+  "gmm_lags": [
+    2,
+    3
+  ],
+  "gmm_lags_by_role": null,
+  "gmm_lags_by_variable": {
+    "L1_y": [
+      2,
+      3
+    ],
+    "x_pred": [
+      2,
+      3
+    ]
+  },
+  "model": "difference",
+  "predetermined": [
+    "x_pred"
+  ],
+  "regressors": [
+    "x_pred",
+    "x_exog",
+    "L1_y"
+  ],
+  "result": "NativeGMMResult(spec=DynamicPanelSpec(dependent='y', regressors=['x_pred', 'x_exog', 'L1_y'], gmm=[GMMStyle(variable='L1_y', min_lag=2, max_lag=3, eq=None), GMMStyle(variable='x_pred', min_lag=2, max_lag=3, eq=None)], iv=[IVStyle(variable='x_exog', eq=None)], time_dummies=False, system=False, collapse=True, transformation='fd', steps='twostep', name='difference_gmm'), nobs=840, n_instruments=5, params=x_pred    0.265653\nx_exog    0.251000\nL1_y      0.711380\nName: coef, dtype: float64, std_errors=x_pred    0.223165\nx_exog    0.044706\nL1_y      0.264949\nName: std_err, dtype: float64, zstats=x_pred    1.190390\nx_exog    5.614442\nL1_y      2.684974\nName: z, dtype: float64, pvalues=x_pred    2.338931e-01\nx_exog    1.971976e-08\nL1_y      7.253549e-03\nName: p_value, dtype: float64, residuals=3      -0.452179\n4       0.322302\n5      -0.089563\n6       0.967359\n7       0.133830\n          ...   \n1195   -0.145822\n1196    0.074987\n1197   -0.018488\n1198   -0.223936\n1199   -0.033724\nName: residual, Length: 840, dtype: float64, covariance_type='robust-clustered-two-step-windmeijer', backend='native-gmm', notes=['Native dynamic-panel GMM engine.', 'Native System GMM parity with xtabond2 is verified for coefficients, N, groups, instruments, and close Hansen diagnostics on the maintained collapsed benchmark; Sargan and AR diagnostics are certified against xtabond2 for the maintained collapsed two-step System GMM benchmark within declared numerical tolerance.', 'Windmeijer-corrected two-step standard errors are enabled via windmeijer=True using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked.'], instrument_names=['D:L1_y:L2', 'D:x_pred:L2', 'D:iv:x_exog', 'D:L1_y:L3', 'D:x_pred:L3'], n_groups=120, hansen_p=0.5034901218093452, sargan_p=0.8644583716781169, sargan_stat=1.3723823721279, ar1_p=1.544393422074201e-36, ar2_p=0.13322676469594164, ar1_z=-12.624643463025116, ar2_z=-1.5014981505133418, z_shape=(840, 5), w_shape=(5, 5), j_stat=1.3723823721279, ztu_norm=22.330898938665865, w_norm=0.015220095529558058, hansen_j_stat=1.3723823721279, sargan_j_stat=0.29130425615987615, overid_df=2, hansen_j_error=None)",
+  "spec": "DynamicPanelSpec(dependent='y', regressors=['x_pred', 'x_exog', 'L1_y'], gmm=[GMMStyle(variable='L1_y', min_lag=2, max_lag=3, eq=None), GMMStyle(variable='x_pred', min_lag=2, max_lag=3, eq=None)], iv=[IVStyle(variable='x_exog', eq=None)], time_dummies=False, system=False, collapse=True, transformation='fd', steps='twostep', name='difference_gmm')",
+  "time": "time",
+  "time_effects": false
+}

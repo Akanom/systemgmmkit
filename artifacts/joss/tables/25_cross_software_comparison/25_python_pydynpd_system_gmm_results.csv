@@ -1,0 +1,5 @@
+model,package,term,term_norm,coefficient,std_error,statistic,p_value,command
+System GMM,pydynpd,L1.y,L1_y,0.9008371856140147,0.026845739305997,33.556058015238904,7.345650084540643e-247,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse"
+System GMM,pydynpd,x_pred,x_pred,0.12043636607781871,0.10014502499085327,1.2026195618685875,0.22912357418991613,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse"
+System GMM,pydynpd,x_exog,x_exog,0.2731091634308979,0.020139530101927695,13.560850826641518,6.833876863438874e-42,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse"
+System GMM,pydynpd,_con,const,0.14544727813834396,0.03390869114954064,4.289380486463109,1.791721963873759e-05,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse"

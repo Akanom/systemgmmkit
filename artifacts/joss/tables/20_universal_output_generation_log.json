@@ -1,0 +1,24 @@
+{
+  "universal_output_hub_used": true,
+  "source_result_files": [
+    "Results\\systemgmmkit\\systemgmmkit_run_fixed_effects_spec_results.csv",
+    "Results\\systemgmmkit\\systemgmmkit_run_ols_spec_results.csv",
+    "Results\\systemgmmkit\\systemgmmkit_run_pooled_ols_spec_results.csv"
+  ],
+  "models_loaded": [
+    "run_fixed_effects_spec",
+    "run_ols_spec",
+    "run_pooled_ols_spec"
+  ],
+  "outputs": {
+    "uoh_markdown": "Results\\systemgmmkit\\universal_output\\uoh_outreg_results.md",
+    "uoh_latex": "Results\\systemgmmkit\\universal_output\\uoh_outreg_results.tex"
+  },
+  "artifact_outputs": {
+    "markdown": "Artifacts/Joss/tables/20_uoh_outreg_results.md",
+    "latex": "Artifacts/Joss/tables/20_uoh_outreg_results.tex",
+    "manual_csv": "Artifacts/Joss/tables/20_ncmapss_manual_publication_table.csv",
+    "manual_markdown": "Artifacts/Joss/tables/20_ncmapss_manual_publication_table.md",
+    "manual_latex": "Artifacts/Joss/tables/20_ncmapss_manual_publication_table.tex"
+  }
+}

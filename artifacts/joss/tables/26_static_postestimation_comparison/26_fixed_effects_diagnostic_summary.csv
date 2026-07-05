@@ -1,0 +1,5 @@
+reference_variant,systemgmmkit_variant,common_slope_terms,max_abs_slope_coef_diff,max_abs_slope_se_diff,status
+entity_fe_no_explicit_constant,entity_fe_native_backend,3,2.886579864025407e-15,4.85722573273506e-17,PASS_NUMERIC
+entity_fe_no_explicit_constant,entity_fe_linearmodels_backend,3,0.0,0.0,PASS_NUMERIC
+entity_fe_with_explicit_constant,entity_fe_native_backend,3,2.942091015256665e-15,3.8163916471489756e-17,PASS_NUMERIC
+entity_fe_with_explicit_constant,entity_fe_linearmodels_backend,3,2.220446049250313e-16,1.0408340855860843e-17,PASS_NUMERIC

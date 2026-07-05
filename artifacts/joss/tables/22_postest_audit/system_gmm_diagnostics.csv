@@ -1,0 +1,10 @@
+model_checked,attribute,value
+system_gmm,nobs,960
+system_gmm,n_groups,120
+system_gmm,n_instruments,8
+system_gmm,hansen_p,0.7936849283524519
+system_gmm,sargan_stat,1.683652800745976
+system_gmm,sargan_p,0.8119506136055369
+system_gmm,ar1_p,null
+system_gmm,ar2_p,null
+system_gmm,covariance_type,"""robust-clustered-two-step-windmeijer"""

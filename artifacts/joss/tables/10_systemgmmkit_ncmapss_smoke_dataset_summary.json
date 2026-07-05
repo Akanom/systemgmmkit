@@ -1,0 +1,14 @@
+{
+  "systemgmmkit_version": "0.5.11",
+  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py",
+  "dataset": "N-CMAPSS DS01 dev unit-cycle panel",
+  "rows": 547,
+  "n_units": 6,
+  "min_cycle": 2,
+  "max_cycle": 100,
+  "duplicate_unit_cycle_rows": 0,
+  "dependent": "risk",
+  "entity": "unit",
+  "time": "cycle",
+  "model_role_note": "This N-CMAPSS DS01 panel is used as a systemgmmkit workflow smoke artifact. Formal Difference/System GMM parity should use controlled benchmarks or FD001-style datasets with more cross-sectional units."
+}

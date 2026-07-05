@@ -1,0 +1,35 @@
+{
+  "overall_status": "REVIEW",
+  "models": [
+    {
+      "model": "Difference GMM",
+      "sgk_file": "Artifacts\\Joss\\tables\\22_difference_gmm_results.csv",
+      "stata_file": "Artifacts\\Joss\\tables\\22_stata_difference_gmm_coefficients.csv",
+      "common_terms": 3,
+      "sgk_only_terms": 0,
+      "stata_only_terms": 0,
+      "max_abs_coef_diff": 0.09809992175118976,
+      "max_abs_se_diff": 0.030984874112746086,
+      "max_abs_p_diff": 0.035416869531638306,
+      "status": "REVIEW"
+    },
+    {
+      "model": "System GMM",
+      "sgk_file": "Artifacts\\Joss\\tables\\22_system_gmm_results.csv",
+      "stata_file": "Artifacts\\Joss\\tables\\22_stata_system_gmm_coefficients.csv",
+      "common_terms": 3,
+      "sgk_only_terms": 1,
+      "stata_only_terms": 0,
+      "max_abs_coef_diff": 0.1814405073522675,
+      "max_abs_se_diff": 0.2536403072339975,
+      "max_abs_p_diff": 0.4160360168263354,
+      "status": "REVIEW"
+    }
+  ],
+  "interpretation": "PASS_STRICT means coefficient and standard-error differences are <= 1e-6. PASS_CLOSE means <= 1e-4. PASS_TOLERANT means <= 1e-3. REVIEW means Stata and systemgmmkit outputs differ beyond tolerance or terms do not align.",
+  "outputs": {
+    "comparison_csv": "Artifacts\\Joss\\tables\\22_stata_systemgmmkit_parity_comparison.csv",
+    "summary_csv": "Artifacts\\Joss\\tables\\22_stata_systemgmmkit_parity_summary.csv",
+    "summary_md": "Artifacts\\Joss\\tables\\22_stata_systemgmmkit_parity_summary.md"
+  }
+}

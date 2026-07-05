@@ -1,0 +1,19 @@
+{
+  "row": {
+    "benchmark": "Difference GMM",
+    "status": "OK",
+    "elapsed_seconds": 0.6660199000034481,
+    "peak_memory_mb": 0.7522439956665039,
+    "result_type": "NativeGMMResult"
+  },
+  "diagnostics": {
+    "nobs": 420,
+    "n_groups": 60,
+    "n_instruments": 5,
+    "covariance_type": "robust-clustered-two-step-uncorrected",
+    "hansen_p": 0.7449141226066521,
+    "sargan_p": 0.8776751906727948,
+    "ar1_p": 6.773732275117311e-13,
+    "ar2_p": 0.03954534805166442
+  }
+}

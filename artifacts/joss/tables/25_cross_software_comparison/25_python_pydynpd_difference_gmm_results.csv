@@ -1,0 +1,4 @@
+model,package,term,term_norm,coefficient,std_error,statistic,p_value,command
+Difference GMM,pydynpd,L1.y,L1_y,0.7121708579598346,0.2104743675317692,3.383646504377018,0.0007153003367013119,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse nolevel"
+Difference GMM,pydynpd,x_pred,x_pred,0.31651642283859066,0.1556921429778363,2.0329633646551364,0.04205622441614733,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse nolevel"
+Difference GMM,pydynpd,x_exog,x_exog,0.25512899066097106,0.04124212632897653,6.186126016536606,6.166072259879052e-10,"y L(1:1).y x_pred x_exog | gmm(y, 2:3) gmm(x_pred, 2:3) iv(x_exog) | collapse nolevel"

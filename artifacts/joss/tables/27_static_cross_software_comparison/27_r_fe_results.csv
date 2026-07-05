@@ -1,0 +1,4 @@
+"model","software","language","term","coefficient","std_error","statistic","p_value","term_norm"
+"Fixed Effects","R plm","R","L1_y",0.537849975992194,0.0197821418556885,27.1886623761891,4.46547238291727e-121,"L1_y"
+"Fixed Effects","R plm","R","x_pred",0.348587955543139,0.0203250967965137,17.150617240993,1.06944442228705e-57,"x_pred"
+"Fixed Effects","R plm","R","x_exog",0.219075881122308,0.0163158480056926,13.4271832543349,8.73111869433077e-38,"x_exog"

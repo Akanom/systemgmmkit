@@ -1,0 +1,9 @@
+{
+  "data_file": "Data\\Processed\\22_dynamic_gmm_controlled_panel.csv",
+  "rows": 1200,
+  "entities": 120,
+  "periods": 10,
+  "missing_L1_y": 120,
+  "systemgmmkit_version": "0.5.11",
+  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py"
+}

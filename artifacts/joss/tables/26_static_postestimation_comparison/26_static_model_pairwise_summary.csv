@@ -1,0 +1,5 @@
+model,reference,comparison_software,common_terms,reference_only_terms,comparison_only_terms,max_abs_coef_diff,max_abs_se_diff,status
+OLS,statsmodels,systemgmmkit,4,0,0,5.551115123125783e-16,1.734723475976807e-17,PASS_NUMERIC
+Pooled OLS,linearmodels,systemgmmkit,4,0,0,8.881784197001252e-16,6.938893903907228e-18,PASS_NUMERIC
+Fixed Effects,linearmodels,systemgmmkit,4,0,0,2.0429240513512985,0.05261152191201833,REVIEW
+Random Effects,linearmodels,systemgmmkit,4,0,0,8.881784197001252e-16,0.0006577757626592511,PASS_COEFFICIENTS

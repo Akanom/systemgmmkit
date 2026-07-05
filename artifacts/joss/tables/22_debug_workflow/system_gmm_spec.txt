@@ -1,0 +1,1 @@
+DynamicPanelSpec(dependent='y', regressors=['x_pred', 'x_exog', 'L1_y'], gmm=[GMMStyle(variable='L1_y', min_lag=2, max_lag=3, eq=None), GMMStyle(variable='x_pred', min_lag=2, max_lag=3, eq=None)], iv=[IVStyle(variable='x_exog', eq=None)], time_dummies=False, system=True, collapse=True, transformation='fd', steps='twostep', name='system_gmm')

@@ -1,0 +1,4 @@
+software_ref,variant_ref,term_ref,coefficient_ref,std_error_ref,term_norm,software_sgk,variant_sgk,term_sgk,coefficient_sgk,std_error_sgk,_merge
+linearmodels,entity_fe_no_explicit_constant,L1_y,0.5378499759921932,0.019782141855688485,L1_y,systemgmmkit,entity_fe_linearmodels_backend,L1_y,0.5378499759921932,0.019782141855688485,both
+linearmodels,entity_fe_no_explicit_constant,x_exog,0.21907588112230783,0.016315848005692572,x_exog,systemgmmkit,entity_fe_linearmodels_backend,x_exog,0.21907588112230783,0.016315848005692572,both
+linearmodels,entity_fe_no_explicit_constant,x_pred,0.3485879555431388,0.02032509679651366,x_pred,systemgmmkit,entity_fe_linearmodels_backend,x_pred,0.3485879555431388,0.02032509679651366,both

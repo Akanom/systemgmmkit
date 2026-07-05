@@ -1,0 +1,6 @@
+"model","status","message"
+"OLS","OK","R lm completed"
+"Pooled OLS","OK","plm pooling completed"
+"Fixed Effects","OK","plm within individual completed"
+"Random Effects","OK","plm random completed"
+"2SLS","OK","AER::ivreg completed"

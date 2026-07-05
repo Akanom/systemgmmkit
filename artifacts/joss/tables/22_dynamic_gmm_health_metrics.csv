@@ -1,0 +1,3 @@
+estimator,nobs,groups,instruments,parameters,collapsed,transformation,covariance_type,hansen_p,sargan_p,ar1_stat,ar1_p,ar2_stat,ar2_p,notes,model
+Difference GMM,840,120,5,3,True,fd,twostep,0.5034901218093444,0.8644583716781172,-12.624643463025118,1.544393422074157e-36,-1.5014981505133407,0.13322676469594183,(),Difference GMM
+System GMM,960,120,8,4,True,fd,twostep,0.793684928352449,0.8119506136055334,,,,,(),System GMM

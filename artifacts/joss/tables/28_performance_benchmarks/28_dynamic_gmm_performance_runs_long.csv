@@ -1,0 +1,5 @@
+benchmark,backend,status,elapsed_seconds,peak_memory_mb,result_type,size_label,rep,n_rows,n_entities,n_periods
+Difference GMM,native,OK,0.4577243000094313,0.42592906951904297,NativeGMMResult,tiny,1,300,30,10
+System GMM,native,OK,0.6986564999970142,0.8176307678222656,NativeGMMResult,tiny,1,300,30,10
+Difference GMM,native,OK,0.775118100020336,0.7519245147705078,NativeGMMResult,small,1,600,60,10
+System GMM,native,OK,1.518540099990787,1.5301637649536133,NativeGMMResult,small,1,600,60,10

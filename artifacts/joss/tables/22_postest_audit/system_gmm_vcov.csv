@@ -1,0 +1,5 @@
+model_checked,term,x_pred,x_exog,L1_y,_con
+system_gmm,x_pred,0.01901822117961891,0.0,0.0,0.0
+system_gmm,x_exog,0.0,0.00038773520336979887,0.0,0.0
+system_gmm,L1_y,0.0,0.0,0.0017887179224934384,0.0
+system_gmm,_con,0.0,0.0,0.0,0.001231068142064568

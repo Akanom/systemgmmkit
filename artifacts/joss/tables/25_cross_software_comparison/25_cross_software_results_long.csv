@@ -1,0 +1,28 @@
+software,language,model,term,term_norm,coefficient,std_error,p_value,status,source_file
+systemgmmkit,Python,Difference GMM,x_pred,x_pred,0.265652910481588,0.2231645590310391,0.2338930517454893,OK,Artifacts\Joss\tables\22_difference_gmm_results.csv
+systemgmmkit,Python,Difference GMM,x_exog,x_exog,0.2509995927449737,0.0447060622863673,1.9719758388715976e-08,OK,Artifacts\Joss\tables\22_difference_gmm_results.csv
+systemgmmkit,Python,Difference GMM,L1_y,L1_y,0.7113802428597236,0.2649486704351936,0.0072535488425632,OK,Artifacts\Joss\tables\22_difference_gmm_results.csv
+systemgmmkit,Python,System GMM,x_pred,x_pred,0.0558768452171638,0.1379065668473367,0.685345938103463,OK,Artifacts\Joss\tables\22_system_gmm_results.csv
+systemgmmkit,Python,System GMM,x_exog,x_exog,0.2423543285116905,0.0196909929503262,8.215541560247815e-35,OK,Artifacts\Joss\tables\22_system_gmm_results.csv
+systemgmmkit,Python,System GMM,L1_y,L1_y,0.9292107947791666,0.0422932373139422,5.495096260295658e-107,OK,Artifacts\Joss\tables\22_system_gmm_results.csv
+systemgmmkit,Python,System GMM,const,const,0.1294962306498237,0.0350865806550682,0.0002235829607283,OK,Artifacts\Joss\tables\22_system_gmm_results.csv
+Stata xtabond2,Stata,Difference GMM,x_pred,x_pred,0.2486761463195476,0.2546396861718789,0.3287768879745338,OK,Artifacts\Joss\tables\22_stata_difference_gmm_coefficients.csv
+Stata xtabond2,Stata,Difference GMM,x_exog,x_exog,0.2535230964039004,0.0519268014604792,1.04846619643e-06,OK,Artifacts\Joss\tables\22_stata_difference_gmm_coefficients.csv
+Stata xtabond2,Stata,Difference GMM,l1_y,L1_y,0.733183220972359,0.3111350374421719,0.0184491045214512,OK,Artifacts\Joss\tables\22_stata_difference_gmm_coefficients.csv
+Stata xtabond2,Stata,System GMM,x_pred,x_pred,0.0558768701385088,0.1379059953120166,0.6853445710441475,OK,Artifacts\Joss\tables\22_stata_system_gmm_coefficients.csv
+Stata xtabond2,Stata,System GMM,x_exog,x_exog,0.2423543265525582,0.0196909117074162,8.21038504766e-35,OK,Artifacts\Joss\tables\22_stata_system_gmm_coefficients.csv
+Stata xtabond2,Stata,System GMM,l1_y,L1_y,0.929210792468204,0.0422930627627494,5.4841436748e-107,OK,Artifacts\Joss\tables\22_stata_system_gmm_coefficients.csv
+Stata xtabond2,Stata,System GMM,const,const,0.1294962326408661,0.0350864364304821,0.0002235695749064,OK,Artifacts\Joss\tables\22_stata_system_gmm_coefficients.csv
+plm::pgmm,R,Difference GMM,"lag(y, 1)",L1_y,0.711988928297237,0.226993127200633,0.0017091326948475,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_r_plm_difference_gmm_results.csv
+plm::pgmm,R,Difference GMM,x_pred,x_pred,0.316246358912628,0.165331489112228,0.0557734392125974,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_r_plm_difference_gmm_results.csv
+plm::pgmm,R,Difference GMM,x_exog,x_exog,0.249023851532029,0.0288339551039319,5.7971984377392095e-18,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_r_plm_difference_gmm_results.csv
+plm::pgmm,R,System GMM,"lag(y, 1)",L1_y,0.916724686003887,0.0277509868000896,2.64507263646367e-239,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_r_plm_system_gmm_results.csv
+plm::pgmm,R,System GMM,x_pred,x_pred,0.198238233748844,0.0929676486782417,0.0329792614105778,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_r_plm_system_gmm_results.csv
+plm::pgmm,R,System GMM,x_exog,x_exog,0.282099343245239,0.027736701546502,2.68206786763093e-24,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_r_plm_system_gmm_results.csv
+pydynpd,Python,Difference GMM,L1.y,L1_y,0.7121708579598346,0.2104743675317692,0.0007153003367013,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_difference_gmm_results.csv
+pydynpd,Python,Difference GMM,x_pred,x_pred,0.3165164228385906,0.1556921429778363,0.0420562244161473,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_difference_gmm_results.csv
+pydynpd,Python,Difference GMM,x_exog,x_exog,0.255128990660971,0.0412421263289765,6.166072259879052e-10,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_difference_gmm_results.csv
+pydynpd,Python,System GMM,L1.y,L1_y,0.9008371856140148,0.026845739305997,7.345650084540643e-247,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_system_gmm_results.csv
+pydynpd,Python,System GMM,x_pred,x_pred,0.1204363660778187,0.1001450249908532,0.2291235741899161,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_system_gmm_results.csv
+pydynpd,Python,System GMM,x_exog,x_exog,0.2731091634308979,0.0201395301019276,6.833876863438874e-42,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_system_gmm_results.csv
+pydynpd,Python,System GMM,_con,const,0.1454472781383439,0.0339086911495406,1.791721963873759e-05,OK,Artifacts\Joss\tables\25_cross_software_comparison\25_python_pydynpd_system_gmm_results.csv

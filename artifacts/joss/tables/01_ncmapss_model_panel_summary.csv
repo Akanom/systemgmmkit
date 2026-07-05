@@ -1,0 +1,2 @@
+dataset,rows_after_lag,n_units,min_cycle,max_cycle,duplicate_unit_cycle_rows,dependent_variable,entity_index,time_index
+N-CMAPSS DS01 dev unit-cycle panel,547,6,2,100,0,risk,unit,cycle

@@ -1,0 +1,5 @@
+model,software,language,term,coefficient,std_error,statistic,p_value,term_norm
+2SLS,Stata,Stata,x_pred,-.50803459,.18199295,-2.791507,.0052463221,x_pred
+2SLS,Stata,Stata,L1_y,1.0229563,.021408575,47.782547,0,L1_y
+2SLS,Stata,Stata,x_exog,.24958698,.028919803,8.6303139,6.1183841e-18,x_exog
+2SLS,Stata,Stata,_cons,.061391506,.033514511,1.8317888,.066982895,const
