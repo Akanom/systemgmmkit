@@ -7,6 +7,8 @@ examples so users can run it immediately.
 
 from __future__ import annotations
 
+from _shared_panel_data import ensure_results_dir, make_static_panel
+
 from systemgmmkit import (
     PanelIVSpec,
     RandomEffectsSpec,
@@ -17,8 +19,6 @@ from systemgmmkit import (
     run_panel_2sls,
     run_random_effects,
 )
-
-from _shared_panel_data import ensure_results_dir, make_static_panel
 
 
 def main() -> None:

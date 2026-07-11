@@ -6,6 +6,8 @@ Run:
 
 from __future__ import annotations
 
+from _shared_panel_data import ensure_results_dir, make_static_panel, write_table_pair
+
 from systemgmmkit import (
     OLSSpec,
     coefficient_plot,
@@ -15,8 +17,6 @@ from systemgmmkit import (
     run_ols,
 )
 from systemgmmkit.ml import quick_postestimation
-
-from _shared_panel_data import ensure_results_dir, make_static_panel, write_table_pair
 
 
 def main() -> None:

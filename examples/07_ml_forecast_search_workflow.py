@@ -7,6 +7,12 @@ Run:
 from __future__ import annotations
 
 import pandas as pd
+from _shared_panel_data import (
+    ensure_results_dir,
+    make_dynamic_panel,
+    make_static_panel,
+    write_table_pair,
+)
 
 from systemgmmkit import OLSSpec, build_difference_gmm_spec, run_difference_gmm, run_ols
 from systemgmmkit.ml import (
@@ -20,8 +26,6 @@ from systemgmmkit.ml import (
     forecast,
     panel_train_test_split,
 )
-
-from _shared_panel_data import ensure_results_dir, make_dynamic_panel, make_static_panel, write_table_pair
 
 
 def fit_dynamic_ols(data: pd.DataFrame):

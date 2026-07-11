@@ -6,6 +6,8 @@ Run:
 
 from __future__ import annotations
 
+from _shared_panel_data import make_static_panel, write_table_pair
+
 from systemgmmkit import (
     FixedEffectsSpec,
     OLSSpec,
@@ -20,9 +22,6 @@ from systemgmmkit import (
     run_random_effects,
 )
 from systemgmmkit.ml import compare_models, panel_train_test_split, quick_postestimation
-
-from _shared_panel_data import make_static_panel, write_table_pair
-
 
 ENTITY = "firm_id"
 TIME = "year"

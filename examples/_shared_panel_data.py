@@ -11,7 +11,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 EXAMPLES_DIR = Path(__file__).resolve().parent
 RESULTS_DIR = EXAMPLES_DIR / "results"
 

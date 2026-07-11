@@ -7,6 +7,7 @@ Run:
 from __future__ import annotations
 
 import pandas as pd
+from _shared_panel_data import ensure_results_dir, make_dynamic_panel, write_table_pair
 
 from systemgmmkit import (
     build_difference_gmm_spec,
@@ -16,9 +17,6 @@ from systemgmmkit import (
     run_difference_gmm,
     run_system_gmm,
 )
-
-from _shared_panel_data import ensure_results_dir, make_dynamic_panel, write_table_pair
-
 
 ENTITY = "entity_id"
 TIME = "year"
