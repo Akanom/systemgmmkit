@@ -1,0 +1,4 @@
+| model                 | backend    |   nobs |   n_groups |   n_instruments |   hansen_p |   sargan_p |   ar1_p |   ar2_p |   overid_df |
+|:----------------------|:-----------|-------:|-----------:|----------------:|-----------:|-----------:|--------:|--------:|------------:|
+| Difference GMM native | native-gmm |    810 |         90 |               5 |     0.9093 |     0.9428 |   0     |  0.4252 |           1 |
+| System GMM native     | native-gmm |    900 |         90 |               9 |     0.2969 |     0.0397 |   0.852 |  0.7027 |           4 |

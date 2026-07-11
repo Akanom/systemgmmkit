@@ -1,8 +1,11 @@
-"""Generic panel-estimator usage example."""
+"""Runnable FE, RE, IV/2SLS, and GMM-spec usage example.
+
+This file keeps the older example name but no longer requires a local
+``panel_data.csv``. It uses the same generated panel as the comprehensive
+examples so users can run it immediately.
+"""
 
 from __future__ import annotations
-
-import pandas as pd
 
 from systemgmmkit import (
     PanelIVSpec,
@@ -15,25 +18,38 @@ from systemgmmkit import (
     run_random_effects,
 )
 
+from _shared_panel_data import ensure_results_dir, make_static_panel
+
 
 def main() -> None:
-    df = pd.read_csv("panel_data.csv")
+    df = make_static_panel().dropna(subset=["q_lag2"]).copy()
 
     suite = build_panel_model_suite(
-        name="investment_model",
-        dependent="investment",
-        regressors=["q", "cashflow"],
+        name="growth_model",
+        dependent="growth",
+        regressors=["investment", "cashflow"],
         controls=["size", "leverage"],
-        endogenous=["q"],
+        endogenous=["investment"],
         predetermined=["cashflow"],
         exogenous=["size", "leverage"],
+        gmm_lags=(2, 3),
         system=True,
     )
 
-    fe_result = run_fixed_effects(suite.fixed_effects, df, entity="firm_id", time="year")
+    fe_result = run_fixed_effects(
+        suite.fixed_effects,
+        df,
+        entity="firm_id",
+        time="year",
+    )
 
     re_result = run_random_effects(
-        RandomEffectsSpec(dependent="investment", regressors=["q", "cashflow", "size", "leverage"]),
+        RandomEffectsSpec(
+            dependent="growth",
+            regressors=["investment", "cashflow", "size", "leverage"],
+            covariance="clustered",
+            name="growth_random_effects",
+        ),
         df,
         entity="firm_id",
         time="year",
@@ -41,24 +57,34 @@ def main() -> None:
 
     iv_result = run_panel_2sls(
         PanelIVSpec(
-            dependent="investment",
+            dependent="growth",
             exog=["cashflow", "size", "leverage"],
-            endogenous=["q"],
+            endogenous=["investment"],
             instruments=["q_lag2"],
             entity_effects=True,
             time_effects=True,
+            covariance="robust",
+            name="growth_panel_2sls",
         ),
         df,
         entity="firm_id",
         time="year",
     )
 
-    print(fe_result.to_markdown())
-    print(re_result.to_markdown())
-    print(iv_result.to_markdown())
-    print(build_pydynpd_command(suite.dynamic_gmm))
+    results = ensure_results_dir()
+    table_path = export_regression_table(
+        [fe_result, re_result, iv_result],
+        results / "fe_re_iv_gmm_usage_coefficients.md",
+        fmt="markdown",
+        model_names=["Two-way FE", "Random effects", "Panel IV/2SLS"],
+    )
+    command_path = results / "fe_re_iv_gmm_usage_system_gmm_command.txt"
+    command_path.write_text(build_pydynpd_command(suite.dynamic_gmm), encoding="utf-8")
 
-    export_regression_table([fe_result, re_result, iv_result], "panel_results.md", fmt="markdown")
+    print(fe_result.to_markdown())
+    print("\nSystem GMM command scaffold")
+    print(build_pydynpd_command(suite.dynamic_gmm))
+    print(f"\nWrote {table_path} and {command_path}")
 
 
 if __name__ == "__main__":

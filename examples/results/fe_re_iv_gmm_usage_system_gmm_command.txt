@@ -1,0 +1,1 @@
+growth L1.growth investment cashflow size leverage | gmm(growth, 2:3) gmm(investment, 2:3) gmm(cashflow, 2:3) iv(size leverage) | timedumm collapse
