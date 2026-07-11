@@ -48,6 +48,14 @@ The package also balances native implementation with interoperability. Native es
 
 The validation suite is organized as reproducible repository artifacts. Artifact 24 is the maintained dynamic-GMM parity certificate and is the primary evidence for formal System GMM parity claims against Stata `xtabond2`. It reports `PASS_XTABOND2_PARITY` for aligned structural coefficients and Windmeijer-corrected two-step standard errors.
 
+| Evidence | Scope | Comparison role |
+|---|---|---|
+| Artifact 22 | Controlled Difference/System GMM | Auxiliary Stata comparison |
+| Artifact 24 | Maintained System GMM certificate | Formal `xtabond2` parity evidence |
+| Artifact 25 | Dynamic-GMM ecosystem comparison | Stata, R, and Python context |
+| Artifacts 26--27 | Static, panel, IV, and post-estimation checks | `statsmodels`, `linearmodels`, R, and Stata comparisons |
+| Artifact 28 | Performance benchmarks | Practical runtime evidence |
+
 Additional artifacts document controlled dynamic-GMM comparisons, static estimator validation, post-estimation checks, and cross-software comparisons against Python, R, and Stata references. OLS, pooled OLS, fixed effects, random effects, and 2SLS are compared under aligned specifications. Dynamic-GMM ecosystem comparisons are reported separately from strict parity claims because defaults, instrument matrices, finite-sample corrections, and covariance scaling differ across packages.
 
 
