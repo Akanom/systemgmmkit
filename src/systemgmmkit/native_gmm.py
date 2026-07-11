@@ -2404,19 +2404,19 @@ def run_native_dynamic_panel_gmm(
 
     # System-GMM AR diagnostics use the certified xtabond2-compatible denominator mapping.
     #
-    # Diagnostic mode:
-    #   SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR=1
-    # exposes certified System-GMM AR diagnostics so parity scripts can compare
-    # against xtabond2. Production output keeps these unset unless certification coverage is enabled.
+    # Production output exposes the diagnostics by default. The legacy
+    # SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR flag is still honored as an
+    # opt-out switch for historical parity comparisons that expected blank AR
+    # diagnostics before this diagnostic surface was promoted.
     if bool(spec.system):
         import os as _native_ar_report_os
 
-        _report_experimental_system_ar = _native_ar_report_os.getenv(
-            "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR",
-            "0",
+        _report_system_ar = _native_ar_report_os.getenv(
+            "SYSTEMGMMKIT_REPORT_SYSTEM_AR",
+            _native_ar_report_os.getenv("SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR", "1"),
         ).strip().lower() in {"1", "true", "yes", "on"}
 
-        if not _report_experimental_system_ar:
+        if not _report_system_ar:
             ar1_z = None
             ar1_p = None
             ar2_z = None

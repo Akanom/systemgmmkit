@@ -143,3 +143,28 @@ def test_system_gmm_diagnostics_contract_if_available():
         if hasattr(res, attr):
             value = getattr(res, attr)
             assert value is None or 0 <= value <= 1
+
+
+def test_system_gmm_ar_diagnostics_are_exposed_by_default(monkeypatch):
+    monkeypatch.delenv("SYSTEMGMMKIT_REPORT_SYSTEM_AR", raising=False)
+    monkeypatch.delenv("SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR", raising=False)
+
+    df = make_dynamic_panel()
+    res = _run_system_gmm(df, collapse=True, min_lag=2, max_lag=3)
+
+    _assert_basic_system_gmm_result(res)
+    assert res.ar1_p is not None
+    assert res.ar2_p is not None
+    assert 0 <= res.ar1_p <= 1
+    assert 0 <= res.ar2_p <= 1
+
+
+def test_system_gmm_ar_diagnostics_can_be_hidden_for_legacy_parity(monkeypatch):
+    monkeypatch.setenv("SYSTEMGMMKIT_REPORT_SYSTEM_AR", "0")
+
+    df = make_dynamic_panel()
+    res = _run_system_gmm(df, collapse=True, min_lag=2, max_lag=3)
+
+    _assert_basic_system_gmm_result(res)
+    assert res.ar1_p is None
+    assert res.ar2_p is None

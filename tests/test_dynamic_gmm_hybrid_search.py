@@ -57,6 +57,39 @@ def test_dynamic_gmm_candidate_grid_filters_invalid_onestep_windmeijer():
     assert grid[0]["windmeijer"] is True
 
 
+def test_gmm_validity_rules_expose_backend_aware_diagnostic_availability():
+    diagnostics = {
+        "hansen_p": 0.20,
+        "n_instruments": 8,
+        "n_groups": 140,
+    }
+
+    strict = GMMValidityRules()
+    assert strict.rejection_reasons(diagnostics, candidate={"model": "system"}) == [
+        "missing_ar2_p"
+    ]
+
+    relaxed = GMMValidityRules(diagnostic_policy="system_ar2_relaxed")
+    assert relaxed.rejection_reasons(diagnostics, candidate={"model": "system"}) == []
+
+    availability = relaxed.diagnostic_availability(
+        diagnostics,
+        candidate={"model": "system"},
+    )
+    assert availability["diagnostic_policy"] == "system_ar2_relaxed"
+    assert availability["system_gmm_candidate"] is True
+    assert availability["available_diagnostics"] == "hansen_p"
+    assert availability["missing_diagnostics"] == "ar2_p"
+    assert availability["missing_required_diagnostics"] == ""
+
+
+def test_gmm_validity_rules_reported_policy_does_not_treat_missing_as_failure():
+    reported = GMMValidityRules(diagnostic_policy="reported")
+
+    assert reported.rejection_reasons({}, candidate={"model": "difference"}) == []
+    assert "hansen_p_too_low" in reported.rejection_reasons({"hansen_p": 0.01})
+
+
 def test_gmm_grid_search_keeps_best_result_aligned_after_failed_candidate():
     def build_spec(**kwargs):
         return kwargs

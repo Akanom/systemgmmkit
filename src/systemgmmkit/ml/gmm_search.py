@@ -15,6 +15,7 @@ from .split import panel_train_test_split
 
 LagWindow = tuple[int, int]
 DiagnosticRule = tuple[str, float]
+DiagnosticPolicy = str
 
 _SCALAR_TYPES = (int, float, str, bool)
 _DIAGNOSTIC_ATTRS = (
@@ -55,9 +56,22 @@ class GMMValidityRules:
     require_ar2: bool = True
     require_convergence: bool = True
     convergence_keys: tuple[str, ...] = ("converged", "succeeded", "success")
+    diagnostic_policy: DiagnosticPolicy = "strict"
 
-    def rejection_reasons(self, diagnostics: Mapping[str, Any]) -> list[str]:
+    def rejection_reasons(
+        self,
+        diagnostics: Mapping[str, Any],
+        *,
+        candidate: Mapping[str, Any] | None = None,
+    ) -> list[str]:
         reasons: list[str] = []
+        policy = _normalise_diagnostic_policy(self.diagnostic_policy)
+        system_candidate = _is_system_candidate(candidate=candidate, diagnostics=diagnostics)
+        require_hansen = self.require_hansen and policy != "reported"
+        require_ar2 = self.require_ar2 and policy != "reported"
+
+        if policy == "system_ar2_relaxed" and system_candidate:
+            require_ar2 = False
 
         if self.require_convergence:
             converged = _first_present(diagnostics, self.convergence_keys)
@@ -66,7 +80,7 @@ class GMMValidityRules:
 
         hansen_p = _diagnostic_float(diagnostics, "hansen_p")
         if hansen_p is None:
-            if self.require_hansen:
+            if require_hansen:
                 reasons.append("missing_hansen_p")
         else:
             if self.min_hansen_p is not None and hansen_p <= self.min_hansen_p:
@@ -76,7 +90,7 @@ class GMMValidityRules:
 
         ar2_p = _diagnostic_float(diagnostics, "ar2_p")
         if ar2_p is None:
-            if self.require_ar2:
+            if require_ar2:
                 reasons.append("missing_ar2_p")
         elif self.min_ar2_p is not None and ar2_p <= self.min_ar2_p:
             reasons.append("ar2_p_too_low")
@@ -101,6 +115,49 @@ class GMMValidityRules:
             reasons.append("instrument_count_exceeds_groups")
 
         return reasons
+
+    def diagnostic_availability(
+        self,
+        diagnostics: Mapping[str, Any],
+        *,
+        candidate: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Return backend-aware diagnostic availability metadata.
+
+        This is deliberately separate from rejection reasons: a diagnostic can
+        be unreported without being treated as failed under a non-strict policy.
+        """
+
+        policy = _normalise_diagnostic_policy(self.diagnostic_policy)
+        system_candidate = _is_system_candidate(candidate=candidate, diagnostics=diagnostics)
+        available = [
+            key
+            for key in ("hansen_p", "sargan_p", "ar1_p", "ar2_p")
+            if _diagnostic_float(diagnostics, key) is not None
+        ]
+        missing = [
+            key
+            for key in ("hansen_p", "ar2_p")
+            if _diagnostic_float(diagnostics, key) is None
+        ]
+
+        required: list[str] = []
+        if policy != "reported":
+            if self.require_hansen:
+                required.append("hansen_p")
+            if self.require_ar2 and not (policy == "system_ar2_relaxed" and system_candidate):
+                required.append("ar2_p")
+
+        missing_required = [key for key in required if key in missing]
+
+        return {
+            "diagnostic_policy": policy,
+            "system_gmm_candidate": system_candidate,
+            "available_diagnostics": ";".join(available),
+            "missing_diagnostics": ";".join(missing),
+            "required_diagnostics": ";".join(required),
+            "missing_required_diagnostics": ";".join(missing_required),
+        }
 
 
 @dataclass(frozen=True)
@@ -318,7 +375,17 @@ class GMMGridSearch:
 
                 reasons = _diagnostic_rule_failures(diagnostics, self.diagnostic_rules)
                 if self.validity_rules is not None:
-                    reasons.extend(self.validity_rules.rejection_reasons(diagnostics))
+                    availability = self.validity_rules.diagnostic_availability(
+                        diagnostics,
+                        candidate=params,
+                    )
+                    row.update(availability)
+                    reasons.extend(
+                        self.validity_rules.rejection_reasons(
+                            diagnostics,
+                            candidate=params,
+                        )
+                    )
 
                 row["passes_diagnostics"] = not reasons
                 row["rejection_reason"] = "; ".join(dict.fromkeys(reasons))
@@ -664,6 +731,61 @@ def _truthy(value: Any) -> bool:
     return bool(value)
 
 
+def _normalise_diagnostic_policy(value: str) -> str:
+    policy = str(value).strip().lower().replace("-", "_")
+    aliases = {
+        "backend_reported": "reported",
+        "available": "reported",
+        "reported_only": "reported",
+        "system_missing_ar2_ok": "system_ar2_relaxed",
+        "system_ar2_optional": "system_ar2_relaxed",
+    }
+    policy = aliases.get(policy, policy)
+    if policy not in {"strict", "reported", "system_ar2_relaxed"}:
+        raise ValueError(
+            "diagnostic_policy must be one of 'strict', 'reported', "
+            "or 'system_ar2_relaxed'."
+        )
+    return policy
+
+
+def _is_system_candidate(
+    *,
+    candidate: Mapping[str, Any] | None,
+    diagnostics: Mapping[str, Any],
+) -> bool:
+    candidates = []
+
+    if candidate is not None:
+        candidates.extend(
+            [
+                candidate.get("model"),
+                candidate.get("estimator"),
+                candidate.get("gmm_estimator"),
+                candidate.get("system"),
+            ]
+        )
+
+    candidates.extend(
+        [
+            diagnostics.get("model"),
+            diagnostics.get("estimator"),
+            diagnostics.get("gmm_estimator"),
+            diagnostics.get("system"),
+        ]
+    )
+
+    for value in candidates:
+        if isinstance(value, bool):
+            if value:
+                return True
+            continue
+        text = str(value).strip().lower()
+        if text in {"system", "system_gmm", "true", "1"}:
+            return True
+    return False
+
+
 def _diagnostic_rule_failures(
     diagnostics: Mapping[str, Any],
     diagnostic_rules: Mapping[str, DiagnosticRule],
@@ -858,6 +980,8 @@ def _build_search_report(
             "diag_ar2_p",
             "diag_n_instruments",
             "diag_n_groups",
+            "diagnostic_policy",
+            "missing_required_diagnostics",
             "passes_diagnostics",
             "rejection_reason",
             "error",
