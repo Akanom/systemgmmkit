@@ -151,7 +151,7 @@ The source repository is available at `https://github.com/Akanom/systemgmmkit`.
 
 Full validation evidence is included as repository-relative supplementary artifacts. Dynamic-GMM parity certificates and maintained Stata-oriented comparison outputs are stored under `artifacts/parity/`. The broader JOSS validation bundle is stored under `artifacts/joss/`, with an artifact index in `artifacts/joss/README.md` and `artifacts/joss/joss_artifact_file_index.csv`.
 
-The committed validation artifacts include controlled Stata comparisons, the maintained `xtabond2` parity certificate, Python/R/Stata static comparison tables, post-estimation validation summaries, ML workflow checks, visualization-related workflow evidence, performance summaries, logs, and artifact indexes.
+The committed validation artifacts include controlled Stata comparisons, the maintained `xtabond2` parity certificate, Python/R/Stata static comparison tables, post-estimation validation summaries, ML workflow checks, visualization-related workflow evidence, performance summaries, retained machine-readable run logs, and artifact indexes.
 
 The ML workflow artifacts include evidence for result adaptation, prediction utilities, regression metrics, panel-aware splitting, quick workflow helpers, and discovery of extended interfaces including `PanelTimeSeriesSplit`, `cross_validate_panel`, `compare_models`, `forecast`, `backtest_forecast`, `GMMGridSearch`, `DynamicGMMHybridSearch`, and `auto_dynamic_gmm`.
 

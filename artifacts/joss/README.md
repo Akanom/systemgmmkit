@@ -116,7 +116,6 @@ The bundle was generated from the `Dynamic_Panel_Econometrics` validation workfl
 - `artifacts/joss/dynamic_panel_econometrics/Scripts/Python/run_dynamic_gmm_parity_artifact.py`
 - `artifacts/joss/dynamic_panel_econometrics/Scripts/R/25_run_r_plm_pgmm_comparison.R`
 - `artifacts/joss/dynamic_panel_econometrics/Scripts/R/27_run_r_static_comparison.R`
-- `artifacts/joss/dynamic_panel_econometrics/Scripts/Stata/22_clean_xtabond2_from_workflow.do`
 - `artifacts/joss/dynamic_panel_econometrics/Scripts/Stata/22_stata_xtabond2_parity_reference.do`
 - `artifacts/joss/dynamic_panel_econometrics/Scripts/Stata/27_run_stata_static_comparison.do`
 - `artifacts/joss/joss_artifact_file_index.csv`

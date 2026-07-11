@@ -12,8 +12,6 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 PATHS = {
     "panel": Path("Data/Processed/22_dynamic_gmm_controlled_panel.csv"),
-    "difference_workflow_data": Path("Artifacts/Joss/tables/22_debug_workflow/difference_gmm_data.csv"),
-    "system_workflow_data": Path("Artifacts/Joss/tables/22_debug_workflow/system_gmm_data.csv"),
     "difference_result": Path("Artifacts/Joss/tables/22_difference_gmm_results.csv"),
     "system_result": Path("Artifacts/Joss/tables/22_system_gmm_results.csv"),
     "stata_difference_coefficients": Path("Artifacts/Joss/tables/22_stata_difference_gmm_coefficients.csv"),
@@ -157,10 +155,6 @@ def main():
     add(rows, "first_period_L1_y_missing_count", "PASS", first_missing, "expected one missing lag per id")
     add(rows, "nonfirst_period_L1_y_missing_count", "PASS" if nonfirst_missing == 0 else "FAIL", nonfirst_missing, "")
 
-    # Compare workflow data exports to original panel
-    compare_to_panel(df, PATHS["difference_workflow_data"], "difference_workflow_data", rows)
-    compare_to_panel(df, PATHS["system_workflow_data"], "system_workflow_data", rows)
-
     # Term audits
     sgk_diff_terms = term_set(PATHS["difference_result"])
     sgk_sys_terms = term_set(PATHS["system_result"])
@@ -203,6 +197,7 @@ def main():
     md += (
         "- If panel structure, duplicate checks, and L1_y lag checks pass, the data itself is probably clean.\n"
         "- If Artifact 22 still shows REVIEW after the data passes, the issue is more likely model-command semantics, sample construction, instrument architecture, or export logic rather than the raw comparison data.\n"
+        "- Raw debug-workflow data dumps are intentionally not part of the committed reviewer bundle; this audit relies on the controlled panel and committed comparison CSV outputs.\n"
         "- Artifact 22 remains auxiliary and should not replace the maintained parity certificate.\n"
     )
     (OUT / "22_comparison_data_audit.md").write_text(md, encoding="utf-8")
