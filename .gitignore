@@ -41,6 +41,7 @@ outputs/
 strict_matrix_debug/
 # Local diagnostic backups
 README.md.before_*
+README_BACKUP_*.md
 *.before_*
 *.py.before_*
 src/systemgmmkit/*.before_*
@@ -50,3 +51,13 @@ xtabond2_strict_parity/
 # Python cache files
 **/__pycache__/
 *.pyo
+
+# Generated validation/debug artifacts that should not be recommitted.
+artifacts/**/22_archived_broken_outputs/
+artifacts/**/22_debug_workflow/
+artifacts/**/*.log
+artifacts/**/*.dta
+artifacts/**/native_debug*.csv
+artifacts/**/*_patched.csv
+artifacts/**/*summary_final*.md
+artifacts/**/*summary_final*.csv

@@ -1,2 +1,0 @@
-xtset id time
-xtabond2 y x_pred x_exog L1_y, gmmstyle(L1_y, lag(2 3) collapse) gmmstyle(x_pred, lag(2 3) collapse) ivstyle(x_exog) twostep robust small

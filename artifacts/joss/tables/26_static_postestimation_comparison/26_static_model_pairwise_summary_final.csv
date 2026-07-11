@@ -1,6 +1,0 @@
-model,reference,comparison_software,comparison_scope,max_abs_coef_diff,max_abs_se_diff,status,notes
-OLS,statsmodels,systemgmmkit,all reported terms,5.551115123125784e-16,1.7347234759768068e-17,PASS_NUMERIC,Numerical agreement with established Python reference.
-Pooled OLS,linearmodels,systemgmmkit,all reported terms,8.881784197001252e-16,6.938893903907228e-18,PASS_NUMERIC,Numerical agreement with established Python reference.
-Fixed Effects,linearmodels,systemgmmkit,aligned entity-FE slope coefficients,0.0,0.0,PASS_NUMERIC,Slope coefficients match after aligning entity-only FE specification. FE intercepts are not used for parity because intercept normalization differs across implementations.
-Random Effects,linearmodels,systemgmmkit,all reported coefficients,8.881784197001252e-16,0.0006577757626592,PASS_COEFFICIENTS,Coefficients match numerically; standard errors differ slightly because covariance implementations are not identical.
-2SLS,linearmodels,systemgmmkit,all reported coefficients,6.550315845288424e-15,0.000380340948015,PASS_COEFFICIENTS,Coefficients match numerically; standard errors differ slightly due to covariance scaling/correction conventions.
