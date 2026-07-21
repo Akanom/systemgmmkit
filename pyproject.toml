@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68,<82", "wheel>=0.41,<1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "systemgmmkit"
-version = "0.5.11"
+version = "0.5.12"
 description = "Panel-data econometrics workflows for OLS, FE, RE, IV/2SLS, Difference GMM, System GMM, diagnostics, post-estimation, visualization, and ML-style validation in Python."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -43,10 +43,9 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
-  "numpy>=1.23",
-  "pandas>=1.5",
-  "scipy>=1.9",
-  "matplotlib>=3.8",
+  "numpy>=1.23,<3",
+  "pandas>=1.5,<4",
+  "scipy>=1.9,<2",
 ]
 
 [project.urls]
@@ -55,20 +54,23 @@ Repository = "https://github.com/Akanom/systemgmmkit"
 Issues = "https://github.com/Akanom/systemgmmkit/issues"
 
 [project.optional-dependencies]
-pydynpd = ["pydynpd>=0.2.2"]
-fe = ["linearmodels>=5"]
-reports = ["tabulate>=0.9"]
+pydynpd = ["pydynpd>=0.2.2,<1"]
+fe = ["linearmodels>=5,<8"]
+plots = ["matplotlib>=3.8,<4"]
+reports = ["tabulate>=0.9,<1"]
 dev = [
-  "pytest>=8",
-  "ruff>=0.6",
-  "mypy>=1.10",
-  "build>=1.2",
-  "twine>=5",
+  "matplotlib>=3.8,<4",
+  "pytest>=8,<10",
+  "ruff>=0.6,<1",
+  "mypy>=1.10,<2",
+  "build>=1.2,<2",
+  "twine>=5,<7",
 ]
 all = [
-  "pydynpd>=0.2.2",
-  "linearmodels>=5",
-  "tabulate>=0.9",
+  "pydynpd>=0.2.2,<1",
+  "linearmodels>=5,<8",
+  "matplotlib>=3.8,<4",
+  "tabulate>=0.9,<1",
 ]
 
 [project.scripts]

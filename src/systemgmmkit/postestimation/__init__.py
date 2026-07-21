@@ -3,75 +3,97 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Mapping, Sequence
+from importlib import import_module
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from .plots import (
-    PlotTheme,
-    available_styles,
-    coefficient_plot,
-    conditional_effects_plot,
-    counterfactual_scenario_plot,
-    dynamic_persistence_plot,
-    effect_surface_plot,
-    export_postestimation_gallery,
-    fixed_effects_plot,
-    hansen_ar_diagnostic_plot,
-    instrument_architecture_plot,
-    instrument_count_plot,
-    interaction_plot,
-    marginal_effects_plot,
-    margins_prediction_plot,
-    model_health_panel,
-    panel_spaghetti_plot,
-    parameter_impact_plot,
-    plot_all_diagnostics,
-    qq_residual_plot,
-    residual_histogram,
-    residuals_vs_fitted_plot,
-    sgm_plot_bundle,
-    surface_3d_plot,
-)
-from .result_plot import (
-    ResultPlotAccessor,
-    attach_plot_accessor,
-    export_sgm_viz_report,
-    extract_health_metrics,
-    extract_instrument_architecture,
-    infer_persistence_phi,
-    install_result_plot_accessors,
-    model_comparison_dashboard_v2,
-    plot_accessor,
-)
-from .sgm_viz import (
-    dynamic_persistence_dashboard,
-    effect_surface_dashboard,
-    instrument_architecture_dashboard,
-    model_health_dashboard,
-    publication_panel,
-)
-from .sgm_viz_v2 import (
-    HealthMetrics,
-    InstrumentArchitecture,
-    PersistenceAnalytics,
-    SGMVizAccessor,
-    dynamic_persistence_dashboard_v2,
-    effect_surface_dashboard_v2,
-    export_sgm_viz_v2_gallery,
-    health_dashboard,
-    instrument_architecture_dashboard_v2,
-    instrument_dashboard,
-    model_health_dashboard_v2,
-    persistence_dashboard,
-    publication_panel_v2,
-    sgm_viz,
-)
-from .standard_gallery import (
-    StandardGalleryResult,
-    export_standard_postestimation_gallery,
-)
+_PLOT_MODULE_EXPORTS = {
+    "plots": {
+        "PlotTheme",
+        "available_styles",
+        "coefficient_plot",
+        "conditional_effects_plot",
+        "counterfactual_scenario_plot",
+        "dynamic_persistence_plot",
+        "effect_surface_plot",
+        "export_postestimation_gallery",
+        "fixed_effects_plot",
+        "hansen_ar_diagnostic_plot",
+        "instrument_architecture_plot",
+        "instrument_count_plot",
+        "interaction_plot",
+        "marginal_effects_plot",
+        "margins_prediction_plot",
+        "model_health_panel",
+        "panel_spaghetti_plot",
+        "parameter_impact_plot",
+        "plot_all_diagnostics",
+        "qq_residual_plot",
+        "residual_histogram",
+        "residuals_vs_fitted_plot",
+        "sgm_plot_bundle",
+        "surface_3d_plot",
+    },
+    "result_plot": {
+        "ResultPlotAccessor",
+        "attach_plot_accessor",
+        "export_sgm_viz_report",
+        "extract_health_metrics",
+        "extract_instrument_architecture",
+        "infer_persistence_phi",
+        "install_result_plot_accessors",
+        "model_comparison_dashboard_v2",
+        "plot_accessor",
+    },
+    "sgm_viz": {
+        "dynamic_persistence_dashboard",
+        "effect_surface_dashboard",
+        "instrument_architecture_dashboard",
+        "model_health_dashboard",
+        "publication_panel",
+    },
+    "sgm_viz_v2": {
+        "HealthMetrics",
+        "InstrumentArchitecture",
+        "PersistenceAnalytics",
+        "SGMVizAccessor",
+        "dynamic_persistence_dashboard_v2",
+        "effect_surface_dashboard_v2",
+        "export_sgm_viz_v2_gallery",
+        "health_dashboard",
+        "instrument_architecture_dashboard_v2",
+        "instrument_dashboard",
+        "model_health_dashboard_v2",
+        "persistence_dashboard",
+        "publication_panel_v2",
+        "sgm_viz",
+    },
+    "standard_gallery": {
+        "StandardGalleryResult",
+        "export_standard_postestimation_gallery",
+    },
+}
+
+
+def __getattr__(name: str) -> Any:
+    for module_name, exports in _PLOT_MODULE_EXPORTS.items():
+        if name not in exports:
+            continue
+        try:
+            value = getattr(import_module(f"{__name__}.{module_name}"), name)
+        except ModuleNotFoundError as exc:
+            if exc.name == "matplotlib" or (exc.name or "").startswith("matplotlib."):
+                raise ImportError(
+                    "Post-estimation plotting requires Matplotlib. "
+                    "Install it with: pip install 'systemgmmkit[plots]'"
+                ) from exc
+            raise
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "PlotTheme",
@@ -501,7 +523,9 @@ def _split_linear_terms(expression: str) -> list[tuple[float, str]]:
     return terms
 
 
-def _linear_expression_to_weights(expression: str, params: pd.Series) -> tuple[pd.Series, float | None]:
+def _linear_expression_to_weights(
+    expression: str, params: pd.Series
+) -> tuple[pd.Series, float | None]:
     lhs, sep, rhs = expression.partition("=")
     w = pd.Series(0.0, index=params.index, dtype=float)
 
@@ -514,9 +538,7 @@ def _linear_expression_to_weights(expression: str, params: pd.Series) -> tuple[p
     if sep:
         rhs_text = rhs.strip()
         if not _is_number(rhs_text):
-            raise ValueError(
-                "Right-hand side of a linear constraint must be a numeric value."
-            )
+            raise ValueError("Right-hand side of a linear constraint must be a numeric value.")
         value = float(rhs_text)
 
     return w, value
@@ -552,11 +574,7 @@ def _split_constraints(text: str) -> list[str]:
         text = text[5:].strip()
     if text.startswith("(") and text.endswith(")"):
         text = re.sub(r"\)\s*\(", ";\n", text[1:-1])
-    parts = [
-        part.strip()
-        for part in re.split(r"[;\n,]+", text)
-        if part.strip()
-    ]
+    parts = [part.strip() for part in re.split(r"[;\n,]+", text) if part.strip()]
     if not parts:
         raise ValueError("Constraint expression cannot be empty.")
     return parts
@@ -566,7 +584,9 @@ def _constraints_to_matrices(
     constraints: Sequence[str] | str,
     params: pd.Series,
 ) -> tuple[np.ndarray, np.ndarray]:
-    expressions = _split_constraints(constraints) if isinstance(constraints, str) else list(constraints)
+    expressions = (
+        _split_constraints(constraints) if isinstance(constraints, str) else list(constraints)
+    )
 
     rows: list[np.ndarray] = []
     values: list[float] = []
@@ -736,7 +756,9 @@ def wald_test(
         distribution = "F"
     else:
         f_statistic = float("nan")
-        p_value = float(stats.chi2.sf(statistic, df_constraints)) if stats is not None else float("nan")
+        p_value = (
+            float(stats.chi2.sf(statistic, df_constraints)) if stats is not None else float("nan")
+        )
         display_statistic = statistic
         distribution = "chi2"
 

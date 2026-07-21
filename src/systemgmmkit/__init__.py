@@ -145,7 +145,7 @@ __all__ = [
     "plot_accessor",
 ]
 
-__version__ = "0.5.11"
+__version__ = "0.5.12"
 
 import contextlib
 
@@ -156,10 +156,10 @@ from .dynamic_panel import (
     run_system_gmm,
 )
 
-with contextlib.suppress(Exception):
+with contextlib.suppress(ImportError):
     from .estimators.first_difference import FirstDifferenceResult, first_difference
 
-with contextlib.suppress(Exception):
+with contextlib.suppress(ImportError):
     from .reporting import ParityReport, ParityResult, classify_parity_result
 
 from .estimators.first_difference import FirstDifferenceResult, first_difference
@@ -190,7 +190,7 @@ from .postestimation import (
 )
 
 # High-quality post-estimation graphics API
-with contextlib.suppress(Exception):
+with contextlib.suppress(ImportError):
     from .postestimation import (
         PlotTheme,
         available_styles,
@@ -254,8 +254,10 @@ try:
     )
 
     install_result_plot_accessors()
-except Exception:
+except ImportError:
     pass
+
+from . import postestimation as _postestimation
 from .easy import (
     DynamicGMMWorkflowResult as DynamicGMMWorkflowResult,
 )
@@ -266,3 +268,12 @@ from .easy import (
     system_gmm as system_gmm,
 )
 
+_OPTIONAL_PLOT_EXPORTS = {
+    export for exports in _postestimation._PLOT_MODULE_EXPORTS.values() for export in exports
+}
+
+
+def __getattr__(name: str):
+    if name in _OPTIONAL_PLOT_EXPORTS:
+        return getattr(_postestimation, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

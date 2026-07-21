@@ -1,3 +1,27 @@
+# systemgmmkit 0.5.12 Release Notes
+
+## Supply-chain and dependency hardening
+
+Version `0.5.12` is a security-focused patch release. It adds bounded direct
+dependencies, hash-verified reproducible requirement sets, automated dependency
+auditing, distribution-content inspection, an SBOM, dependency-review gates,
+pinned GitHub Actions, and trusted PyPI publishing with build provenance.
+
+Matplotlib is now an optional `plots` dependency. Core estimation and
+post-estimation imports work without Matplotlib; plotting APIs report the exact
+extra to install when it is absent:
+
+```bash
+python -m pip install "systemgmmkit[plots]"
+```
+
+The release workflow verifies that the release tag matches the package version,
+builds once, checks both artifacts, and publishes the verified artifacts through
+the protected `pypi` environment. See `docs/security/` for the evidence review,
+release-integrity procedure, and the remaining Socket alert monitoring policy.
+
+---
+
 # systemgmmkit 0.5.9 Release Notes
 
 ## Overview
