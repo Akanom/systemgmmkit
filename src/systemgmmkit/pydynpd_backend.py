@@ -526,7 +526,11 @@ def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
     if hansen_p is None:
         hansen_p = _valid_p_value(
             _extract_number_from_output(
-                [r"hansen[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)"],
+                [
+                    r"hansen[^\n]*prob\s*>\s*chi2\s*=\s*([0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)",
+                    r"hansen[^\n]*(?:p-value|pvalue|p\s*value)\s*[=:]\s*([0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)",
+                    r"hansen[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)",
+                ],
                 output,
             )
         )
@@ -534,7 +538,11 @@ def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
     if sargan_p is None:
         sargan_p = _valid_p_value(
             _extract_number_from_output(
-                [r"sargan[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)"],
+                [
+                    r"sargan[^\n]*prob\s*>\s*chi2\s*=\s*([0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)",
+                    r"sargan[^\n]*(?:p-value|pvalue|p\s*value)\s*[=:]\s*([0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)",
+                    r"sargan[^\n]*(?:p|prob|pr)[^0-9.]*([0-9]*\.?[0-9]+)",
+                ],
                 output,
             )
         )
