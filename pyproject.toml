@@ -60,6 +60,8 @@ plots = ["matplotlib>=3.8,<4"]
 reports = ["tabulate>=0.9,<1"]
 dev = [
   "matplotlib>=3.8,<4",
+  "statsmodels>=0.14,<1",
+  "tomli>=2,<3; python_version < '3.11'",
   "pytest>=8,<10",
   "ruff>=0.6,<1",
   "mypy>=1.10,<2",

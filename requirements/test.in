@@ -5,4 +5,6 @@ mypy>=1.10,<2
 pydynpd>=0.2.2,<1
 pytest>=8,<10
 ruff>=0.6,<1
+statsmodels>=0.14,<1
 tabulate>=0.9,<1
+tomli>=2,<3; python_version < "3.11"
