@@ -1,7 +1,7 @@
 -r runtime.in
 linearmodels>=5,<8
 matplotlib>=3.8,<4
-mypy>=1.10,<2
+mypy>=1.10,<3
 pydynpd>=0.2.2,<1
 pytest>=8,<10
 ruff>=0.6,<1
