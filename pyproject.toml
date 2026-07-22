@@ -64,7 +64,7 @@ dev = [
   "tomli>=2,<3; python_version < '3.11'",
   "pytest>=8,<10",
   "ruff>=0.6,<1",
-  "mypy>=1.10,<2",
+  "mypy>=1.10,<3",
   "build>=1.2,<2",
   "twine>=5,<7",
 ]
