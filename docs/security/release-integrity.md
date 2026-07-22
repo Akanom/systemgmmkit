@@ -1,5 +1,9 @@
 # Release Integrity
 
+The security and build jobs call `Akanom/python-package-governance` at immutable
+commit `863aef9dd96c3ea40806d4fa0b6e78b50323ad6b`; dependency updates must review
+and deliberately advance that SHA.
+
 Every release must:
 
 1. originate from a reviewed GitHub release tag matching `pyproject.toml`;
