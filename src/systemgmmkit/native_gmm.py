@@ -374,15 +374,98 @@ def _transformed_error_terms(
     raise ValueError("transformation must be one of 'fd', 'difference', 'fod', or 'orthogonal'.")
 
 
+def _cached_style_source(
+    group: pd.DataFrame,
+    variable: str,
+    cache: dict[str, pd.Series],
+) -> pd.Series:
+    """Return one immutable prepared source per group and variable."""
+    source = cache.get(variable)
+    if source is None:
+        source = _style_source_series(group, variable)
+        cache[variable] = source
+    return source
+
+
+def _prepared_transformed_regressor_at(
+    group: pd.DataFrame,
+    spec: DynamicPanelSpec,
+    regressor: str,
+    pos: int,
+    *,
+    source_cache: dict[str, pd.Series],
+    transformed_source_cache: dict[tuple[str, str], pd.Series],
+) -> float | None:
+    """Transform a structural regressor using immutable per-group sources."""
+    transformation_normalized = str(spec.transformation).strip().lower()
+    parsed = _parse_lagged_regressor(regressor)
+
+    if parsed is not None and transformation_normalized in {
+        "fod",
+        "orthogonal",
+        "orthogonal_deviations",
+        "forward_orthogonal_deviations",
+    }:
+        import os as _prepared_fod_os
+
+        mode = (
+            _prepared_fod_os.getenv(
+                "SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE",
+                "transform_lagged",
+            )
+            .strip()
+            .lower()
+        )
+        if mode in {"lag_transformed", "lag_of_transformed", "alternative"}:
+            lag, base = parsed
+            cache_key = (base, transformation_normalized)
+            transformed_base = transformed_source_cache.get(cache_key)
+            if transformed_base is None:
+                base_series = group[base]
+                transformed_base = pd.Series(
+                    [
+                        _transform_at(base_series, position, spec.transformation)
+                        for position in range(len(base_series))
+                    ],
+                    index=base_series.index,
+                )
+                transformed_source_cache[cache_key] = transformed_base
+            return _safe_get(transformed_base, pos - lag)
+        if mode not in {"transform_lagged", "current", "default", ""}:
+            raise ValueError(
+                "Unsupported SYSTEMGMMKIT_FOD_LAGGED_REGRESSOR_MODE="
+                f"{mode!r}. Use transform_lagged or lag_transformed."
+            )
+
+    return _transform_at(
+        _cached_style_source(group, regressor, source_cache),
+        pos,
+        spec.transformation,
+    )
+
+
+def _normalize_preparation_engine(value: str) -> str:
+    """Validate the internal matrix-preparation engine selector."""
+    if not isinstance(value, str):
+        raise TypeError("preparation_engine must be 'reference' or 'accelerated'.")
+    normalized = value.strip().lower()
+    if normalized not in {"reference", "accelerated"}:
+        raise ValueError("preparation_engine must be 'reference' or 'accelerated'.")
+    return normalized
+
+
 def _build_native_matrices(
     spec: DynamicPanelSpec,
     data: pd.DataFrame,
     *,
     entity: str,
     time: str,
+    preparation_engine: str = "reference",
 ) -> tuple[
     np.ndarray, np.ndarray, np.ndarray, list[str], pd.Index, int, list[str], list[dict[str, object]]
 ]:
+    preparation_engine = _normalize_preparation_engine(preparation_engine)
+    use_cached_preparation = preparation_engine == "accelerated"
     raw_vars = _required_variables(spec)
     _require_columns(data, [entity, time, *raw_vars])
     work = data[[entity, time, *raw_vars]].dropna().copy().sort_values([entity, time])
@@ -421,7 +504,14 @@ def _build_native_matrices(
         group["_native_original_index"] = group.index
         group = group.set_index(time).reindex(time_values)
 
-        dep = group[spec.dependent].astype(float)
+        source_cache: dict[str, pd.Series] = {}
+        transformed_source_cache: dict[tuple[str, str], pd.Series] = {}
+
+        dep = (
+            _cached_style_source(group, spec.dependent, source_cache)
+            if use_cached_preparation
+            else group[spec.dependent].astype(float)
+        )
 
         def _time_dummy_x_values(current_time: object) -> list[float]:
             if not time_dummy_values:
@@ -465,7 +555,17 @@ def _build_native_matrices(
             valid = True
 
             for reg in spec.regressors:
-                val = _transformed_regressor_at(group, reg, pos, spec.transformation)
+                if use_cached_preparation:
+                    val = _prepared_transformed_regressor_at(
+                        group,
+                        spec,
+                        reg,
+                        pos,
+                        source_cache=source_cache,
+                        transformed_source_cache=transformed_source_cache,
+                    )
+                else:
+                    val = _transformed_regressor_at(group, reg, pos, spec.transformation)
                 if val is None:
                     valid = False
                     break
@@ -489,7 +589,11 @@ def _build_native_matrices(
             # Important: if the structural regressor is L1.y but the GMM block is
             # y, lag(2 2), the source is still raw y, not already-lagged L1.y.
             for block in spec.gmm:
-                s = _style_source_series(group, block.variable)
+                s = (
+                    _cached_style_source(group, block.variable, source_cache)
+                    if use_cached_preparation
+                    else _style_source_series(group, block.variable)
+                )
                 block_label = _style_label(block.variable)
 
                 instrument_pos = pos
@@ -530,7 +634,11 @@ def _build_native_matrices(
                 if getattr(block, "eq", None) == "level":
                     continue
 
-                s = _style_source_series(group, block.variable)
+                s = (
+                    _cached_style_source(group, block.variable, source_cache)
+                    if use_cached_preparation
+                    else _style_source_series(group, block.variable)
+                )
 
                 # xtdpdgmm model(fodev) compatibility:
                 # IV-style instruments in the FOD transformed equation are entered
@@ -596,7 +704,10 @@ def _build_native_matrices(
                 x_vals = []
                 valid = True
                 for reg in spec.regressors:
-                    val = _level_regressor_at(group, reg, pos)
+                    if use_cached_preparation:
+                        val = _safe_get(_cached_style_source(group, reg, source_cache), pos)
+                    else:
+                        val = _level_regressor_at(group, reg, pos)
                     if val is None:
                         valid = False
                         break
@@ -618,7 +729,11 @@ def _build_native_matrices(
                 # This is deterministic estimator logic. Diagnostic environment
                 # switches must not alter production matrix construction.
                 for block in spec.gmm:
-                    s = _style_source_series(group, block.variable)
+                    s = (
+                        _cached_style_source(group, block.variable, source_cache)
+                        if use_cached_preparation
+                        else _style_source_series(group, block.variable)
+                    )
                     block_label = _style_label(block.variable)
                     level_lag = _native_system_level_diff_lag(block)
                     val = _lagged_difference_instrument_at(s, pos, lag=level_lag)
@@ -631,7 +746,11 @@ def _build_native_matrices(
                     if getattr(block, "eq", None) == "diff":
                         continue
 
-                    s = _style_source_series(group, block.variable)
+                    s = (
+                        _cached_style_source(group, block.variable, source_cache)
+                        if use_cached_preparation
+                        else _style_source_series(group, block.variable)
+                    )
                     val = _safe_get(s, pos)
 
                     if val is not None:
@@ -1861,23 +1980,31 @@ def run_native_dynamic_panel_gmm(
     entity: str,
     time: str,
     windmeijer: bool = False,
+    preparation_engine: str = "reference",
 ) -> NativeGMMResult:
     """Run the native Difference/System GMM estimator.
+
+    ``preparation_engine="reference"`` preserves the validated preparation
+    implementation and remains the default. ``"accelerated"`` enables an
+    exactly equivalent per-fit cache for repeated source and transformed Series;
+    estimator algebra, tolerances, and diagnostics are shared unchanged.
 
     Native System GMM has baseline xtabond2 parity for the current collapsed
     two-step benchmark covering coefficients, raw moments, group-scaled A2,
     and Hansen J.
 
-    Windmeijer correction is deliberately not implemented yet because an
-    incorrect correction would be worse than no correction. Use a validated
-    backend for Windmeijer-style two-step inference until native SE parity is
-    implemented and tested.
+    Windmeijer correction is available only on the maintained, explicitly
+    validated configurations and retains its existing guards.
     """
 
     windmeijer_requested = bool(windmeijer)
 
     y, X, Z, names, row_index, nobs_effective, instrument_names, row_meta = _build_native_matrices(
-        spec, data, entity=entity, time=time
+        spec,
+        data,
+        entity=entity,
+        time=time,
+        preparation_engine=preparation_engine,
     )
     y = np.asarray(y, dtype=float).reshape(-1, 1)
 

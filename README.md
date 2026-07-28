@@ -31,6 +31,28 @@ The package is designed for empirical researchers working in economics, finance,
 
 The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
+## Controlled performance mode
+
+Native dynamic-panel GMM retains the validated preparation path by default. For
+large or repeatedly evaluated specifications, the direct native runner offers an
+opt-in preparation cache without changing estimator algebra or output ordering:
+
+```python
+from systemgmmkit import run_native_dynamic_panel_gmm
+
+result = run_native_dynamic_panel_gmm(
+    spec,
+    data,
+    entity="firm_id",
+    time="year",
+    preparation_engine="accelerated",
+)
+```
+
+Use `preparation_engine="reference"` for the permanent audit and rollback path.
+See [controlled performance benchmarks](docs/PERFORMANCE.md) for the benchmark
+contract, exact-parity requirements, measured scope, and reproduction commands.
+
 ---
 
 # Why systemgmmkit?
