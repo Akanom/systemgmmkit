@@ -1,3 +1,5 @@
 build>=1.2,<2
+colorama==0.4.6; sys_platform == "win32"
 pip-audit>=2.10,<3
+pywin32-ctypes==0.2.3; sys_platform == "win32"
 twine>=5,<7

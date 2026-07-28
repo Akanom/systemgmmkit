@@ -1,7 +1,7 @@
 # Release Integrity
 
-The security and build jobs call `Akanom/python-package-governance` at immutable
-commit `256d69be94f67d22548e9f1431b3f9902f235a50`; dependency updates must review
+The security and build jobs call `Akanom/python-package-governance` at immutable,
+verified commit `f3147a43f2857dfdc033d563932f0c21a4fbb44d`; dependency updates must review
 and deliberately advance that SHA.
 
 Every release must:
@@ -15,6 +15,12 @@ Every release must:
 7. publish unchanged artifacts through PyPI Trusted Publishing;
 8. use protected-environment approval for the `pypi` environment; and
 9. verify and smoke-test the package downloaded from PyPI after publication.
+
+The installed-distribution smoke command is:
+
+```powershell
+python scripts/release_smoke.py --expected-version <version>
+```
 
 The final post-publication verification is an operator step until a separate
 post-release workflow is introduced. Record the source commit, workflow run,

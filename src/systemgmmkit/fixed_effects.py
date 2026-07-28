@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import pandas as pd
 
 CovarianceType = Literal["unadjusted", "robust", "clustered"]
+StaticPreparationEngine = Literal["reference", "accelerated"]
 
 
 @dataclass(frozen=True)
@@ -95,12 +96,58 @@ def _require_columns(data: pd.DataFrame, columns: list[str]) -> None:
         raise KeyError(f"Missing required columns: {missing}")
 
 
+def _normalize_preparation_engine(value: str) -> StaticPreparationEngine:
+    """Validate the static-estimator preparation engine selector."""
+    if not isinstance(value, str):
+        raise TypeError("preparation_engine must be 'reference' or 'accelerated'.")
+    normalized = value.strip().lower()
+    if normalized not in {"reference", "accelerated"}:
+        raise ValueError("preparation_engine must be 'reference' or 'accelerated'.")
+    return cast(StaticPreparationEngine, normalized)
+
+
+def _drop_collinear_columns(
+    X: pd.DataFrame,
+    *,
+    preparation_engine: str = "reference",
+) -> tuple[pd.DataFrame, list[str]]:
+    """Drop collinear columns while preserving the reference selection order.
+
+    The accelerated path performs one full-design rank check. A full-rank design
+    cannot contain a collinear prefix, so it can safely bypass the repeated
+    prefix SVDs. Rank-deficient designs fall back to the unchanged sequential
+    reference algorithm, preserving its tolerance and selected-column order.
+    """
+
+    engine = _normalize_preparation_engine(preparation_engine)
+    if engine == "accelerated":
+        values = np.ascontiguousarray(X.to_numpy(dtype=np.float64, copy=False))
+        if int(np.linalg.matrix_rank(values)) == values.shape[1]:
+            return X, []
+
+    keep: list[str] = []
+    current = np.empty((len(X), 0), dtype=float)
+    current_rank = 0
+    dropped: list[str] = []
+    for col in X.columns:
+        candidate = np.column_stack([current, X[col].to_numpy(dtype=float)])
+        candidate_rank = int(np.linalg.matrix_rank(candidate))
+        if candidate_rank > current_rank:
+            keep.append(col)
+            current = candidate
+            current_rank = candidate_rank
+        else:
+            dropped.append(col)
+    return X[keep], dropped
+
+
 def _build_lsdv_design(
     data: pd.DataFrame,
     *,
     entity: str,
     time: str,
     spec: FixedEffectsSpec,
+    preparation_engine: str = "reference",
 ) -> tuple[pd.Series, pd.DataFrame, pd.DataFrame, list[str]]:
     """Build an explicit least-squares dummy-variable design matrix.
 
@@ -109,6 +156,7 @@ def _build_lsdv_design(
     the implementation auditable.
     """
 
+    preparation_engine = _normalize_preparation_engine(preparation_engine)
     columns = [entity, time, spec.dependent, *spec.regressors]
     _require_columns(data, columns)
     work = data[columns].dropna().copy()
@@ -152,25 +200,12 @@ def _build_lsdv_design(
     # Drop exactly collinear columns if requested. This protects against absorbed
     # variables and duplicate regressors without silently changing named slopes.
     if spec.drop_absorbed:
-        keep: list[str] = []
-        current = np.empty((len(X), 0), dtype=float)
-        current_rank = 0
-        dropped: list[str] = []
-        for col in X.columns:
-            candidate = np.column_stack([current, X[col].to_numpy(dtype=float)])
-            candidate_rank = int(np.linalg.matrix_rank(candidate))
-            if candidate_rank > current_rank:
-                keep.append(col)
-                current = candidate
-                current_rank = candidate_rank
-            else:
-                dropped.append(col)
+        X, dropped = _drop_collinear_columns(X, preparation_engine=preparation_engine)
         if dropped:
             notes.append(
                 f"Dropped absorbed/collinear columns: {', '.join(dropped[:10])}"
                 + ("..." if len(dropped) > 10 else "")
             )
-        X = X[keep]
 
     return y, X, work[[entity, time]], notes
 
@@ -233,15 +268,26 @@ def run_fixed_effects_native(
     *,
     entity: str,
     time: str,
+    preparation_engine: str = "reference",
 ) -> FixedEffectsResult:
     """Estimate a static one-/two-way fixed-effects model using native NumPy.
 
-    This is an exact LSDV estimator for slopes. It is intentionally conservative
-    and transparent. For very large panels, install `linearmodels` and use
+    This is an exact LSDV estimator for slopes. ``preparation_engine="reference"``
+    remains the default. ``"accelerated"`` can bypass repeated prefix-rank checks
+    for full-rank designs; rank-deficient designs use the unchanged reference
+    selection algorithm. Estimator algebra and covariance calculations are shared.
+
+    For very large panels, install `linearmodels` and use
     `run_fixed_effects(..., prefer_backend="linearmodels")`.
     """
 
-    y, X_df, ids, notes = _build_lsdv_design(data, entity=entity, time=time, spec=spec)
+    y, X_df, ids, notes = _build_lsdv_design(
+        data,
+        entity=entity,
+        time=time,
+        spec=spec,
+        preparation_engine=preparation_engine,
+    )
     X = X_df.to_numpy(dtype=float)
     yv = y.to_numpy(dtype=float)
 
@@ -312,6 +358,7 @@ def run_fixed_effects(
     entity: str,
     time: str,
     prefer_backend: Literal["native", "linearmodels"] = "native",
+    preparation_engine: str = "reference",
 ) -> Any:
     """Run a fixed-effects model.
 
@@ -320,10 +367,18 @@ def run_fixed_effects(
     """
 
     if prefer_backend == "native":
-        return run_fixed_effects_native(spec, data, entity=entity, time=time)
+        return run_fixed_effects_native(
+            spec,
+            data,
+            entity=entity,
+            time=time,
+            preparation_engine=preparation_engine,
+        )
 
     if prefer_backend != "linearmodels":
         raise ValueError("prefer_backend must be 'native' or 'linearmodels'.")
+    if _normalize_preparation_engine(preparation_engine) != "reference":
+        raise ValueError("preparation_engine applies only to the native fixed-effects backend.")
 
     try:
         from linearmodels.panel import PanelOLS
