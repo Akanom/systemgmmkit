@@ -10,6 +10,21 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## Unreleased
+
+### Added
+
+* Added a reproducible native-GMM benchmark and profiling harness covering
+  balanced, unbalanced, unsorted, gapped, FD, FOD, Difference-GMM, System-GMM,
+  and scaling workloads with cold/warm timing and Python-allocation evidence.
+* Added an opt-in `preparation_engine="accelerated"` native-GMM preparation path
+  that caches repeated per-fit pandas sources while preserving exact prepared
+  matrices, estimator outputs, diagnostics, and the default reference path.
+* Documented reviewed dependency-scanner capabilities and artifact provenance;
+  no finding is blanket-suppressed or accepted as a release exception.
+
+---
+
 ## 0.5.11
 
 ### Added
