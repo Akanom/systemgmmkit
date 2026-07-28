@@ -33,14 +33,30 @@ The objective is not only to estimate models. The objective is to make modelling
 
 ## Controlled performance mode
 
-Native dynamic-panel GMM retains the validated preparation path by default. For
-large or repeatedly evaluated specifications, the direct native runner offers an
-opt-in preparation cache without changing estimator algebra or output ordering:
+Native dynamic-panel GMM, native LSDV fixed effects, and native panel IV retain
+their validated preparation paths by default. For large or repeatedly evaluated
+specifications, opt-in preparation engines remove measured preparation overhead
+without changing estimator algebra or output ordering:
 
 ```python
 from systemgmmkit import run_native_dynamic_panel_gmm
 
 result = run_native_dynamic_panel_gmm(
+    spec,
+    data,
+    entity="firm_id",
+    time="year",
+    preparation_engine="accelerated",
+)
+```
+
+The same selector is available on `run_fixed_effects()` and `run_panel_2sls()`.
+It is most useful when entity/time effects create a wide LSDV design:
+
+```python
+from systemgmmkit import run_fixed_effects
+
+result = run_fixed_effects(
     spec,
     data,
     entity="firm_id",
@@ -406,6 +422,7 @@ result = run_fixed_effects(
     df,
     entity="firm_id",
     time="year",
+    preparation_engine="accelerated",
 )
 
 print(result.summary_frame())
@@ -427,8 +444,7 @@ from systemgmmkit import RandomEffectsSpec, run_random_effects
 
 spec = RandomEffectsSpec(
     dependent="y",
-    regressors=["x1", "x2"],
-    controls=["z1"],
+    regressors=["x1", "x2", "z1"],
 )
 
 result = run_random_effects(
@@ -457,7 +473,7 @@ from systemgmmkit import PanelIVSpec, run_panel_2sls
 
 spec = PanelIVSpec(
     dependent="y",
-    exogenous=["x1", "z1"],
+    exog=["x1", "z1"],
     endogenous=["x2"],
     instruments=["z2"],
 )
@@ -467,6 +483,7 @@ result = run_panel_2sls(
     df,
     entity="firm_id",
     time="year",
+    preparation_engine="accelerated",
 )
 
 print(result.summary_frame())

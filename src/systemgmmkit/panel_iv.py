@@ -5,7 +5,13 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from .fixed_effects import CovarianceType, _normal_pvalues_from_t, _require_columns
+from .fixed_effects import (
+    CovarianceType,
+    _drop_collinear_columns,
+    _normal_pvalues_from_t,
+    _normalize_preparation_engine,
+    _require_columns,
+)
 
 
 @dataclass(frozen=True)
@@ -92,21 +98,10 @@ def _add_constant(X: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _drop_collinear(X: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
-    keep: list[str] = []
-    dropped: list[str] = []
-    current = np.empty((len(X), 0), dtype=float)
-    current_rank = 0
-    for col in X.columns:
-        candidate = np.column_stack([current, X[col].to_numpy(dtype=float)])
-        rank = int(np.linalg.matrix_rank(candidate))
-        if rank > current_rank:
-            keep.append(col)
-            current = candidate
-            current_rank = rank
-        else:
-            dropped.append(col)
-    return X[keep], dropped
+def _drop_collinear(
+    X: pd.DataFrame, *, preparation_engine: str = "reference"
+) -> tuple[pd.DataFrame, list[str]]:
+    return _drop_collinear_columns(X, preparation_engine=preparation_engine)
 
 
 def _designs(
@@ -115,7 +110,9 @@ def _designs(
     *,
     entity: str,
     time: str,
+    preparation_engine: str = "reference",
 ) -> tuple[pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame, list[str]]:
+    preparation_engine = _normalize_preparation_engine(preparation_engine)
     columns = [entity, time, spec.dependent, *spec.exog, *spec.endogenous, *spec.instruments]
     _require_columns(data, columns)
     work = data[columns].dropna().copy().sort_values([entity, time])
@@ -148,8 +145,8 @@ def _designs(
         notes.append("Time fixed effects included as LSDV controls in both stages.")
 
     if spec.drop_absorbed:
-        structural, dropped_x = _drop_collinear(structural)
-        instruments, dropped_z = _drop_collinear(instruments)
+        structural, dropped_x = _drop_collinear(structural, preparation_engine=preparation_engine)
+        instruments, dropped_z = _drop_collinear(instruments, preparation_engine=preparation_engine)
         if dropped_x:
             notes.append(
                 f"Dropped collinear structural columns: {', '.join(dropped_x[:10])}"
@@ -186,10 +183,22 @@ def run_panel_2sls(
     *,
     entity: str,
     time: str,
+    preparation_engine: str = "reference",
 ) -> PanelIVResult:
-    """Estimate a native panel IV/2SLS model with optional LSDV effects."""
+    """Estimate a native panel IV/2SLS model with optional LSDV effects.
 
-    y, X_df, Z_df, ids, notes = _designs(spec, data, entity=entity, time=time)
+    ``preparation_engine="accelerated"`` can bypass repeated prefix-rank checks
+    for full-rank LSDV designs. Rank-deficient designs fall back to the unchanged
+    reference selector. The 2SLS projection and covariance algebra are unchanged.
+    """
+
+    y, X_df, Z_df, ids, notes = _designs(
+        spec,
+        data,
+        entity=entity,
+        time=time,
+        preparation_engine=preparation_engine,
+    )
     X = X_df.to_numpy(dtype=float)
     Z = Z_df.to_numpy(dtype=float)
     yv = y.to_numpy(dtype=float)

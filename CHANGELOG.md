@@ -12,6 +12,10 @@ The project follows a practical semantic-versioning style:
 
 ## Unreleased
 
+---
+
+## 0.5.13 - 2026-07-28
+
 ### Added
 
 * Added a reproducible native-GMM benchmark and profiling harness covering
@@ -20,6 +24,21 @@ The project follows a practical semantic-versioning style:
 * Added an opt-in `preparation_engine="accelerated"` native-GMM preparation path
   that caches repeated per-fit pandas sources while preserving exact prepared
   matrices, estimator outputs, diagnostics, and the default reference path.
+* Added a reproducible static-estimator benchmark and profiling harness covering
+  OLS, clustered pooled OLS, one-/two-way fixed effects, random effects, and panel
+  IV/2SLS, including unbalanced and unsorted panels.
+* Added opt-in accelerated preparation for native LSDV fixed effects and panel
+  IV/2SLS. Full-rank designs bypass repeated prefix-SVD collinearity scans, while
+  rank-deficient designs fall back to the unchanged ordered reference selector.
+  Estimator and covariance algebra remain unchanged.
+* Added direct reference/accelerated equivalence tests for prepared designs,
+  coefficients, standard errors, residuals, fitted values, diagnostics, missing
+  data, unsorted input, and collinear fallback behaviour.
+* Added the missing hash-pinned Windows `colorama` build dependency to the
+  release requirements, making `--require-hashes` release setup reproducible on
+  both Windows maintainer systems and Linux CI.
+* Added a reusable installed-distribution smoke test covering OLS and exact
+  reference/accelerated identity for fixed effects, panel IV, and native GMM.
 * Documented reviewed dependency-scanner capabilities and artifact provenance;
   no finding is blanket-suppressed or accepted as a release exception.
 
