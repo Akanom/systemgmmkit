@@ -14,7 +14,6 @@ validation_table = r"""
 |---|---|---|---|
 | 22 | Controlled dynamic-GMM comparison | Stata `xtabond2` | System GMM `PASS_NUMERIC`; Difference GMM `PASS_TOLERANT_AUXILIARY` |
 | 24 | Maintained System GMM parity certificate | Stata `xtabond2` | `PASS_XTABOND2_PARITY` |
-| 25 | Dynamic-GMM ecosystem comparison | Stata, R, Python | Ecosystem comparison; strict parity limited to aligned Stata benchmarks |
 | 26 | Static and post-estimation validation | `statsmodels`, `linearmodels` | OLS/Pooled/FE `PASS_NUMERIC`; RE/2SLS `PASS_COEFFICIENTS` |
 | 27 | Static cross-software validation | Python, R, Stata | OLS, pooled OLS, FE, RE, and 2SLS pass under aligned specifications |
 

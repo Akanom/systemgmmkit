@@ -34,7 +34,7 @@ Panel-data and dynamic-panel models are widely used in economics, finance, manag
 
 Dynamic-panel GMM is a mature method for panels with lagged dependent variables, persistence, unobserved heterogeneity, and endogenous or predetermined regressors. Stata commands such as `xtabond2` and `xtdpdgmm` are common applied reference points [@roodman2009xtabond2]. R packages such as `plm` provide panel-data and GMM functionality [@croissant2008panel], while Python packages such as `statsmodels`, `linearmodels`, and `pydynpd` cover other parts of the same econometric work [@seabold2010statsmodels; @sheppard2024linearmodels; @pydynpd].
 
-`systemgmmkit` is not presented as a replacement for these tools. The reason for a separate package is the connected workflow: static panel models, IV estimation, Difference GMM, System GMM, diagnostics, post-estimation, panel/time-aware prediction utilities, visualization, and reproducible comparison artifacts are exposed through one Python interface. Static fixed-effects slopes are estimated with a native within-transformation backend, while least-squares dummy-variable construction remains an internal audit reference for slope-equivalence checks. Strict numerical parity is claimed only for aligned reference specifications where estimator definitions, instrument construction, covariance choices, and sample handling are controlled. Broader R/Python/Stata comparisons are treated as software-context checks.
+`systemgmmkit` is not presented as a replacement for these tools. The reason for a separate package is the connected workflow: static panel models, IV estimation, Difference GMM, System GMM, diagnostics, post-estimation, panel/time-aware prediction utilities, visualization, and reproducible comparison artifacts are exposed through one Python interface. Static fixed-effects slopes are estimated with a native within-transformation backend, while least-squares dummy-variable construction remains an internal audit reference for slope-equivalence checks. Strict numerical parity is claimed only for aligned reference specifications where estimator definitions, instrument construction, covariance choices, and sample handling are controlled. Reference checks are package-scoped and are not used to rank unrelated software.
 
 # Software Design
 
@@ -42,9 +42,9 @@ Dynamic-panel GMM is a mature method for panels with lagged dependent variables,
 
 This matters most for dynamic-panel GMM, where small changes in instrument construction, sample trimming, finite-sample corrections, or equation scope can change results. The package therefore treats validation, diagnostics, and post-estimation as part of the workflow, not as material users have to reconstruct after estimation. Result objects expose coefficients, covariance matrices, fitted values, residuals, diagnostic tests, and metadata in a consistent form across estimator families.
 
-The package also balances native Python implementation with comparison against other software. Native estimators and utilities provide reproducible Python workflows, while validation artifacts compare selected specifications against established Stata, R, and Python references. The point is not to pretend that software implementations are identical, but to make the differences visible enough to check.
+The package also balances native Python implementation with aligned reference checks. Native estimators and utilities provide reproducible Python workflows, while validation artifacts compare selected `systemgmmkit` specifications against established Stata, R, and Python references where the estimand is controlled. The point is not to pretend that software implementations are identical, but to make the package's claim boundary visible enough to check.
 
-# Validation and Cross-Software Comparison
+# Package Validation and Aligned Reference Checks
 
 The validation suite is organized as reproducible repository artifacts. Artifact 24 is the maintained dynamic-GMM parity certificate and is the main evidence for formal System GMM parity claims against Stata `xtabond2`. It reports `PASS_XTABOND2_PARITY` for aligned structural coefficients and Windmeijer-corrected two-step standard errors.
 
@@ -52,11 +52,10 @@ The validation suite is organized as reproducible repository artifacts. Artifact
 |---|---|---|
 | Artifact 22 | Controlled Difference/System GMM | Auxiliary Stata comparison |
 | Artifact 24 | Maintained System GMM certificate | Formal `xtabond2` parity evidence |
-| Artifact 25 | Dynamic-GMM software comparison | Stata, R, and Python context |
 | Artifacts 26--27 | Static, panel, IV, and post-estimation checks | `statsmodels`, `linearmodels`, R, and Stata comparisons |
 | Artifact 28 | Performance benchmarks | Practical runtime evidence |
 
-Additional artifacts document controlled dynamic-GMM comparisons, static estimator validation, post-estimation checks, and cross-software comparisons against Python, R, and Stata references. OLS, pooled OLS, fixed effects, random effects, and 2SLS are compared under aligned specifications. The native fixed-effects runtime reports `native-within`; fixed-effects validation checks slope agreement against maintained reference paths rather than treating dummy-variable coefficients as public model output. Dynamic-GMM software comparisons are reported separately from strict parity claims because defaults, instrument matrices, finite-sample corrections, and covariance scaling differ across packages.
+Additional artifacts document controlled dynamic-GMM comparisons, static estimator validation, post-estimation checks, and package-aligned reference checks against Python, R, and Stata implementations. OLS, pooled OLS, fixed effects, random effects, and 2SLS are compared under aligned specifications. The native fixed-effects runtime reports `native-within`; fixed-effects validation checks slope agreement against maintained reference paths rather than treating dummy-variable coefficients as public model output. Auxiliary R/Python dynamic-GMM notes remain outside formal parity claims because defaults, instrument matrices, finite-sample corrections, and covariance scaling differ across implementations.
 
 
 # Post-Estimation, ML Workflow, and Visualization Layers
@@ -69,7 +68,7 @@ The visualization layer supports coefficient, marginal-effect, margins, residual
 
 # Research Impact Statement
 
-`systemgmmkit` supports research workflows where panel-data estimation, dynamic-GMM diagnostics, validation, and reporting need to be inspected together. The current evidence is the validation workflow itself: reproducible comparisons, diagnostics, benchmarks, and artifacts that let reviewers inspect what the package is doing. The repository compares selected estimators against established Stata, R, and Python references, with strict parity claims limited to aligned benchmark specifications.
+`systemgmmkit` supports research workflows where panel-data estimation, dynamic-GMM diagnostics, validation, and reporting need to be inspected together. The current evidence is the validation workflow itself: reproducible package-scoped checks, diagnostics, benchmarks, and artifacts that let reviewers inspect what the package is doing. The repository compares selected `systemgmmkit` estimators against established Stata, R, and Python references, with strict parity claims limited to aligned benchmark specifications.
 
 Performance artifacts show that static, panel, IV, and dynamic-GMM workflows complete successfully on the tested panel sizes. Fixed-effects benchmarks now use the compact native `native-within` backend for ordinary one-way and two-way fixed-effects slope estimation; the optional `linearmodels` backend remains useful when users need the upstream `PanelOLS` result object or additional backend-specific features. These benchmarks are presented as reproducibility-oriented evidence, not hardware-independent speed claims.
 

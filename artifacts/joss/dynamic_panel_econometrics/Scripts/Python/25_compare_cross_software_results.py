@@ -273,7 +273,7 @@ def main() -> None:
         "The comparison uses systemgmmkit as the reference within this artifact. "
         "Stata xtabond2 is expected to match closely where the effective sample and "
         "instrument conventions are aligned. R package results are reported as "
-        "ecosystem comparison outputs; strict parity is not assumed unless the "
+        "auxiliary external-reference notes; strict parity is not assumed unless the "
         "underlying model specification and instrument construction are fully aligned.\n"
     )
 

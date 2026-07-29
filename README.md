@@ -127,6 +127,11 @@ record. See [Open development](docs/OPEN_DEVELOPMENT.md) and the GitHub
 Discussion templates for specification questions, validation reports, and use
 cases.
 
+Kaggle and Google Colab notebooks may be used as reproducibility aids only when
+they stay within the `systemgmmkit` package boundary. See
+[Kaggle and Google Colab usage](docs/CLOUD_NOTEBOOKS.md) for credential, data,
+and evidence rules.
+
 ---
 
 # Quick User Path
