@@ -17,6 +17,8 @@ def test_install_cell_evicts_stale_systemgmmkit_modules():
     source = _code_cell_source(2)
 
     assert "--no-deps" in source
+    assert "50583c7e5520a3a343d6fbeba3713a63b14a4b44" in source
+    assert "6638a2f87c68cde44ace2d2661a9361afffb0595" not in source
     assert "tuple(sys.modules)" in source
     assert 'name == "systemgmmkit"' in source
     assert 'name.startswith("systemgmmkit.")' in source
