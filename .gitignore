@@ -63,8 +63,8 @@ artifacts/**/*summary_final*.md
 artifacts/**/*summary_final*.csv
 
 # Local cloud-notebook credentials and generated notebooks
-Kaggle/
-kaggle.json
-.kaggle/
+/Kaggle/
+/kaggle.json
+/.kaggle/
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
