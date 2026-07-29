@@ -118,7 +118,9 @@ def classify_parity_result(
         original_status = "FAIL_PARITY"
         blocks_release = False
         message = (
-            "Native System GMM executed but strict coefficient-level parity is not certified yet."
+            "Native System GMM executed, but this comparison did not pass strict "
+            "coefficient-level parity; maintained benchmark certification does not "
+            "extend automatically to this specification."
         )
     else:
         status = "FAIL_PARITY"

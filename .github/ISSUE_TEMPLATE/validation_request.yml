@@ -1,0 +1,26 @@
+name: Validation request
+description: Propose or report a concrete conformance, parity, or benchmark check.
+title: "Validation: "
+labels:
+  - validation
+body:
+  - type: textarea
+    id: benchmark
+    attributes:
+      label: Benchmark target
+      description: Name the reference software, command, dataset, artifact, or published example.
+    validations:
+      required: true
+  - type: textarea
+    id: quantities
+    attributes:
+      label: Quantities to compare
+      description: Coefficients, covariance, standard errors, diagnostics, instrument counts, observations, or predictions.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: State intended tolerances and required artifacts.
+

@@ -167,6 +167,11 @@ The project follows a practical semantic-versioning style:
 
 ### Changed
 
+* Changed the native fixed-effects backend from explicit public LSDV estimation to a
+  compact within-transformation runtime path. Native FE results now report
+  `native-within`; the internal LSDV construction remains as an audit reference for
+  slope-equivalence tests on balanced and unbalanced panel designs.
+
 * Expanded the package positioning from estimation, post-estimation, and visualization toward a fuller empirical workflow:
 
   ```text

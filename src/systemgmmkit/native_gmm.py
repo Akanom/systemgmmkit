@@ -1864,14 +1864,12 @@ def run_native_dynamic_panel_gmm(
 ) -> NativeGMMResult:
     """Run the native Difference/System GMM estimator.
 
-    Native System GMM has baseline xtabond2 parity for the current collapsed
-    two-step benchmark covering coefficients, raw moments, group-scaled A2,
-    and Hansen J.
-
-    Windmeijer correction is deliberately not implemented yet because an
-    incorrect correction would be worse than no correction. Use a validated
-    backend for Windmeijer-style two-step inference until native SE parity is
-    implemented and tested.
+    Native System GMM has benchmark-specific ``xtabond2`` certification for the
+    maintained collapsed two-step baseline.  The certified surface includes
+    structural coefficients, Windmeijer-corrected standard errors, sample and
+    instrument counts, Hansen/Sargan diagnostics, and signed AR(1)/AR(2)
+    diagnostics within their declared tolerances.  This claim does not extend
+    automatically to other data designs or option combinations.
     """
 
     windmeijer_requested = bool(windmeijer)

@@ -1,0 +1,29 @@
+title: "Parity or validation report: "
+labels:
+  - validation
+  - parity
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this to share a reproducible comparison against Stata, R, Python, or a published benchmark.
+  - type: textarea
+    id: benchmark
+    attributes:
+      label: Benchmark target
+      description: Include software, versions, commands, options, data, and artifact hashes.
+    validations:
+      required: true
+  - type: textarea
+    id: quantities
+    attributes:
+      label: Compared quantities
+      description: Coefficients, covariance, standard errors, Hansen/Sargan, AR tests, instrument count, observations, or predictions.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: Include tolerances, max differences, failures, and follow-up work.
+

@@ -6,10 +6,6 @@
 [![CI](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml)
 [![Publish](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml)
 
----
-
-# systemgmmkit
-
 `systemgmmkit` is a Python package for applied panel-data econometrics and dynamic-panel GMM workflows.
 
 It provides a unified workflow for:
@@ -125,6 +121,11 @@ The main improvements are:
 * sanitized diagnostic p-values so impossible backend p-values are not reported as valid diagnostics.
 
 The easy API remains a convenience layer. It does not introduce a new estimator. It builds on the validated lower-level specification and runner APIs.
+
+Public roadmap, parity, and adoption discussions are part of the development
+record. See [Open development](docs/OPEN_DEVELOPMENT.md) and the GitHub
+Discussion templates for specification questions, validation reports, and use
+cases.
 
 ---
 
@@ -1847,6 +1848,25 @@ A defensible empirical workflow often starts with:
 5. Difference GMM or System GMM for dynamic-panel settings.
 
 This helps users understand how estimates change across assumptions.
+
+## Fixed-effects runtime
+
+The native fixed-effects backend uses a compact within transformation for one-way and
+two-way fixed-effects slope estimation. This avoids constructing a full least-squares
+dummy-variable matrix when many entity or time effects are present, while preserving
+slope equivalence with the corresponding LSDV estimator on the maintained balanced and
+unbalanced benchmark paths.
+
+Native fixed-effects results report:
+
+* backend: `native-within`;
+* structural slopes and a descriptive intercept where fixed effects are included;
+* robust or clustered covariance using the compact residualized design;
+* fixed-effect dummies kept out of the public coefficient table.
+
+The internal LSDV construction remains available as an audit reference in tests. For
+workflows that need an upstream result object or additional `PanelOLS` features, use
+`run_fixed_effects(..., prefer_backend="linearmodels")`.
 
 ## Control instrument proliferation
 

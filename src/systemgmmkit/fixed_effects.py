@@ -175,6 +175,133 @@ def _build_lsdv_design(
     return y, X, work[[entity, time]], notes
 
 
+def _demean_for_effects(
+    values: pd.DataFrame,
+    ids: pd.DataFrame,
+    *,
+    entity: str,
+    time: str,
+    entity_effects: bool,
+    time_effects: bool,
+    tolerance: float = 1e-12,
+    maxiter: int = 1_000,
+) -> pd.DataFrame:
+    """Return columns residualized against requested fixed effects."""
+
+    if not entity_effects and not time_effects:
+        return values - values.mean(axis=0)
+
+    if entity_effects and not time_effects:
+        return values - values.groupby(ids[entity], sort=False).transform("mean")
+
+    if time_effects and not entity_effects:
+        return values - values.groupby(ids[time], sort=False).transform("mean")
+
+    entity_counts = ids[entity].value_counts(sort=False)
+    time_counts = ids[time].value_counts(sort=False)
+    balanced = entity_counts.nunique() == 1 and time_counts.nunique() == 1
+    if balanced:
+        return (
+            values
+            - values.groupby(ids[entity], sort=False).transform("mean")
+            - values.groupby(ids[time], sort=False).transform("mean")
+            + values.mean(axis=0)
+        )
+
+    residualized = values - values.mean(axis=0)
+    previous = residualized.to_numpy(dtype=float, copy=True)
+    for _ in range(maxiter):
+        residualized = residualized - residualized.groupby(ids[entity], sort=False).transform(
+            "mean"
+        )
+        residualized = residualized - residualized.groupby(ids[time], sort=False).transform("mean")
+        current = residualized.to_numpy(dtype=float, copy=False)
+        scale = max(1.0, float(np.linalg.norm(previous)))
+        if float(np.linalg.norm(current - previous)) <= tolerance * scale:
+            break
+        previous = current.copy()
+    return residualized
+
+
+def _build_within_design(
+    data: pd.DataFrame,
+    *,
+    entity: str,
+    time: str,
+    spec: FixedEffectsSpec,
+) -> tuple[pd.Series, pd.DataFrame, pd.DataFrame, pd.Series, float, list[str], int]:
+    """Build a compact within-transformed design for fixed-effects slopes."""
+
+    columns = [entity, time, spec.dependent, *spec.regressors]
+    _require_columns(data, columns)
+    work = data[columns].dropna().copy()
+    if work.empty:
+        raise ValueError("No complete observations remain after dropping missing values.")
+
+    ids = work[[entity, time]]
+    values = work[[spec.dependent, *spec.regressors]].astype(float)
+    notes: list[str] = []
+    if spec.entity_effects:
+        notes.append("Entity fixed effects removed by within transformation.")
+    if spec.time_effects:
+        notes.append("Time fixed effects removed by within transformation.")
+
+    if spec.entity_effects or spec.time_effects:
+        transformed = _demean_for_effects(
+            values,
+            ids,
+            entity=entity,
+            time=time,
+            entity_effects=spec.entity_effects,
+            time_effects=spec.time_effects,
+        )
+        y = transformed[spec.dependent]
+        X = transformed[spec.regressors]
+    else:
+        y = values[spec.dependent]
+        X = pd.concat(
+            [
+                pd.DataFrame({"const": np.ones(len(work), dtype=float)}, index=work.index),
+                values[spec.regressors],
+            ],
+            axis=1,
+        )
+
+    dropped: list[str] = []
+    if spec.drop_absorbed:
+        keep: list[str] = []
+        current = np.empty((len(X), 0), dtype=float)
+        current_rank = 0
+        for col in X.columns:
+            candidate = np.column_stack([current, X[col].to_numpy(dtype=float)])
+            candidate_rank = int(np.linalg.matrix_rank(candidate))
+            if candidate_rank > current_rank:
+                keep.append(col)
+                current = candidate
+                current_rank = candidate_rank
+            else:
+                dropped.append(col)
+        X = X[keep]
+    if dropped:
+        notes.append(
+            f"Dropped absorbed/collinear columns: {', '.join(dropped[:10])}"
+            + ("..." if len(dropped) > 10 else "")
+        )
+
+    if spec.entity_effects and spec.time_effects:
+        absorbed_rank = ids[entity].nunique() + ids[time].nunique() - 1
+    elif spec.entity_effects:
+        absorbed_rank = ids[entity].nunique()
+    elif spec.time_effects:
+        absorbed_rank = ids[time].nunique()
+    else:
+        absorbed_rank = 1
+
+    x_means = values[X.columns].mean(axis=0) if len(X.columns) else pd.Series(dtype=float)
+    y_mean = float(values[spec.dependent].mean())
+    return y, X, ids, x_means, y_mean, notes, int(absorbed_rank)
+
+
 def _safe_inverse_xtx(X: np.ndarray) -> np.ndarray:
     xtx = X.T @ X
     return np.linalg.pinv(xtx)
@@ -236,19 +363,24 @@ def run_fixed_effects_native(
 ) -> FixedEffectsResult:
     """Estimate a static one-/two-way fixed-effects model using native NumPy.
 
-    This is an exact LSDV estimator for slopes. It is intentionally conservative
-    and transparent. For very large panels, install `linearmodels` and use
-    `run_fixed_effects(..., prefer_backend="linearmodels")`.
+    The native backend uses a compact within transformation for fixed-effect
+    slopes, avoiding explicit dummy matrices for large panels. The resulting
+    slopes match the corresponding least-squares dummy-variable estimator.
     """
 
-    y, X_df, ids, notes = _build_lsdv_design(data, entity=entity, time=time, spec=spec)
+    y, X_df, ids, x_means, y_mean, notes, absorbed_rank = _build_within_design(
+        data, entity=entity, time=time, spec=spec
+    )
     X = X_df.to_numpy(dtype=float)
     yv = y.to_numpy(dtype=float)
+    if X.shape[1] == 0:
+        raise ValueError("No structural regressors remain after absorption/collinearity checks.")
 
     beta, *_ = np.linalg.lstsq(X, yv, rcond=None)
     fitted = X @ beta
     residuals = yv - fitted
-    rank = int(np.linalg.matrix_rank(X))
+    structural_rank = int(np.linalg.matrix_rank(X))
+    rank = int(absorbed_rank + structural_rank)
     df_resid = int(max(len(yv) - rank, 0))
 
     cluster_series = ids[entity] if spec.cluster == "entity" else ids[time]
@@ -268,6 +400,13 @@ def run_fixed_effects_native(
     t_ser = pd.Series(tstats, index=X_df.columns, name="t")
     p_ser = pd.Series(pvalues, index=X_df.columns, name="p_value")
 
+    if spec.entity_effects or spec.time_effects:
+        intercept_value = float(y_mean - x_means.to_numpy(dtype=float) @ beta)
+        params = pd.concat([pd.Series([intercept_value], index=["const"]), params])
+        std_errors = pd.concat([pd.Series([np.nan], index=["const"]), std_errors])
+        t_ser = pd.concat([pd.Series([np.nan], index=["const"]), t_ser])
+        p_ser = pd.concat([pd.Series([np.nan], index=["const"]), p_ser])
+
     # Return only structural regressors/constant in summary fields; dummies stay internal.
     reported = [c for c in (["const"] + spec.regressors) if c in params.index]
     if not reported:
@@ -275,14 +414,7 @@ def run_fixed_effects_native(
 
     # Within R² approximation based on FE-adjusted residual variance relative to
     # demeaned dependent variable under the requested FE structure.
-    y_center = y.copy()
-    if spec.entity_effects:
-        y_center = y_center - y.groupby(ids[entity]).transform("mean")
-    if spec.time_effects:
-        y_center = y_center - y.groupby(ids[time]).transform("mean")
-        if spec.entity_effects:
-            y_center = y_center + y.mean()
-    denom = float(np.sum(np.asarray(y_center) ** 2))
+    denom = float(np.sum(yv**2))
     r2_within = float(1.0 - (residuals @ residuals) / denom) if denom > 0 else float("nan")
 
     return FixedEffectsResult(
@@ -300,7 +432,7 @@ def run_fixed_effects_native(
         covariance_type=spec.covariance
         if spec.covariance != "clustered"
         else f"clustered-{spec.cluster}",
-        backend="native-lsdv",
+        backend="native-within",
         notes=notes,
     )
 
@@ -315,8 +447,9 @@ def run_fixed_effects(
 ) -> Any:
     """Run a fixed-effects model.
 
-    The native backend is dependency-light and exact for slope coefficients. The
-    optional `linearmodels` backend returns the upstream `PanelOLS` result object.
+    The native backend is dependency-light and uses the compact `native-within`
+    slope estimator. The optional `linearmodels` backend returns the upstream
+    `PanelOLS` result object.
     """
 
     if prefer_backend == "native":

@@ -1,7 +1,9 @@
 """Policy helpers for interpreting GMM parity comparisons.
 
-This module separates production backend validation from experimental native-GMM parity.
-Native Difference/System GMM is operational but not certified as pydynpd- or xtabond2-equivalent yet.
+Certification is attached to a declared benchmark, not to every possible native-GMM
+specification.  The maintained native System GMM baseline is certified against
+``xtabond2``; comparisons outside that scope must still pass their requested strict
+checks before they can inherit a parity claim.
 """
 
 from __future__ import annotations
@@ -31,12 +33,13 @@ def classify_gmm_parity(
     execution_passed: bool,
     strict_parity_passed: bool,
 ) -> GMMParityDecision:
-    """Classify GMM parity results without over-claiming native-GMM certification.
+    """Classify GMM parity results without extending benchmark certification.
 
     Rules:
     - pydynpd execution failure is release-blocking.
     - pydynpd execution success is production-acceptable even if external strict parity is pending.
-    - native GMM execution success with strict parity failure is experimental, not release-blocking.
+    - native GMM execution success with strict parity failure remains outside the
+      certified scope and is not release-blocking.
     - native GMM execution failure is still a release-blocking failure.
     - non-GMM estimators keep strict parity behavior.
     """
@@ -88,8 +91,9 @@ def classify_gmm_parity(
             status=EXPERIMENTAL_PARITY_PENDING,
             blocks_release=False,
             message=(
-                "Native GMM executed but strict parity is not certified yet. "
-                "Use backend='pydynpd' for production Difference/System GMM."
+                "Native GMM executed, but this requested comparison did not pass "
+                "strict parity. Maintained benchmark certification does not extend "
+                "automatically to this specification."
             ),
         )
 
