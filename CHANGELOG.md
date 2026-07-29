@@ -10,6 +10,50 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## Unreleased
+
+### Changed
+
+* Based the development line on the `0.5.13` controlled-performance release while
+  retaining the compact `native-within` fixed-effects runtime and its maintained
+  slope-parity tests.
+* Applied reference/accelerated collinearity screening to the transformed native
+  fixed-effects design; estimator and covariance algebra remain shared.
+* Replaced the deprecated pandas `DataFrameGroupBy.apply` AR-diagnostic reduction
+  with an equivalent vectorized product-and-sum implementation.
+
+---
+
+## 0.5.13 - 2026-07-28
+
+### Added
+
+* Added a reproducible native-GMM benchmark and profiling harness covering
+  balanced, unbalanced, unsorted, gapped, FD, FOD, Difference-GMM, System-GMM,
+  and scaling workloads with cold/warm timing and Python-allocation evidence.
+* Added an opt-in `preparation_engine="accelerated"` native-GMM preparation path
+  that caches repeated per-fit pandas sources while preserving exact prepared
+  matrices, estimator outputs, diagnostics, and the default reference path.
+* Added a reproducible static-estimator benchmark and profiling harness covering
+  OLS, clustered pooled OLS, one-/two-way fixed effects, random effects, and panel
+  IV/2SLS, including unbalanced and unsorted panels.
+* Added opt-in accelerated preparation for native LSDV fixed effects and panel
+  IV/2SLS. Full-rank designs bypass repeated prefix-SVD collinearity scans, while
+  rank-deficient designs fall back to the unchanged ordered reference selector.
+  Estimator and covariance algebra remain unchanged.
+* Added direct reference/accelerated equivalence tests for prepared designs,
+  coefficients, standard errors, residuals, fitted values, diagnostics, missing
+  data, unsorted input, and collinear fallback behaviour.
+* Added the missing hash-pinned Windows `colorama` build dependency to the
+  release requirements, making `--require-hashes` release setup reproducible on
+  both Windows maintainer systems and Linux CI.
+* Added a reusable installed-distribution smoke test covering OLS and exact
+  reference/accelerated identity for fixed effects, panel IV, and native GMM.
+* Documented reviewed dependency-scanner capabilities and artifact provenance;
+  no finding is blanket-suppressed or accepted as a release exception.
+
+---
+
 ## 0.5.11
 
 ### Added

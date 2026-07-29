@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.9/3.10
+    import tomli as tomllib
+
+import systemgmmkit
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_release_version_metadata_is_consistent() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as handle:
+        project_version = tomllib.load(handle)["project"]["version"]
+
+    citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    release_notes = (ROOT / "RELEASE_NOTES.md").read_text(encoding="utf-8")
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    citation_match = re.search(r'^version: "([^"]+)"$', citation, flags=re.MULTILINE)
+
+    assert citation_match is not None
+    assert systemgmmkit.__version__ == project_version == citation_match.group(1)
+    assert f"# systemgmmkit {project_version} Release Notes" in release_notes
+    assert f"## {project_version} - " in changelog
+
+
+def test_release_requirements_cover_windows_build_dependency() -> None:
+    release_input = (ROOT / "requirements" / "release.in").read_text(encoding="utf-8")
+    release_requirements = (ROOT / "requirements" / "release.txt").read_text(encoding="utf-8")
+
+    assert 'colorama==0.4.6; sys_platform == "win32"' in release_input
+    assert 'colorama==0.4.6 ; sys_platform == "win32"' in release_requirements
+    assert "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44" in (
+        release_requirements
+    )
+    assert "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6" in (
+        release_requirements
+    )
+    assert 'pywin32-ctypes==0.2.3; sys_platform == "win32"' in release_input
+    assert 'pywin32-ctypes==0.2.3 ; sys_platform == "win32"' in release_requirements
+    assert "sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8" in (
+        release_requirements
+    )
+    assert "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755" in (
+        release_requirements
+    )

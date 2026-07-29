@@ -1,3 +1,76 @@
+# systemgmmkit 0.5.13 Release Notes
+
+## Controlled exact-parity acceleration
+
+Version `0.5.13` adds an opt-in accelerated native-GMM preparation engine. It
+caches repeated per-fit pandas sources while preserving the established
+transformation, instrument ordering, matrix assembly, estimation, covariance,
+Windmeijer correction, and diagnostic paths.
+
+The validated reference engine remains the default and permanent audit path:
+
+```python
+reference = run_native_dynamic_panel_gmm(
+    spec,
+    data,
+    entity="firm_id",
+    time="year",
+    preparation_engine="reference",
+)
+accelerated = run_native_dynamic_panel_gmm(
+    spec,
+    data,
+    entity="firm_id",
+    time="year",
+    preparation_engine="accelerated",
+)
+```
+
+The maintained benchmark covers balanced, unbalanced, unsorted, and gapped
+panels; first-difference and forward-orthogonal-deviation transformations;
+Difference and System GMM; one- and two-step estimation; collapsed instruments;
+and Windmeijer-corrected inference. On the documented instrument-heavy workload,
+the interleaved warm-run median improved from `1.301863` seconds to `0.389465`
+seconds, a `3.34x` speedup and `70.08%` runtime reduction, with exact equality of
+prepared matrices and fitted outputs.
+
+The release also adds opt-in preparation acceleration to native LSDV fixed
+effects and panel IV/2SLS. On the documented deterministic static benchmark,
+two-way fixed effects improved from a `0.475624`-second reference median to
+`0.064555` seconds (`7.37x`, an `86.43%` reduction). Panel IV with entity and time
+LSDV controls improved from `0.533521` seconds to `0.107536` seconds (`4.96x`, a
+`79.84%` reduction). Prepared designs and fitted results were exactly identical.
+Rank-deficient designs use the unchanged sequential reference selector.
+
+```python
+fixed_effects = run_fixed_effects(
+    fe_spec,
+    data,
+    entity="firm_id",
+    time="year",
+    preparation_engine="accelerated",
+)
+
+panel_iv = run_panel_2sls(
+    iv_spec,
+    data,
+    entity="firm_id",
+    time="year",
+    preparation_engine="accelerated",
+)
+```
+
+The same benchmark recorded OLS at `0.013533` seconds, clustered pooled OLS at
+`0.105526` seconds, and random effects at `0.024369` seconds. Those paths were
+already fast for the maintained workloads. A candidate random-effects cache
+improved the median by only about 6%, so it was deliberately not added to the
+public API.
+
+The release also documents the benchmark environment, reproduction commands,
+maintenance cost, rollback path, and reviewed dependency-scanner findings.
+
+---
+
 # systemgmmkit 0.5.12 Release Notes
 
 ## Supply-chain and dependency hardening
