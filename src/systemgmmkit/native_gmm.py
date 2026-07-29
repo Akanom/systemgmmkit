@@ -1504,16 +1504,13 @@ def _native_ab_serial_correlation_diagnostics(
 
             # Cluster/group-based candidate: sum the residual products within
             # entity and standardize across groups.
+            residual_lag_product = (
+                d["_resid"].to_numpy(dtype=float) * d["_lag"].to_numpy(dtype=float)
+            )
             g = (
-                d.groupby(entity, sort=False)[["_resid", "_lag"]]
-                .apply(
-                    lambda frame: float(
-                        np.sum(
-                            frame["_resid"].to_numpy(dtype=float)
-                            * frame["_lag"].to_numpy(dtype=float)
-                        )
-                    )
-                )
+                d.assign(_resid_lag_product=residual_lag_product)
+                .groupby(entity, sort=False)["_resid_lag_product"]
+                .sum()
                 .to_numpy(dtype=float)
             )
 
