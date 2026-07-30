@@ -63,6 +63,11 @@ The adapter maps coefficients, standard errors, p-values, sample statistics,
 backend and covariance metadata, and available GMM diagnostics. It does not
 change estimates or convert predictive evidence into identification evidence.
 
+For compact notebook display of linear combinations and Wald tests, use
+`format_inference_frame(frame)`. It preserves the raw result frame, removes
+redundant test-statistic fields, and displays very small p-values as bounds such
+as `<0.0001` instead of rounding them to zero.
+
 ## Controlled performance mode
 
 Native dynamic-panel GMM and native panel IV retain their validated preparation
