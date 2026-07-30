@@ -12,6 +12,12 @@ The project follows a practical semantic-versioning style:
 
 ## Unreleased
 
+### Added
+
+* Added an optional Universal Output Hub adapter for pooled OLS, fixed effects,
+  random effects, panel IV/2SLS, and native or pydynpd dynamic-panel GMM
+  results, including estimator metadata and GMM diagnostic tables.
+
 ### Changed
 
 * Based the development line on the `0.5.13` controlled-performance release while

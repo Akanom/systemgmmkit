@@ -31,9 +31,36 @@ The objective is not only to estimate models. The objective is to make modelling
 
 Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit)
 to explore deterministic panel-data setup, pooled OLS, fixed and random effects,
-panel-aware forecast validation, reporting export, and a compact Difference GMM
+panel-aware forecast validation, OutputHub reporting, and a compact Difference GMM
 diagnostic workflow. The notebook is a reproducible cloud demonstration, not a
 cross-software parity certificate or paper artifact.
+
+## Universal Output Hub integration
+
+Install the optional reporting bridge and add any fitted SystemGMMKit result to
+an OutputHub report:
+
+```bash
+python -m pip install "systemgmmkit[outputhub]"
+```
+
+```python
+from universal_output_hub import OutputHub
+from systemgmmkit import add_to_outputhub
+
+hub = OutputHub("Panel model report")
+add_to_outputhub(hub, pooled_result, name="Pooled OLS")
+add_to_outputhub(
+    hub,
+    system_gmm_result,
+    name="System GMM",
+    include_diagnostics=True,
+)
+```
+
+The adapter maps coefficients, standard errors, p-values, sample statistics,
+backend and covariance metadata, and available GMM diagnostics. It does not
+change estimates or convert predictive evidence into identification evidence.
 
 ## Controlled performance mode
 

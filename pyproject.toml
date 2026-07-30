@@ -58,6 +58,7 @@ pydynpd = ["pydynpd>=0.2.2,<1"]
 fe = ["linearmodels>=5,<8"]
 plots = ["matplotlib>=3.8,<4"]
 reports = ["tabulate>=0.9,<1"]
+outputhub = ["universal-output-hub>=0.2.2,<1"]
 dev = [
   "matplotlib>=3.8,<4",
   "statsmodels>=0.14,<1",
@@ -67,12 +68,14 @@ dev = [
   "mypy>=1.10,<3",
   "build>=1.2,<2",
   "twine>=5,<7",
+  "universal-output-hub>=0.2.2,<1",
 ]
 all = [
   "pydynpd>=0.2.2,<1",
   "linearmodels>=5,<8",
   "matplotlib>=3.8,<4",
   "tabulate>=0.9,<1",
+  "universal-output-hub>=0.2.2,<1",
 ]
 
 [project.scripts]
