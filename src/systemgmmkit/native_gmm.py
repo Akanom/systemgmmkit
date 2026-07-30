@@ -1623,16 +1623,13 @@ def _native_ab_serial_correlation_diagnostics(
 
             # Cluster/group-based candidate: sum the residual products within
             # entity and standardize across groups.
+            residual_lag_product = (
+                d["_resid"].to_numpy(dtype=float) * d["_lag"].to_numpy(dtype=float)
+            )
             g = (
-                d.groupby(entity, sort=False)
-                .apply(
-                    lambda frame: float(
-                        np.sum(
-                            frame["_resid"].to_numpy(dtype=float)
-                            * frame["_lag"].to_numpy(dtype=float)
-                        )
-                    )
-                )
+                d.assign(_resid_lag_product=residual_lag_product)
+                .groupby(entity, sort=False)["_resid_lag_product"]
+                .sum()
                 .to_numpy(dtype=float)
             )
 
@@ -1989,9 +1986,12 @@ def run_native_dynamic_panel_gmm(
     exactly equivalent per-fit cache for repeated source and transformed Series;
     estimator algebra, tolerances, and diagnostics are shared unchanged.
 
-    Native System GMM has baseline xtabond2 parity for the current collapsed
-    two-step benchmark covering coefficients, raw moments, group-scaled A2,
-    and Hansen J.
+    Native System GMM has benchmark-specific ``xtabond2`` certification for the
+    maintained collapsed two-step baseline.  The certified surface includes
+    structural coefficients, Windmeijer-corrected standard errors, sample and
+    instrument counts, Hansen/Sargan diagnostics, and signed AR(1)/AR(2)
+    diagnostics within their declared tolerances.  This claim does not extend
+    automatically to other data designs or option combinations.
 
     Windmeijer correction is available only on the maintained, explicitly
     validated configurations and retains its existing guards.

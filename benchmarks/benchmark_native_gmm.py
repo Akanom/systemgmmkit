@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 import scipy
 
+import systemgmmkit
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle, run_native_dynamic_panel_gmm
 
 
@@ -211,11 +212,17 @@ def _environment() -> dict[str, Any]:
         numba_version = importlib.metadata.version("numba")
     except importlib.metadata.PackageNotFoundError:
         numba_version = None
+    try:
+        installed_version = importlib.metadata.version("systemgmmkit")
+    except importlib.metadata.PackageNotFoundError:
+        installed_version = None
     return {
         "python": sys.version,
         "platform": platform.platform(),
         "processor": platform.processor(),
-        "systemgmmkit": importlib.metadata.version("systemgmmkit"),
+        "systemgmmkit": systemgmmkit.__version__,
+        "systemgmmkit_source": systemgmmkit.__version__,
+        "systemgmmkit_installed_distribution": installed_version,
         "numpy": np.__version__,
         "pandas": pd.__version__,
         "scipy": scipy.__version__,

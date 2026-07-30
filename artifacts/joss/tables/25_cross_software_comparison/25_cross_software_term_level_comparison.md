@@ -53,8 +53,8 @@
 
 Stata xtabond2 is the closest numerical comparator. For System GMM, systemgmmkit and Stata xtabond2 agree at numerical precision across all reported terms. For Difference GMM, the Stata comparison falls within the predefined tolerant auxiliary band.
 
-The pydynpd and plm::pgmm results are retained as ecosystem comparison outputs. Their estimates are directionally comparable, especially for the lagged dependent variable and the exogenous regressor, but they differ beyond the auxiliary tolerance band for some coefficients and standard errors, particularly for x_pred. These rows are therefore classified as REVIEW rather than parity failures.
+The pydynpd and plm::pgmm results are retained as auxiliary external-reference notes. Their estimates are directionally comparable, especially for the lagged dependent variable and the exogenous regressor, but they differ beyond the auxiliary tolerance band for some coefficients and standard errors, particularly for x_pred. These rows are therefore classified as REVIEW rather than parity failures.
 
 The pydynpd Difference GMM run reported 960 observations, while the aligned Stata/systemgmmkit Difference GMM comparison uses 840 observations. This suggests that part of the cross-software difference may come from effective-sample construction. More generally, dynamic-panel GMM comparisons are sensitive to instrument construction, sample trimming, level-equation treatment, finite-sample correction, and covariance scaling.
 
-Formal parity claims in the paper should rely on Artifact 24 and the Stata-based validation results. Artifact 25 supports ecosystem positioning and demonstrates that systemgmmkit produces comparable dynamic-panel GMM outputs relative to established Python and R packages, but it is not used as the primary parity certificate.
+Formal parity claims in the paper should rely on Artifact 24 and the Stata-based validation results. Artifact 25 is archived as auxiliary reference context; it is not used for formal parity claims, unrelated-software ranking, or package positioning.

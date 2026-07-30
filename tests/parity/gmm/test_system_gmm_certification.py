@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 
 def make_dynamic_panel(
@@ -87,8 +88,23 @@ def test_system_gmm_balanced_uncollapsed_lag_2_3():
 
 def test_system_gmm_unbalanced_collapsed_lag_2_3():
     df = make_dynamic_panel(unbalanced=True)
+
+    # The benchmark must contain genuine within-entity gaps, not merely
+    # different panel start/end dates.
+    observed_deltas = df.sort_values(["id", "t"]).groupby("id")["t"].diff()
+    assert (observed_deltas > 1).any()
+
     res = _run_system_gmm(df, collapse=True, min_lag=2, max_lag=3)
     _assert_basic_system_gmm_result(res)
+
+    # Pin the deterministic native benchmark so changes to gap handling,
+    # sample trimming, or instrument construction cannot pass as a smoke test.
+    assert res.nobs == 361
+    assert res.n_instruments == 13
+    assert res.params["L1.y"] == pytest.approx(0.8198616515, abs=1e-8)
+    assert res.params["x"] == pytest.approx(-0.3684280172, abs=1e-8)
+    assert res.params["w"] == pytest.approx(-0.2437573310, abs=1e-8)
+    assert res.ar2_p == pytest.approx(0.6216721725, abs=1e-9)
 
 
 def test_system_gmm_missing_periods_collapsed_lag_2_3():

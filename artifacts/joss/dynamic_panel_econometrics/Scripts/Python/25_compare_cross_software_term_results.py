@@ -124,7 +124,7 @@ md += (
     "predefined tolerant auxiliary band. pydynpd and plm::pgmm produce comparable "
     "directional estimates, but their coefficient and standard-error differences "
     "remain outside the auxiliary parity band, so they are classified as REVIEW "
-    "ecosystem comparisons rather than strict parity checks.\n"
+    "auxiliary external-reference notes rather than strict parity checks.\n"
 )
 
 md_path = OUT / "25_cross_software_term_level_comparison.md"

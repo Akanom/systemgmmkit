@@ -8,8 +8,8 @@ CONFORMANCE_STATUS = {
         "strict_reference": "pydynpd/xtabond2",
     },
     "system_gmm_baseline_controls": {
-        "status": "EXPERIMENTAL_PARITY_PENDING",
-        "original_status": "FAIL_PARITY",
+        "status": "PASS_PARITY",
+        "original_status": "PASS_STRICT",
         "blocks_release": False,
         "strict_reference": "pydynpd/xtabond2",
     },
@@ -54,9 +54,12 @@ def test_difference_gmm_is_current_strict_pass():
     assert spec["blocks_release"] is False
 
 
-def test_native_system_gmm_is_not_mislabelled_as_certified():
+def test_only_maintained_system_gmm_baseline_is_fully_certified():
+    baseline = CONFORMANCE_STATUS["system_gmm_baseline_controls"]
+    assert baseline["status"] == "PASS_PARITY"
+    assert baseline["original_status"] == "PASS_STRICT"
+
     system_specs = [
-        "system_gmm_baseline_controls",
         "system_gmm_three_way_controls",
         "system_gmm_three_way_no_controls",
         "system_gmm_decomposition_controls",

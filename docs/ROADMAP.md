@@ -30,6 +30,7 @@ Certified quantities for System GMM include:
 - coefficient parity;
 - Windmeijer-corrected two-step standard-error parity;
 - Hansen p-value parity;
+- signed AR(1)/AR(2) diagnostic parity with p-values for the maintained benchmark;
 - number of instruments;
 - number of observations;
 - covariance type;
@@ -40,8 +41,7 @@ Certified quantities for System GMM include:
 
 High-priority remaining items:
 
-- Certify AR(1)/AR(2) diagnostic parity.
-- Add unbalanced-panel System GMM parity tests.
+- Add unbalanced-panel System GMM parity tests (next validation slice).
 - Add missing-data parity tests.
 - Add alternative lag-window parity tests.
 - Add alternative instrument-classification parity tests.
@@ -50,3 +50,11 @@ High-priority remaining items:
 ## Release discipline
 
 No universal Stata-equivalence claim should be made. All parity statements should remain benchmark-specific and tied to committed artifacts, comparison scripts, pytest guards, and passing CI.
+
+## Open-development record
+
+Future validation slices, reviewer-facing evidence tables, adoption notes, and
+specification discussions should be tracked through public Issues, Discussions, and pull
+requests. See [Open development](OPEN_DEVELOPMENT.md) for the expected record.
+Starter discussion posts are available in
+[Public discussion drafts](PUBLIC_DISCUSSION_DRAFTS.md).

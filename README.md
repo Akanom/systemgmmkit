@@ -6,10 +6,6 @@
 [![CI](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml)
 [![Publish](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml)
 
----
-
-# systemgmmkit
-
 `systemgmmkit` is a Python package for applied panel-data econometrics and dynamic-panel GMM workflows.
 
 It provides a unified workflow for:
@@ -31,12 +27,49 @@ The package is designed for empirical researchers working in economics, finance,
 
 The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
+## Public runnable example
+
+Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit)
+to explore deterministic panel-data setup, pooled OLS, fixed and random effects,
+panel-aware forecast validation, OutputHub reporting, and a compact Difference GMM
+diagnostic workflow. The notebook is a reproducible cloud demonstration, not a
+cross-software parity certificate or paper artifact.
+
+## Universal Output Hub integration
+
+Install the optional reporting bridge and add any fitted SystemGMMKit result to
+an OutputHub report. SystemGMMKit's core supports Python 3.9, while Universal
+Output Hub and this optional integration require Python 3.10 or newer:
+
+```bash
+python -m pip install "systemgmmkit[outputhub]"
+```
+
+```python
+from universal_output_hub import OutputHub
+from systemgmmkit import add_to_outputhub
+
+hub = OutputHub("Panel model report")
+add_to_outputhub(hub, pooled_result, name="Pooled OLS")
+add_to_outputhub(
+    hub,
+    system_gmm_result,
+    name="System GMM",
+    include_diagnostics=True,
+)
+```
+
+The adapter maps coefficients, standard errors, p-values, sample statistics,
+backend and covariance metadata, and available GMM diagnostics. It does not
+change estimates or convert predictive evidence into identification evidence.
+
 ## Controlled performance mode
 
-Native dynamic-panel GMM, native LSDV fixed effects, and native panel IV retain
-their validated preparation paths by default. For large or repeatedly evaluated
-specifications, opt-in preparation engines remove measured preparation overhead
-without changing estimator algebra or output ordering:
+Native dynamic-panel GMM and native panel IV retain their validated preparation
+paths by default. Native fixed effects use the compact within transformation on
+both preparation paths. For large or repeatedly evaluated specifications,
+opt-in preparation engines remove measured preparation overhead without changing
+estimator algebra or output ordering:
 
 ```python
 from systemgmmkit import run_native_dynamic_panel_gmm
@@ -51,7 +84,8 @@ result = run_native_dynamic_panel_gmm(
 ```
 
 The same selector is available on `run_fixed_effects()` and `run_panel_2sls()`.
-It is most useful when entity/time effects create a wide LSDV design:
+For native fixed effects, it accelerates full-rank collinearity screening on the
+compact transformed design; it does not restore an explicit dummy matrix:
 
 ```python
 from systemgmmkit import run_fixed_effects
@@ -163,6 +197,16 @@ The main improvements are:
 * sanitized diagnostic p-values so impossible backend p-values are not reported as valid diagnostics.
 
 The easy API remains a convenience layer. It does not introduce a new estimator. It builds on the validated lower-level specification and runner APIs.
+
+Public roadmap, parity, and adoption discussions are part of the development
+record. See [Open development](docs/OPEN_DEVELOPMENT.md) and the GitHub
+Discussion templates for specification questions, validation reports, and use
+cases.
+
+Kaggle and Google Colab notebooks may be used as reproducibility aids only when
+they stay within the `systemgmmkit` package boundary. See
+[Kaggle and Google Colab usage](docs/CLOUD_NOTEBOOKS.md) for credential, data,
+and evidence rules.
 
 ---
 
@@ -1886,6 +1930,25 @@ A defensible empirical workflow often starts with:
 5. Difference GMM or System GMM for dynamic-panel settings.
 
 This helps users understand how estimates change across assumptions.
+
+## Fixed-effects runtime
+
+The native fixed-effects backend uses a compact within transformation for one-way and
+two-way fixed-effects slope estimation. This avoids constructing a full least-squares
+dummy-variable matrix when many entity or time effects are present, while preserving
+slope equivalence with the corresponding LSDV estimator on the maintained balanced and
+unbalanced benchmark paths.
+
+Native fixed-effects results report:
+
+* backend: `native-within`;
+* structural slopes and a descriptive intercept where fixed effects are included;
+* robust or clustered covariance using the compact residualized design;
+* fixed-effect dummies kept out of the public coefficient table.
+
+The internal LSDV construction remains available as an audit reference in tests. For
+workflows that need an upstream result object or additional `PanelOLS` features, use
+`run_fixed_effects(..., prefer_backend="linearmodels")`.
 
 ## Control instrument proliferation
 

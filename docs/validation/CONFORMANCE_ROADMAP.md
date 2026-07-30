@@ -52,6 +52,18 @@ The following items are now part of the completed or substantially validated con
 19. automated parity report generation for the maintained benchmark artifacts;
 20. reviewer-facing parity artifacts for the maintained `xtabond2` validation suite.
 
+## Static fixed-effects runtime boundary
+
+The native fixed-effects backend now reports `native-within`. It estimates structural
+slopes on a compact within-transformed design instead of constructing a full LSDV dummy
+matrix for ordinary one-way and two-way FE fits. The old LSDV construction remains an
+internal audit path and is used in tests to confirm slope equivalence, including an
+unbalanced two-way panel case.
+
+This is a runtime and memory-scaling improvement, not a broader validation claim.
+Conformance language remains benchmark-specific and tied to the maintained static-panel
+paths.
+
 ## Remaining validation-extension work
 
 The remaining work is now focused on extending the certification boundary, not on establishing the core estimator set.

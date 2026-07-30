@@ -34,6 +34,9 @@ Create a GitHub Release from the tag. The `publish.yml` workflow can publish to 
 
 - CI passes on Python 3.9, 3.10, 3.11, and 3.12.
 - Tests cover core specification, validation, diagnostics, FE estimation, and pydynpd command generation.
+- Native fixed-effects tests cover the compact `native-within` backend and confirm
+  slope equivalence with the internal LSDV audit construction on maintained panel
+  designs.
 - README examples run without modification.
 - Version number follows semantic versioning.
 - No generated data, local notebooks, or private thesis data committed.

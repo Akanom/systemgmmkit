@@ -12,6 +12,23 @@ The project follows a practical semantic-versioning style:
 
 ## Unreleased
 
+### Added
+
+* Added an optional Universal Output Hub adapter for pooled OLS, fixed effects,
+  random effects, panel IV/2SLS, and native or pydynpd dynamic-panel GMM
+  results, including estimator metadata and GMM diagnostic tables. The adapter
+  is available on Python 3.10 and newer; core Python 3.9 support is unchanged.
+
+### Changed
+
+* Based the development line on the `0.5.13` controlled-performance release while
+  retaining the compact `native-within` fixed-effects runtime and its maintained
+  slope-parity tests.
+* Applied reference/accelerated collinearity screening to the transformed native
+  fixed-effects design; estimator and covariance algebra remain shared.
+* Replaced the deprecated pandas `DataFrameGroupBy.apply` AR-diagnostic reduction
+  with an equivalent vectorized product-and-sum implementation.
+
 ---
 
 ## 0.5.13 - 2026-07-28
@@ -200,6 +217,11 @@ The project follows a practical semantic-versioning style:
   * `test_ml_workflow_smoke_script.py`.
 
 ### Changed
+
+* Changed the native fixed-effects backend from explicit public LSDV estimation to a
+  compact within-transformation runtime path. Native FE results now report
+  `native-within`; the internal LSDV construction remains as an audit reference for
+  slope-equivalence tests on balanced and unbalanced panel designs.
 
 * Expanded the package positioning from estimation, post-estimation, and visualization toward a fuller empirical workflow:
 
