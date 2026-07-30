@@ -23,7 +23,12 @@ from .random_effects import RandomEffectsResult, RandomEffectsSpec, run_random_e
 from .reporting import model_card_markdown
 from .spec import DynamicPanelSpec, GMMStyle, IVStyle
 from .suite import PanelModelSuite, PanelModelSuiteResult, run_panel_model_suite
-from .tables import combine_result_frames, export_regression_table, result_to_frame
+from .tables import (
+    combine_result_frames,
+    export_regression_table,
+    format_inference_frame,
+    result_to_frame,
+)
 from .validation import PanelValidationReport, validate_panel
 
 __all__ = [
@@ -53,6 +58,7 @@ __all__ = [
     "build_system_gmm_spec",
     "combine_result_frames",
     "export_regression_table",
+    "format_inference_frame",
     "model_card_markdown",
     "outputhub_diagnostics_frame",
     "result_to_frame",

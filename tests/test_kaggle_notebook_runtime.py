@@ -17,7 +17,7 @@ def test_install_cell_evicts_stale_systemgmmkit_modules():
     source = _code_cell_source(2)
 
     assert "--no-deps" in source
-    assert "f4e830808afcf8938386b5f89d708d8fad0bb0f5" in source
+    assert "a5d56f57773cda8e3986de2494f5ff5ef23a120f" in source
     assert '"universal-output-hub>=0.2.2,<1"' in source
     assert "6638a2f87c68cde44ace2d2661a9361afffb0595" not in source
     assert "tuple(sys.modules)" in source
@@ -46,3 +46,11 @@ def test_reporting_cells_use_outputhub_for_static_and_gmm_results():
     assert 'metadata["estimator"] == "difference_gmm"' in gmm_source
     assert "assert len(hub.models) == 4" in gmm_source
     assert "assert len(hub.tables) == 1" in gmm_source
+
+
+def test_postestimation_tables_use_compact_inference_formatting():
+    notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+    source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
+
+    assert "sgk.format_inference_frame(post.linear_combinations" in source
+    assert "sgk.format_inference_frame(post.wald_tests" in source

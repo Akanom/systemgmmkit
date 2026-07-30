@@ -21,6 +21,9 @@ The project follows a practical semantic-versioning style:
 
 ### Changed
 
+* Added compact, display-only inference-table formatting for post-estimation
+  results and applied it to the public Kaggle quickstart. Raw inferential values
+  and schemas remain unchanged.
 * Based the development line on the `0.5.13` controlled-performance release while
   retaining the compact `native-within` fixed-effects runtime and its maintained
   slope-parity tests.
