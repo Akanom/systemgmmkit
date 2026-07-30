@@ -27,6 +27,14 @@ The package is designed for empirical researchers working in economics, finance,
 
 The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
+## Public runnable example
+
+Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit)
+to explore deterministic panel-data setup, pooled OLS, fixed and random effects,
+panel-aware forecast validation, reporting export, and a compact Difference GMM
+diagnostic workflow. The notebook is a reproducible cloud demonstration, not a
+cross-software parity certificate or paper artifact.
+
 ## Controlled performance mode
 
 Native dynamic-panel GMM and native panel IV retain their validated preparation
