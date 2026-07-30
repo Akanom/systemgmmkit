@@ -16,7 +16,8 @@ The project follows a practical semantic-versioning style:
 
 * Added an optional Universal Output Hub adapter for pooled OLS, fixed effects,
   random effects, panel IV/2SLS, and native or pydynpd dynamic-panel GMM
-  results, including estimator metadata and GMM diagnostic tables.
+  results, including estimator metadata and GMM diagnostic tables. The adapter
+  is available on Python 3.10 and newer; core Python 3.9 support is unchanged.
 
 ### Changed
 

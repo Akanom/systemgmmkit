@@ -38,7 +38,8 @@ cross-software parity certificate or paper artifact.
 ## Universal Output Hub integration
 
 Install the optional reporting bridge and add any fitted SystemGMMKit result to
-an OutputHub report:
+an OutputHub report. SystemGMMKit's core supports Python 3.9, while Universal
+Output Hub and this optional integration require Python 3.10 or newer:
 
 ```bash
 python -m pip install "systemgmmkit[outputhub]"

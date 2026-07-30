@@ -29,6 +29,16 @@ def test_release_version_metadata_is_consistent() -> None:
     assert f"## {project_version} - " in changelog
 
 
+def test_outputhub_dependency_preserves_python_39_core_support() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as handle:
+        optional = tomllib.load(handle)["project"]["optional-dependencies"]
+
+    requirement = "universal-output-hub>=0.2.2,<1; python_version >= '3.10'"
+    assert optional["outputhub"] == [requirement]
+    assert requirement in optional["dev"]
+    assert requirement in optional["all"]
+
+
 def test_release_requirements_cover_windows_build_dependency() -> None:
     release_input = (ROOT / "requirements" / "release.in").read_text(encoding="utf-8")
     release_requirements = (ROOT / "requirements" / "release.txt").read_text(encoding="utf-8")
