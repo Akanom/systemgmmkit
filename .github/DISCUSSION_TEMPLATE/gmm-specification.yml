@@ -1,0 +1,28 @@
+title: "GMM specification discussion: "
+labels:
+  - gmm
+  - discussion
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this to discuss instrument design, lag windows, transformations, diagnostics, or estimator boundaries.
+  - type: textarea
+    id: specification
+    attributes:
+      label: Specification
+      description: Describe the dependent variable, regressors, endogenous/predetermined/exogenous roles, lag windows, and transformation.
+    validations:
+      required: true
+  - type: textarea
+    id: concern
+    attributes:
+      label: Question or concern
+      description: Explain the design choice, diagnostic issue, or implementation boundary being discussed.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or references
+      description: Add public data, scripts, benchmark output, papers, or related issue links.

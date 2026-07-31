@@ -12,6 +12,26 @@ The project follows a practical semantic-versioning style:
 
 ## Unreleased
 
+### Added
+
+* Added an optional Universal Output Hub adapter for pooled OLS, fixed effects,
+  random effects, panel IV/2SLS, and native or pydynpd dynamic-panel GMM
+  results, including estimator metadata and GMM diagnostic tables. The adapter
+  is available on Python 3.10 and newer; core Python 3.9 support is unchanged.
+
+### Changed
+
+* Added compact, display-only inference-table formatting for post-estimation
+  results and applied it to the public Kaggle quickstart. Raw inferential values
+  and schemas remain unchanged.
+* Based the development line on the `0.5.13` controlled-performance release while
+  retaining the compact `native-within` fixed-effects runtime and its maintained
+  slope-parity tests.
+* Applied reference/accelerated collinearity screening to the transformed native
+  fixed-effects design; estimator and covariance algebra remain shared.
+* Replaced the deprecated pandas `DataFrameGroupBy.apply` AR-diagnostic reduction
+  with an equivalent vectorized product-and-sum implementation.
+
 ### Fixed
 
 * Reconciled System-GMM certification language with the committed evidence:
@@ -27,14 +47,28 @@ The project follows a practical semantic-versioning style:
 * Added a portable Stata rerun driver, hashes for fixtures/do-files/exact result
   exports, signed diagnostic comparisons, and a unified four-spec
   `PASS_XTABOND2_PARITY` certificate.
+* Centralized the four maintained System-GMM specifications, comparator identity,
+  oracle, and numerical gates in one machine-readable registry. The unified
+  certificate is now regenerated from that registry and a sanitized, path-free
+  historical-run provenance attestation.
+* Bound the certificate to LF-normalized canonical digests of the registry,
+  comparator, builders, runners, inputs, and outputs. Comparator provenance is
+  fail-closed and explicitly records the historical-log/output-hash binding
+  limitation instead of embedding a user profile path.
 * Made CI rerun every maintained native System-GMM specification in a temporary
   workspace and compare the fresh outputs directly with the committed Stata exports;
   non-finite values, incomplete parameter sets, or stale certificate hashes now fail.
 * Clarified that `pydynpd` is an optional execution backend and auxiliary
   comparator; unaligned results cannot support parity or speed-ranking claims.
+* Clarified that `PASS_XTABOND2_PARITY` is a numerical-agreement result, not an
+  instrument-validity or specification-endorsement result; Hansen/Sargan p-values
+  and reject-at-0.05 flags remain visible in the authoritative certificate.
 * Retired the unsupported historical AR-pass label for
   `system_gmm_three_way_no_controls`; no dedicated comparison row or complete
   certificate existed, so it remains explicitly pending.
+* Removed committed local user-profile and OneDrive paths from executable parity
+  scripts and historical artifacts, replaced them with portable roots, and added
+  a repository-wide path-disclosure regression gate.
 
 ---
 
@@ -224,6 +258,11 @@ The project follows a practical semantic-versioning style:
   * `test_ml_workflow_smoke_script.py`.
 
 ### Changed
+
+* Changed the native fixed-effects backend from explicit public LSDV estimation to a
+  compact within-transformation runtime path. Native FE results now report
+  `native-within`; the internal LSDV construction remains as an audit reference for
+  slope-equivalence tests on balanced and unbalanced panel designs.
 
 * Expanded the package positioning from estimation, post-estimation, and visualization toward a fuller empirical workflow:
 

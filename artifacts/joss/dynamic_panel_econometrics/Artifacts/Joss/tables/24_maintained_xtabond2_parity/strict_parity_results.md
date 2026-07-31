@@ -1,5 +1,10 @@
 # Panel Econometrics Conformance Suite
 
+> Frozen legacy snapshot: this table is retained for provenance and is not the
+> current certification authority. Its constant-exclusion wording is superseded
+> by the complete-parameter-set four-spec certificate under
+> `artifacts/parity/xtabond2/`.
+
 Package: `systemgmmkit`
 
 | spec                             |   native_nobs |   native_n_instruments |   pydynpd_nobs |   pydynpd_n_groups |   pydynpd_n_instruments |   hansen_p |   ar1_p |   ar2_p | status               | original_status   | blocks_release   | policy_message                                                                                                                                                                               |   same_instrument_count |   max_abs_coef_diff |   mean_abs_coef_diff |   sign_match_rate |   max_abs_se_diff |   mean_abs_se_diff |

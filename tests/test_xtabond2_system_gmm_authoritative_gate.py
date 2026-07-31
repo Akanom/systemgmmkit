@@ -1,147 +1,38 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import TypedDict
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from scripts.parity.system_gmm_certification_registry import (
+    REGISTRY_PATH,
+    SpecConfig,
+    canonical_text_sha256,
+    certification_registry_sha256,
+    comparator_provenance_sha256,
+    load_certification_registry,
+    load_comparator_provenance,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "artifacts" / "parity" / "xtabond2"
-AR_Z_TOL = 0.10
-AR_P_TOL = 0.03
-OVERID_TOL = 1e-6
+REGISTRY = load_certification_registry(REGISTRY_PATH)
+PROVENANCE = load_comparator_provenance(REGISTRY)
+SPECS = REGISTRY.specifications
+COEF_TOL = REGISTRY.tolerances.coefficient_absolute
+AR_Z_TOL = REGISTRY.tolerances.ar_z_absolute
+AR_P_TOL = REGISTRY.tolerances.ar_p_value_absolute
+OVERID_STAT_TOL = REGISTRY.tolerances.overidentification_statistic_absolute
+OVERID_P_TOL = REGISTRY.tolerances.overidentification_p_value_absolute
 
 
-class SpecConfig(TypedDict):
-    native_params: Path
-    native_diagnostics: Path
-    stata_params: Path
-    stata_diagnostics: Path
-    data: Path
-    do_file: Path
-    builder: Path
-    runner: Path
-    expected_params: frozenset[str]
-    expected_instruments: int
-    expected_df: int
-    max_rel_se_diff: float
-
-
-SPECS: dict[str, SpecConfig] = {
-    "system_gmm_baseline_controls": {
-        "native_params": BASE
-        / "specs"
-        / "system_gmm_baseline_controls"
-        / "windmeijer"
-        / "native_params.csv",
-        "native_diagnostics": BASE
-        / "specs"
-        / "system_gmm_baseline_controls"
-        / "windmeijer"
-        / "native_diagnostics.csv",
-        "stata_params": BASE / "xtabond2_system_gmm_params.csv",
-        "stata_diagnostics": BASE / "xtabond2_system_gmm_diagnostics.csv",
-        "data": BASE / "system_gmm_benchmark.csv",
-        "do_file": BASE / "system_gmm_xtabond2_parity.do",
-        "builder": ROOT / "scripts" / "parity" / "build_xtabond2_system_gmm_do.py",
-        "runner": ROOT / "scripts" / "parity" / "run_native_system_gmm_benchmark.py",
-        "expected_params": frozenset({"L1.y", "x", "w", "_con"}),
-        "expected_instruments": 8,
-        "expected_df": 4,
-        "max_rel_se_diff": 1e-6,
-    },
-    "system_gmm_no_controls": {
-        "native_params": BASE / "specs" / "system_gmm_no_controls" / "native_params.csv",
-        "native_diagnostics": BASE / "specs" / "system_gmm_no_controls" / "native_diagnostics.csv",
-        "stata_params": BASE / "specs" / "system_gmm_no_controls" / "stata_params.csv",
-        "stata_diagnostics": BASE / "specs" / "system_gmm_no_controls" / "stata_diagnostics.csv",
-        "data": BASE / "specs" / "system_gmm_no_controls" / "system_gmm_no_controls_benchmark.csv",
-        "do_file": BASE / "specs" / "system_gmm_no_controls" / "system_gmm_no_controls.do",
-        "builder": ROOT / "scripts" / "parity" / "build_xtabond2_system_gmm_no_controls_do.py",
-        "runner": ROOT / "scripts" / "parity" / "run_native_system_gmm_no_controls.py",
-        "expected_params": frozenset({"L1.y", "x", "_con"}),
-        "expected_instruments": 7,
-        "expected_df": 4,
-        "max_rel_se_diff": 1e-3,
-    },
-    "system_gmm_three_way_controls": {
-        "native_params": BASE / "specs" / "system_gmm_three_way_controls" / "native_params.csv",
-        "native_diagnostics": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "native_diagnostics.csv",
-        "stata_params": BASE / "specs" / "system_gmm_three_way_controls" / "stata_params.csv",
-        "stata_diagnostics": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "stata_diagnostics.csv",
-        "data": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "system_gmm_three_way_controls_benchmark.csv",
-        "do_file": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "system_gmm_three_way_controls.do",
-        "builder": ROOT
-        / "scripts"
-        / "parity"
-        / "build_xtabond2_system_gmm_three_way_controls_do.py",
-        "runner": ROOT / "scripts" / "parity" / "run_native_system_gmm_three_way_controls.py",
-        "expected_params": frozenset(
-            {
-                "L1.y",
-                "x",
-                "frag",
-                "polity",
-                "x_frag",
-                "x_polity",
-                "frag_polity",
-                "x_frag_polity",
-                "w",
-                "_con",
-            }
-        ),
-        "expected_instruments": 16,
-        "expected_df": 6,
-        "max_rel_se_diff": 1e-5,
-    },
-    "system_gmm_decomposition_controls": {
-        "native_params": BASE / "specs" / "system_gmm_decomposition_controls" / "native_params.csv",
-        "native_diagnostics": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "native_diagnostics.csv",
-        "stata_params": BASE / "specs" / "system_gmm_decomposition_controls" / "stata_params.csv",
-        "stata_diagnostics": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "stata_diagnostics.csv",
-        "data": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "system_gmm_decomposition_controls_benchmark.csv",
-        "do_file": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "system_gmm_decomposition_controls.do",
-        "builder": ROOT
-        / "scripts"
-        / "parity"
-        / "build_xtabond2_system_gmm_decomposition_controls_do.py",
-        "runner": ROOT / "scripts" / "parity" / "run_native_system_gmm_decomposition_controls.py",
-        "expected_params": frozenset({"L1.y", "x_long", "x_short", "w", "c1", "_con"}),
-        "expected_instruments": 12,
-        "expected_df": 6,
-        "max_rel_se_diff": 1e-6,
-    },
-}
+def _repo(path: Path) -> Path:
+    return ROOT / path
 
 
 def _one(path: Path) -> pd.Series:
@@ -151,7 +42,7 @@ def _one(path: Path) -> pd.Series:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return canonical_text_sha256(path)
 
 
 def _normalise_stata_params(path: Path) -> pd.DataFrame:
@@ -175,7 +66,7 @@ def _assert_parameter_gate(
     native_path: Path,
 ) -> None:
     native = pd.read_csv(native_path)
-    stata = _normalise_stata_params(paths["stata_params"])
+    stata = _normalise_stata_params(_repo(paths["stata_params"]))
 
     assert native["param"].is_unique, spec
     assert stata["param"].is_unique, spec
@@ -194,7 +85,7 @@ def _assert_parameter_gate(
     relative_se_diff = (merged["native_std_err"] - merged["stata_std_err"]).abs() / merged[
         "stata_std_err"
     ].abs()
-    assert float(coef_diff.max(skipna=False)) <= 1e-6, spec
+    assert float(coef_diff.max(skipna=False)) <= COEF_TOL, spec
     assert float(relative_se_diff.max(skipna=False)) <= float(paths["max_rel_se_diff"]), spec
 
 
@@ -204,7 +95,7 @@ def _assert_diagnostic_gate(
     native_path: Path,
 ) -> None:
     native = _one(native_path)
-    stata = _one(paths["stata_diagnostics"])
+    stata = _one(_repo(paths["stata_diagnostics"]))
     numeric_pairs = (
         ("native_hansen_j_stat", "stata_hansen"),
         ("native_hansen_p", "stata_hansen_p"),
@@ -217,11 +108,28 @@ def _assert_diagnostic_gate(
     )
 
     assert native["spec"] == stata["spec"] == spec
-    assert _exact_int(native["native_nobs"], spec) == _exact_int(stata["stata_nobs"], spec) == 1248
+    assert (
+        float(stata["stata_version"]) == PROVENANCE.stata_version == REGISTRY.expected_stata_version
+    )
+    assert PROVENANCE.xtabond2_e_version == REGISTRY.expected_xtabond2_e_version
+    assert PROVENANCE.xtabond2_ado_header == REGISTRY.expected_xtabond2_ado_header
+    assert (
+        _sha256(_repo(paths["stata_params"]))
+        == PROVENANCE.output_hashes[spec]["stata_params_sha256"]
+    )
+    assert (
+        _sha256(_repo(paths["stata_diagnostics"]))
+        == PROVENANCE.output_hashes[spec]["stata_diagnostics_sha256"]
+    )
+    assert (
+        _exact_int(native["native_nobs"], spec)
+        == _exact_int(stata["stata_nobs"], spec)
+        == int(paths["expected_nobs"])
+    )
     assert (
         _exact_int(native["native_n_groups"], spec)
         == _exact_int(stata["stata_n_groups"], spec)
-        == 96
+        == int(paths["expected_n_groups"])
     )
     assert (
         _exact_int(native["native_n_instruments"], spec)
@@ -246,7 +154,8 @@ def _assert_diagnostic_gate(
         assert ((values[row_index] >= 0) & (values[row_index] <= 1)).all(), spec
 
     for native_name, stata_name in numeric_pairs[:4]:
-        assert abs(float(native[native_name]) - float(stata[stata_name])) <= OVERID_TOL
+        tolerance = OVERID_P_TOL if native_name.endswith("_p") else OVERID_STAT_TOL
+        assert abs(float(native[native_name]) - float(stata[stata_name])) <= tolerance
     for native_name, stata_name in numeric_pairs[4:]:
         tolerance = AR_Z_TOL if native_name.endswith("_z") else AR_P_TOL
         assert abs(float(native[native_name]) - float(stata[stata_name])) <= tolerance
@@ -255,13 +164,13 @@ def _assert_diagnostic_gate(
 @pytest.mark.parity
 @pytest.mark.parametrize(("spec", "paths"), SPECS.items())
 def test_raw_parameter_artifacts_pass_declared_gates(spec: str, paths: SpecConfig) -> None:
-    _assert_parameter_gate(spec, paths, paths["native_params"])
+    _assert_parameter_gate(spec, paths, _repo(paths["native_params"]))
 
 
 @pytest.mark.parity
 @pytest.mark.parametrize(("spec", "paths"), SPECS.items())
 def test_raw_diagnostic_artifacts_pass_declared_gates(spec: str, paths: SpecConfig) -> None:
-    _assert_diagnostic_gate(spec, paths, paths["native_diagnostics"])
+    _assert_diagnostic_gate(spec, paths, _repo(paths["native_diagnostics"]))
 
 
 @pytest.mark.parity
@@ -274,11 +183,13 @@ def test_current_native_engine_passes_stata_gates(
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT / "src")
     env["SYSTEMGMMKIT_NATIVE_WINDMEIJER"] = "1"
-    subprocess.run([sys.executable, str(paths["builder"])], cwd=tmp_path, env=env, check=True)
-    subprocess.run([sys.executable, str(paths["runner"])], cwd=tmp_path, env=env, check=True)
+    subprocess.run(
+        [sys.executable, str(_repo(paths["builder"]))], cwd=tmp_path, env=env, check=True
+    )
+    subprocess.run([sys.executable, str(_repo(paths["runner"]))], cwd=tmp_path, env=env, check=True)
 
-    fresh_params = tmp_path / paths["native_params"].relative_to(ROOT)
-    fresh_diagnostics = tmp_path / paths["native_diagnostics"].relative_to(ROOT)
+    fresh_params = tmp_path / paths["native_params"]
+    fresh_diagnostics = tmp_path / paths["native_diagnostics"]
     assert fresh_params.exists(), fresh_params
     assert fresh_diagnostics.exists(), fresh_diagnostics
     _assert_parameter_gate(spec, paths, fresh_params)
@@ -295,45 +206,71 @@ def test_machine_readable_diagnostic_certificate_matches_raw_inputs() -> None:
 
     for spec, paths in SPECS.items():
         row = certificate.loc[spec]
-        assert row["data_sha256"] == _sha256(paths["data"])
-        assert row["do_file_sha256"] == _sha256(paths["do_file"])
-        assert row["native_params_sha256"] == _sha256(paths["native_params"])
-        assert row["stata_params_sha256"] == _sha256(paths["stata_params"])
-        assert row["native_diagnostics_sha256"] == _sha256(paths["native_diagnostics"])
-        assert row["stata_diagnostics_sha256"] == _sha256(paths["stata_diagnostics"])
+        assert row["certification_registry_path"] == REGISTRY_PATH.relative_to(ROOT).as_posix()
+        assert row["certification_registry_sha256"] == certification_registry_sha256(REGISTRY_PATH)
+        assert row["comparator_provenance_path"] == REGISTRY.comparator_provenance.as_posix()
+        assert row["comparator_provenance_sha256"] == comparator_provenance_sha256(REGISTRY)
+        assert row["provenance_attestation_kind"] == PROVENANCE.attestation_kind
+        assert row["provenance_source_log_sha256"] == PROVENANCE.run_log_sha256
+        assert bool(row["same_stata_version"])
+        assert bool(row["same_xtabond2_e_version"])
+        assert bool(row["same_xtabond2_ado_header"])
+        assert bool(row["same_spec_id"])
+        assert bool(row["stata_output_hashes_match_provenance"])
+        stata_diagnostics = pd.read_csv(_repo(paths["stata_diagnostics"]))
+        embedded_fields = {"xtabond2_e_version", "xtabond2_ado_header"}
+        if embedded_fields.issubset(stata_diagnostics.columns):
+            assert bool(row["stata_export_provenance_embedded"])
+            assert bool(row["stata_export_provenance_matches_attestation"])
+            assert row["comparator_provenance_mode"] == "embedded-export-plus-attestation"
+        else:
+            assert not bool(row["stata_export_provenance_embedded"])
+            assert pd.isna(row["stata_export_provenance_matches_attestation"])
+            assert row["comparator_provenance_mode"] == "historical-log-derived-attestation"
+        assert row["comparator_status"] == "PASS"
+        assert row["data_sha256"] == _sha256(_repo(paths["data"]))
+        assert row["do_file_sha256"] == _sha256(_repo(paths["do_file"]))
+        assert row["native_params_sha256"] == _sha256(_repo(paths["native_params"]))
+        assert row["stata_params_sha256"] == _sha256(_repo(paths["stata_params"]))
+        assert row["native_diagnostics_sha256"] == _sha256(_repo(paths["native_diagnostics"]))
+        assert row["stata_diagnostics_sha256"] == _sha256(_repo(paths["stata_diagnostics"]))
         assert bool(row["parameter_set_complete"])
         assert bool(row["parameters_finite"])
         assert bool(row["standard_errors_positive"])
-        assert float(row["max_abs_coef_diff"]) <= 1e-6
+        assert float(row["max_abs_coef_diff"]) <= COEF_TOL
         assert float(row["max_rel_se_diff"]) <= float(paths["max_rel_se_diff"])
         assert float(row["abs_ar1_z_diff"]) <= AR_Z_TOL
         assert float(row["abs_ar1_p_diff"]) <= AR_P_TOL
         assert float(row["abs_ar2_z_diff"]) <= AR_Z_TOL
         assert float(row["abs_ar2_p_diff"]) <= AR_P_TOL
+        assert bool(row["stata_hansen_reject_005"]) == (float(row["stata_hansen_p"]) < 0.05)
+        assert bool(row["stata_sargan_reject_005"]) == (float(row["stata_sargan_p"]) < 0.05)
 
 
 def test_stata_and_native_selector_contracts_are_explicit() -> None:
-    for spec, paths in SPECS.items():
-        do_text = paths["do_file"].read_text(encoding="utf-8")
-        runner_text = paths["runner"].read_text(encoding="utf-8")
+    for paths in SPECS.values():
+        do_text = _repo(paths["do_file"]).read_text(encoding="utf-8")
+        runner_text = _repo(paths["runner"]).read_text(encoding="utf-8")
 
-        assert do_text.startswith("version 17.0\n")
+        assert do_text.startswith(f"version {REGISTRY.stata_syntax_version}\n")
         assert "collapse eq(both)" in do_text
         assert "twostep robust small ///" not in do_text
         assert "stata_ar1_z" in do_text and "stata_ar2_z" in do_text
         assert "gen double stata_version = c(stata_version)" in do_text
+        assert "findfile xtabond2.ado" in do_text
+        assert "file read `xtabond2_ado_handle' xtabond2_ado_header" in do_text
+        assert 'local xtabond2_e_version "`e(version)\'"' in do_text
+        assert "gen str20 xtabond2_e_version" in do_text
+        assert "gen str80 xtabond2_ado_header" in do_text
         assert "stata_reported_date" in do_text and "stata_reported_time" in do_text
-        if spec == "system_gmm_baseline_controls":
-            assert 'SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "fd"' in runner_text
-        else:
-            assert 'transformation="fd"' in runner_text
+        transformation = paths["transformation"]
+        assert (
+            f'transformation="{transformation}"' in runner_text
+            or f'SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "{transformation}"' in runner_text
+        )
         assert 'GMMStyle(variable="L1.y"' in runner_text
 
-        if spec in {
-            "system_gmm_baseline_controls",
-            "system_gmm_three_way_controls",
-            "system_gmm_decomposition_controls",
-        }:
+        if paths["requires_level_iv"]:
             assert 'eq="level"' in runner_text
 
     driver = (ROOT / "scripts" / "parity" / "rerun_xtabond2_certification.do").read_text(
@@ -344,24 +281,21 @@ def test_stata_and_native_selector_contracts_are_explicit() -> None:
 
 
 def test_generated_stata_fixtures_are_in_sync_with_builders(tmp_path: Path) -> None:
-    builders = (
-        "build_xtabond2_system_gmm_do.py",
-        "build_xtabond2_system_gmm_no_controls_do.py",
-        "build_xtabond2_system_gmm_three_way_controls_do.py",
-        "build_xtabond2_system_gmm_decomposition_controls_do.py",
-    )
+    builders = dict.fromkeys(paths["builder"] for paths in SPECS.values())
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT / "src")
     for builder in builders:
         subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "parity" / builder)],
+            [sys.executable, str(_repo(builder))],
             cwd=tmp_path,
             env=env,
             check=True,
         )
 
     for paths in SPECS.values():
-        relative_data = paths["data"].relative_to(ROOT)
-        relative_do = paths["do_file"].relative_to(ROOT)
-        assert (tmp_path / relative_data).read_bytes() == paths["data"].read_bytes()
-        assert (tmp_path / relative_do).read_bytes() == paths["do_file"].read_bytes()
+        assert canonical_text_sha256(tmp_path / paths["data"]) == canonical_text_sha256(
+            _repo(paths["data"])
+        )
+        assert canonical_text_sha256(tmp_path / paths["do_file"]) == canonical_text_sha256(
+            _repo(paths["do_file"])
+        )

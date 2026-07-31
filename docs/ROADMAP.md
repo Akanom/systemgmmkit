@@ -54,3 +54,11 @@ High-priority remaining items:
 ## Release discipline
 
 No universal Stata-equivalence claim should be made. All parity statements should remain benchmark-specific and tied to committed artifacts, comparison scripts, pytest guards, and passing CI.
+
+## Open-development record
+
+Future validation slices, reviewer-facing evidence tables, adoption notes, and
+specification discussions should be tracked through public Issues, Discussions, and pull
+requests. See [Open development](OPEN_DEVELOPMENT.md) for the expected record.
+Starter discussion posts are available in
+[Public discussion drafts](PUBLIC_DISCUSSION_DRAFTS.md).

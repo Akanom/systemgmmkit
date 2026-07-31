@@ -62,19 +62,24 @@ python benchmarks/benchmark_native_gmm.py --case small_difference_fd_onestep --e
 ## Static estimators
 
 The static-estimator harness profiles full OLS, pooled OLS, fixed-effects,
-random-effects, and panel-IV fits. It confirmed that NumPy/BLAS already handles
-the ordinary OLS algebra efficiently, while wide LSDV designs spent most of their
-time repeatedly applying SVD-based rank checks to every design prefix.
+random-effects, and panel-IV fits. Version 0.5.13 measured the explicit LSDV
+fixed-effects path and found that wide dummy-variable designs spent most of their
+time repeatedly applying SVD-based rank checks to every design prefix. The current
+development line supersedes that public fixed-effects execution path with the
+compact `native-within` backend; the LSDV builder remains an audit reference.
 
 The opt-in static `preparation_engine="accelerated"` performs one full-design
-rank check. When the design is full rank, it safely bypasses the repeated prefix
+rank check. When the design is full rank, it safely bypasses repeated prefix
 checks. When the design is rank deficient, it falls back to the unchanged
-sequential reference algorithm, including its tolerance and column order. The
-estimator, projection, covariance, fitted-value, and diagnostic algebra is shared
-unchanged.
+sequential reference algorithm, including its tolerance and column order. For
+fixed effects this screening now operates on the within-transformed structural
+design; for panel IV with effects it continues to operate on the LSDV design.
+Estimator, projection, covariance, fitted-value, and diagnostic algebra are
+shared within each estimator.
 
 On Windows with CPython 3.14.6, NumPy 2.4.6, pandas 3.0.3, SciPy 1.17.1, and
-OpenBLAS 0.3.31, the deterministic quick suite produced these warm medians:
+OpenBLAS 0.3.31, the version 0.5.13 deterministic quick suite produced these
+warm medians before the native-within fixed-effects change:
 
 | Workload | Reference | Accelerated | Relative speed | Reduction |
 |---|---:|---:|---:|---:|
@@ -85,11 +90,12 @@ OpenBLAS 0.3.31, the deterministic quick suite produced these warm medians:
 | Panel IV without effects, 2,000 rows | 0.0515 s | 0.0431 s | 1.20x | 16.3% |
 | Panel IV with two-way LSDV effects, 640 rows | 0.5335 s | 0.1075 s | 4.96x | 79.8% |
 
-Every accelerated case reported exact reference identity for coefficients,
-standard errors, residuals, fitted values, and prepared design ordering. Python
-allocation peaks were also slightly lower for the two material LSDV cases. The
-random-effects candidate reduced runtime by only about 6%; it was not retained
-because the improvement did not justify another public execution path.
+Every accelerated 0.5.13 case reported exact reference identity for coefficients,
+standard errors, residuals, fitted values, and prepared design ordering. The
+fixed-effects timing row is retained as historical release evidence and must not
+be attributed to the current native-within runtime. The random-effects candidate
+reduced runtime by only about 6%; it was not retained because the improvement did
+not justify another public execution path.
 
 Reproduce the static benchmark from the repository root:
 
@@ -98,6 +104,17 @@ python benchmarks/benchmark_static_estimators.py --suite quick --repetitions 5
 python benchmarks/benchmark_static_estimators.py --suite full --repetitions 5 --output benchmark-results/static-estimators.json
 python benchmarks/benchmark_static_estimators.py --case panel_iv_lsdv --profile-case panel_iv_lsdv --profile-limit 40
 ```
+
+Running the harness at `v0.5.13` reproduces the release-era LSDV comparison.
+Running it on the current development line measures the compact native-within
+fixed-effects backend and the retained panel-IV preparation engines.
+
+On the same recorded Windows/Python/NumPy/pandas/SciPy environment, the current
+development line measured the 800-row two-way native-within case at 0.022245 s
+for `reference` and 0.022154 s for `accelerated`, with exact output identity.
+That difference is not a material acceleration claim. Compared with the 0.5.13
+release-era 0.4756 s LSDV reference median, the compact within path accounts for
+the meaningful fixed-effects runtime reduction; timings remain machine-specific.
 
 ## Boundaries
 

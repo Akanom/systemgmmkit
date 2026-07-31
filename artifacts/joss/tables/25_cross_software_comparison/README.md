@@ -1,10 +1,10 @@
-# Artifact 25: Cross-Software Comparison
+# Artifact 25: Archived External-Reference Notes
 
 ## Purpose
 
-This artifact positions systemgmmkit against related Python, R, and Stata tools.
+This artifact records auxiliary outputs from related Python, R, and Stata tools.
 
-It is not intended to claim that systemgmmkit is the first dynamic-panel GMM implementation. Instead, the comparison documents systemgmmkit's workflow contribution: estimation, diagnostics, post-estimation, validation artifacts, visualization, forecasting, and publication-oriented reporting in one Python package.
+It is not intended to claim that systemgmmkit is the first dynamic-panel GMM implementation, rank software, or host a repository-wide package comparison workflow. Instead, these notes document why formal `systemgmmkit` parity claims are limited to aligned package validation artifacts.
 
 ## Comparator groups
 
@@ -25,7 +25,7 @@ Stata:
 
 Stata xtabond2 and xtdpdgmm remain the primary numerical parity references.
 
-Python and R tools are used for ecosystem positioning and, where feasible, additional numerical comparison. Because dynamic-panel GMM implementations differ in instrument construction, sample trimming, finite-sample correction, covariance scaling, and default equation-scope conventions, cross-software comparison should not be interpreted as automatic strict parity unless the benchmark specification is explicitly aligned.
+Python and R outputs are retained as auxiliary external-reference notes. Because dynamic-panel GMM implementations differ in instrument construction, sample trimming, finite-sample correction, covariance scaling, and default equation-scope conventions, these notes should not be interpreted as strict parity unless the benchmark specification is explicitly aligned.
 
 ## systemgmmkit positioning
 

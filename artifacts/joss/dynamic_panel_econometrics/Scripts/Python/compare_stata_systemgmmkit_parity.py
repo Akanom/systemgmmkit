@@ -167,7 +167,9 @@ def main() -> None:
 
         common = merged[merged["_merge"].eq("both")].copy()
 
-        max_abs_coef_diff = float(common["abs_coef_diff"].max()) if not common.empty else float("nan")
+        max_abs_coef_diff = (
+            float(common["abs_coef_diff"].max()) if not common.empty else float("nan")
+        )
         max_abs_se_diff = float(common["abs_se_diff"].max()) if not common.empty else float("nan")
         max_abs_p_diff = float(common["abs_p_diff"].max()) if not common.empty else float("nan")
 
@@ -231,7 +233,8 @@ def main() -> None:
         "This comparison uses aligned effective samples between Stata and systemgmmkit. "
         "System GMM reaches numerical agreement. Difference GMM falls within the "
         "predefined tolerant auxiliary agreement band. Formal parity claims for the "
-        "paper should rely on Artifact 24, the maintained dynamic-GMM parity certificate.\n"
+        "paper should rely on the central registry and unified certificate under "
+        "artifacts/parity/xtabond2/; Artifact 24 is a frozen legacy snapshot.\n"
     )
 
     md_path = ARTIFACT_DIR / "22_stata_systemgmmkit_parity_summary.md"

@@ -6,10 +6,6 @@
 [![CI](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/ci.yml)
 [![Publish](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml/badge.svg)](https://github.com/Akanom/systemgmmkit/actions/workflows/publish.yml)
 
----
-
-# systemgmmkit
-
 `systemgmmkit` is a Python package for applied panel-data econometrics and dynamic-panel GMM workflows.
 
 It provides a unified workflow for:
@@ -31,12 +27,54 @@ The package is designed for empirical researchers working in economics, finance,
 
 The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
+## Public runnable example
+
+Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit)
+to explore deterministic panel-data setup, pooled OLS, fixed and random effects,
+panel-aware forecast validation, OutputHub reporting, and a compact Difference GMM
+diagnostic workflow. The notebook is a reproducible cloud demonstration, not a
+cross-software parity certificate or paper artifact.
+
+## Universal Output Hub integration
+
+Install the optional reporting bridge and add any fitted SystemGMMKit result to
+an OutputHub report. SystemGMMKit's core supports Python 3.9, while Universal
+Output Hub and this optional integration require Python 3.10 or newer:
+
+```bash
+python -m pip install "systemgmmkit[outputhub]"
+```
+
+```python
+from universal_output_hub import OutputHub
+from systemgmmkit import add_to_outputhub
+
+hub = OutputHub("Panel model report")
+add_to_outputhub(hub, pooled_result, name="Pooled OLS")
+add_to_outputhub(
+    hub,
+    system_gmm_result,
+    name="System GMM",
+    include_diagnostics=True,
+)
+```
+
+The adapter maps coefficients, standard errors, p-values, sample statistics,
+backend and covariance metadata, and available GMM diagnostics. It does not
+change estimates or convert predictive evidence into identification evidence.
+
+For compact notebook display of linear combinations and Wald tests, use
+`format_inference_frame(frame)`. It preserves the raw result frame, removes
+redundant test-statistic fields, and displays very small p-values as bounds such
+as `<0.0001` instead of rounding them to zero.
+
 ## Controlled performance mode
 
-Native dynamic-panel GMM, native LSDV fixed effects, and native panel IV retain
-their validated preparation paths by default. For large or repeatedly evaluated
-specifications, opt-in preparation engines remove measured preparation overhead
-without changing estimator algebra or output ordering:
+Native dynamic-panel GMM and native panel IV retain their validated preparation
+paths by default. Native fixed effects use the compact within transformation on
+both preparation paths. For large or repeatedly evaluated specifications,
+opt-in preparation engines remove measured preparation overhead without changing
+estimator algebra or output ordering:
 
 ```python
 from systemgmmkit import run_native_dynamic_panel_gmm
@@ -51,7 +89,8 @@ result = run_native_dynamic_panel_gmm(
 ```
 
 The same selector is available on `run_fixed_effects()` and `run_panel_2sls()`.
-It is most useful when entity/time effects create a wide LSDV design:
+For native fixed effects, it accelerates full-rank collinearity screening on the
+compact transformed design; it does not restore an explicit dummy matrix:
 
 ```python
 from systemgmmkit import run_fixed_effects
@@ -163,6 +202,16 @@ The main improvements are:
 * sanitized diagnostic p-values so impossible backend p-values are not reported as valid diagnostics.
 
 The easy API remains a convenience layer. It does not introduce a new estimator. It builds on the validated lower-level specification and runner APIs.
+
+Public roadmap, parity, and adoption discussions are part of the development
+record. See [Open development](docs/OPEN_DEVELOPMENT.md) and the GitHub
+Discussion templates for specification questions, validation reports, and use
+cases.
+
+Kaggle and Google Colab notebooks may be used as reproducibility aids only when
+they stay within the `systemgmmkit` package boundary. See
+[Kaggle and Google Colab usage](docs/CLOUD_NOTEBOOKS.md) for credential, data,
+and evidence rules.
 
 ---
 
@@ -1698,6 +1747,14 @@ The goal is not merely to produce estimates. The goal is to provide transparent 
 
 Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. CMAPSS FD001 is an application scaffold, not part of the formal parity certificate.
 
+For Hansen, Sargan, and AR rows, `PASS_XTABOND2_PARITY` means numerical
+agreement with `xtabond2`; it does not establish instrument validity or endorse
+the benchmark specification. Stata rejects both Hansen and Sargan tests at 5%
+for the no-controls (`0.02356` / `0.00568`), three-way-controls (`0.02144` /
+`0.0000369`), and decomposition (`0.00640` / `0.0000128`) fixtures. The
+baseline fixture does not reject (`0.15998` / `0.08792`). The unified
+certificate preserves the raw p-values and reject-at-0.05 flags.
+
 Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
 
 ---
@@ -1720,8 +1777,13 @@ Certified components include:
 
 The authoritative gate reruns the current native engine in an isolated temporary
 workspace and compares those fresh outputs directly with the committed Stata exports.
-It also verifies the committed unified certificate against SHA-256 hashes of every
-fixture, do-file, parameter export, and diagnostic export. Counts and degrees of
+The sole specification/oracle/tolerance registry is
+`artifacts/parity/xtabond2/system_gmm_certification_specs.json`; the sole
+numerical decision artifact is
+`artifacts/parity/xtabond2/diagnostic_parity_certificate.csv`. The gate verifies
+the certificate against LF-normalized canonical SHA-256 digests of the registry,
+comparator, generators, fixtures, do-files, parameter exports, and diagnostic
+exports. Counts and degrees of
 freedom must match exactly; coefficient absolute
 differences must be at most `1e-6`; Windmeijer-SE tolerances are specification
 specific; Hansen/Sargan absolute differences must be at most `1e-6`; signed AR
@@ -1731,6 +1793,18 @@ observed signed-AR differences are approximately `0.02264` for z and `0.00638` f
 p. See the [System GMM parity matrix](docs/parity/system_gmm_parity_matrix.md) and
 the unified machine-readable certificate at
 `artifacts/parity/xtabond2/diagnostic_parity_certificate.csv`.
+
+Comparator identity for the current historical Stata exports is carried by a
+path-free, machine-generated provenance attestation. Its local source log is not
+committed because it contains machine-specific paths. The attestation explicitly
+records that the tracked-output and installed-ado hashes were observed when the
+attestation was generated; the completed log itself recorded Stata 17,
+`xtabond2` 3.7.2 / `e(version)=03.07.00`, all four run markers, and completion.
+Future Stata exports also embed comparator metadata directly.
+
+The exact builder, Stata-driver, attestation, certificate, report, and pytest
+commands are documented in the
+[System GMM parity matrix](docs/parity/system_gmm_parity_matrix.md#evidence-and-reproduction).
 
 Stata `xtabond2` is the formal certification oracle. `pydynpd` is an optional
 execution backend and auxiliary comparator, not part of the current formal native
@@ -1907,6 +1981,25 @@ A defensible empirical workflow often starts with:
 5. Difference GMM or System GMM for dynamic-panel settings.
 
 This helps users understand how estimates change across assumptions.
+
+## Fixed-effects runtime
+
+The native fixed-effects backend uses a compact within transformation for one-way and
+two-way fixed-effects slope estimation. This avoids constructing a full least-squares
+dummy-variable matrix when many entity or time effects are present, while preserving
+slope equivalence with the corresponding LSDV estimator on the maintained balanced and
+unbalanced benchmark paths.
+
+Native fixed-effects results report:
+
+* backend: `native-within`;
+* structural slopes and a descriptive intercept where fixed effects are included;
+* robust or clustered covariance using the compact residualized design;
+* fixed-effect dummies kept out of the public coefficient table.
+
+The internal LSDV construction remains available as an audit reference in tests. For
+workflows that need an upstream result object or additional `PanelOLS` features, use
+`run_fixed_effects(..., prefer_backend="linearmodels")`.
 
 ## Control instrument proliferation
 

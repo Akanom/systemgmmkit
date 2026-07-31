@@ -1,138 +1,48 @@
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
-from typing import TypedDict
 
 import numpy as np
 import pandas as pd
 
-BASE = Path("artifacts/parity/xtabond2")
-COEF_TOL = 1e-6
-AR_Z_TOL = 0.10
-AR_P_TOL = 0.03
-OVERID_STAT_TOL = 1e-6
-OVERID_P_TOL = 1e-6
+if __package__:
+    from .system_gmm_certification_registry import (
+        REGISTRY_PATH,
+        REPOSITORY_ROOT,
+        SpecConfig,
+        canonical_text_sha256,
+        certification_registry_sha256,
+        comparator_provenance_sha256,
+        load_certification_registry,
+        load_comparator_provenance,
+        repository_path,
+    )
+else:
+    from system_gmm_certification_registry import (
+        REGISTRY_PATH,
+        REPOSITORY_ROOT,
+        SpecConfig,
+        canonical_text_sha256,
+        certification_registry_sha256,
+        comparator_provenance_sha256,
+        load_certification_registry,
+        load_comparator_provenance,
+        repository_path,
+    )
 
-
-class SpecConfig(TypedDict):
-    native_params: Path
-    native_diagnostics: Path
-    stata_params: Path
-    stata_diagnostics: Path
-    data: Path
-    do_file: Path
-    expected_params: frozenset[str]
-    expected_nobs: int
-    expected_n_groups: int
-    expected_n_instruments: int
-    expected_overid_df: int
-    max_rel_se_diff: float
-
-
-SPECS: dict[str, SpecConfig] = {
-    "system_gmm_baseline_controls": {
-        "native_params": BASE
-        / "specs"
-        / "system_gmm_baseline_controls"
-        / "windmeijer"
-        / "native_params.csv",
-        "native_diagnostics": BASE
-        / "specs"
-        / "system_gmm_baseline_controls"
-        / "windmeijer"
-        / "native_diagnostics.csv",
-        "stata_params": BASE / "xtabond2_system_gmm_params.csv",
-        "stata_diagnostics": BASE / "xtabond2_system_gmm_diagnostics.csv",
-        "data": BASE / "system_gmm_benchmark.csv",
-        "do_file": BASE / "system_gmm_xtabond2_parity.do",
-        "expected_params": frozenset({"L1.y", "x", "w", "_con"}),
-        "expected_nobs": 1248,
-        "expected_n_groups": 96,
-        "expected_n_instruments": 8,
-        "expected_overid_df": 4,
-        "max_rel_se_diff": 1e-6,
-    },
-    "system_gmm_no_controls": {
-        "native_params": BASE / "specs" / "system_gmm_no_controls" / "native_params.csv",
-        "native_diagnostics": BASE / "specs" / "system_gmm_no_controls" / "native_diagnostics.csv",
-        "stata_params": BASE / "specs" / "system_gmm_no_controls" / "stata_params.csv",
-        "stata_diagnostics": BASE / "specs" / "system_gmm_no_controls" / "stata_diagnostics.csv",
-        "data": BASE / "specs" / "system_gmm_no_controls" / "system_gmm_no_controls_benchmark.csv",
-        "do_file": BASE / "specs" / "system_gmm_no_controls" / "system_gmm_no_controls.do",
-        "expected_params": frozenset({"L1.y", "x", "_con"}),
-        "expected_nobs": 1248,
-        "expected_n_groups": 96,
-        "expected_n_instruments": 7,
-        "expected_overid_df": 4,
-        "max_rel_se_diff": 1e-3,
-    },
-    "system_gmm_three_way_controls": {
-        "native_params": BASE / "specs" / "system_gmm_three_way_controls" / "native_params.csv",
-        "native_diagnostics": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "native_diagnostics.csv",
-        "stata_params": BASE / "specs" / "system_gmm_three_way_controls" / "stata_params.csv",
-        "stata_diagnostics": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "stata_diagnostics.csv",
-        "data": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "system_gmm_three_way_controls_benchmark.csv",
-        "do_file": BASE
-        / "specs"
-        / "system_gmm_three_way_controls"
-        / "system_gmm_three_way_controls.do",
-        "expected_params": frozenset(
-            {
-                "L1.y",
-                "x",
-                "frag",
-                "polity",
-                "x_frag",
-                "x_polity",
-                "frag_polity",
-                "x_frag_polity",
-                "w",
-                "_con",
-            }
-        ),
-        "expected_nobs": 1248,
-        "expected_n_groups": 96,
-        "expected_n_instruments": 16,
-        "expected_overid_df": 6,
-        "max_rel_se_diff": 1e-5,
-    },
-    "system_gmm_decomposition_controls": {
-        "native_params": BASE / "specs" / "system_gmm_decomposition_controls" / "native_params.csv",
-        "native_diagnostics": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "native_diagnostics.csv",
-        "stata_params": BASE / "specs" / "system_gmm_decomposition_controls" / "stata_params.csv",
-        "stata_diagnostics": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "stata_diagnostics.csv",
-        "data": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "system_gmm_decomposition_controls_benchmark.csv",
-        "do_file": BASE
-        / "specs"
-        / "system_gmm_decomposition_controls"
-        / "system_gmm_decomposition_controls.do",
-        "expected_params": frozenset({"L1.y", "x_long", "x_short", "w", "c1", "_con"}),
-        "expected_nobs": 1248,
-        "expected_n_groups": 96,
-        "expected_n_instruments": 12,
-        "expected_overid_df": 6,
-        "max_rel_se_diff": 1e-6,
-    },
-}
+BASE = REPOSITORY_ROOT / "artifacts" / "parity" / "xtabond2"
+COMPARATOR_PATH = Path("scripts/parity/compare_xtabond2_ar_diagnostics.py")
+COMPARATOR_ID = "systemgmmkit.xtabond2-parity-comparator-v2"
+REGISTRY = load_certification_registry(REGISTRY_PATH)
+REGISTRY_SHA256 = certification_registry_sha256(REGISTRY_PATH)
+PROVENANCE = load_comparator_provenance(REGISTRY)
+PROVENANCE_SHA256 = comparator_provenance_sha256(REGISTRY)
+SPECS = REGISTRY.specifications
+COEF_TOL = REGISTRY.tolerances.coefficient_absolute
+AR_Z_TOL = REGISTRY.tolerances.ar_z_absolute
+AR_P_TOL = REGISTRY.tolerances.ar_p_value_absolute
+OVERID_STAT_TOL = REGISTRY.tolerances.overidentification_statistic_absolute
+OVERID_P_TOL = REGISTRY.tolerances.overidentification_p_value_absolute
 
 
 def _read_one(path: Path) -> pd.Series:
@@ -189,17 +99,36 @@ def _probability(row: pd.Series, name: str) -> float:
     return value
 
 
+def _text(row: pd.Series, name: str) -> str:
+    if name not in row.index or pd.isna(row[name]):
+        raise ValueError(f"Missing required comparator metadata {name!r}")
+    value = str(row[name]).strip()
+    if not value:
+        raise ValueError(f"Empty required comparator metadata {name!r}")
+    return value
+
+
 def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return canonical_text_sha256(path)
+
+
+def _embedded_comparator_metadata(stata: pd.Series) -> tuple[bool, bool | float]:
+    fields = ("xtabond2_e_version", "xtabond2_ado_header")
+    present = [field in stata.index and not pd.isna(stata[field]) for field in fields]
+    if any(present) and not all(present):
+        raise ValueError("Stata export has incomplete embedded xtabond2 provenance metadata.")
+    if not all(present):
+        return False, float("nan")
+    matches = (
+        _text(stata, "xtabond2_e_version") == PROVENANCE.xtabond2_e_version
+        and _text(stata, "xtabond2_ado_header") == PROVENANCE.xtabond2_ado_header
+    )
+    return True, matches
 
 
 def _parameter_result(paths: SpecConfig) -> dict[str, object]:
-    native = _read_params(paths["native_params"], stata=False)
-    stata = _read_params(paths["stata_params"], stata=True)
+    native = _read_params(repository_path(paths["native_params"]), stata=False)
+    stata = _read_params(repository_path(paths["stata_params"]), stata=True)
     expected_terms = set(paths["expected_params"])
     native_terms = set(native["param"])
     stata_terms = set(stata["param"])
@@ -252,22 +181,60 @@ def _parameter_result(paths: SpecConfig) -> dict[str, object]:
 
 
 def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
-    native = _read_one(paths["native_diagnostics"])
-    stata = _read_one(paths["stata_diagnostics"])
+    native = _read_one(repository_path(paths["native_diagnostics"]))
+    stata = _read_one(repository_path(paths["stata_diagnostics"]))
+    native_spec = _text(native, "spec")
+    stata_spec = _text(stata, "spec")
+    embedded_provenance, embedded_provenance_matches = _embedded_comparator_metadata(stata)
+    provenance_hashes = PROVENANCE.output_hashes[spec]
+    stata_params_sha256 = _sha256(repository_path(paths["stata_params"]))
+    stata_diagnostics_sha256 = _sha256(repository_path(paths["stata_diagnostics"]))
+    output_hashes_match_provenance = (
+        stata_params_sha256 == provenance_hashes["stata_params_sha256"]
+        and stata_diagnostics_sha256 == provenance_hashes["stata_diagnostics_sha256"]
+    )
 
     row: dict[str, object] = {
         "spec": spec,
+        "native_spec": native_spec,
+        "stata_spec": stata_spec,
+        "same_spec_id": native_spec == stata_spec == spec,
         "native_params_path": paths["native_params"].as_posix(),
         "stata_params_path": paths["stata_params"].as_posix(),
         "native_diagnostics_path": paths["native_diagnostics"].as_posix(),
         "stata_diagnostics_path": paths["stata_diagnostics"].as_posix(),
-        "data_sha256": _sha256(paths["data"]),
-        "do_file_sha256": _sha256(paths["do_file"]),
-        "native_params_sha256": _sha256(paths["native_params"]),
-        "stata_params_sha256": _sha256(paths["stata_params"]),
-        "native_diagnostics_sha256": _sha256(paths["native_diagnostics"]),
-        "stata_diagnostics_sha256": _sha256(paths["stata_diagnostics"]),
+        "certification_registry_path": REGISTRY_PATH.relative_to(REPOSITORY_ROOT).as_posix(),
+        "certification_registry_sha256": REGISTRY_SHA256,
+        "comparator_provenance_path": REGISTRY.comparator_provenance.as_posix(),
+        "comparator_provenance_sha256": PROVENANCE_SHA256,
+        "comparator_id": COMPARATOR_ID,
+        "comparator_sha256": _sha256(repository_path(COMPARATOR_PATH)),
+        "text_digest_algorithm": REGISTRY.text_digest_algorithm,
+        "provenance_attestation_kind": PROVENANCE.attestation_kind,
+        "provenance_source_log_sha256": PROVENANCE.run_log_sha256,
+        "data_sha256": _sha256(repository_path(paths["data"])),
+        "do_file_sha256": _sha256(repository_path(paths["do_file"])),
+        "builder_sha256": _sha256(repository_path(paths["builder"])),
+        "runner_sha256": _sha256(repository_path(paths["runner"])),
+        "native_params_sha256": _sha256(repository_path(paths["native_params"])),
+        "stata_params_sha256": stata_params_sha256,
+        "native_diagnostics_sha256": _sha256(repository_path(paths["native_diagnostics"])),
+        "stata_diagnostics_sha256": stata_diagnostics_sha256,
+        "stata_output_hashes_match_provenance": output_hashes_match_provenance,
+        "stata_export_provenance_embedded": embedded_provenance,
+        "stata_export_provenance_matches_attestation": embedded_provenance_matches,
+        "comparator_provenance_mode": (
+            "embedded-export-plus-attestation"
+            if embedded_provenance
+            else "historical-log-derived-attestation"
+        ),
+        "expected_stata_version": REGISTRY.expected_stata_version,
         "stata_version": _number(stata, "stata_version"),
+        "expected_xtabond2_e_version": REGISTRY.expected_xtabond2_e_version,
+        "xtabond2_e_version": PROVENANCE.xtabond2_e_version,
+        "expected_xtabond2_ado_header": REGISTRY.expected_xtabond2_ado_header,
+        "xtabond2_ado_header": PROVENANCE.xtabond2_ado_header,
+        "xtabond2_ado_sha256": PROVENANCE.xtabond2_ado_sha256,
         "stata_reported_date": stata.get("stata_reported_date", stata.get("stata_run_date", "")),
         "stata_reported_time": stata.get("stata_reported_time", stata.get("stata_run_time", "")),
         "native_nobs": _integer(native, "native_nobs"),
@@ -299,18 +266,27 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
     }
 
     row["same_nobs"] = row["native_nobs"] == row["stata_nobs"] == paths["expected_nobs"]
+    row["same_stata_version"] = (
+        row["stata_version"] == PROVENANCE.stata_version == row["expected_stata_version"]
+    )
+    row["same_xtabond2_e_version"] = row["xtabond2_e_version"] == row["expected_xtabond2_e_version"]
+    row["same_xtabond2_ado_header"] = (
+        row["xtabond2_ado_header"] == row["expected_xtabond2_ado_header"]
+    )
     row["same_n_groups"] = (
         row["native_n_groups"] == row["stata_n_groups"] == paths["expected_n_groups"]
     )
     row["same_instrument_count"] = (
-        row["native_n_instruments"] == row["stata_n_instruments"] == paths["expected_n_instruments"]
+        row["native_n_instruments"] == row["stata_n_instruments"] == paths["expected_instruments"]
     )
     row["same_overid_df"] = (
         row["native_overid_df"]
         == row["stata_hansen_df"]
         == row["stata_sargan_df"]
-        == paths["expected_overid_df"]
+        == paths["expected_df"]
     )
+    row["stata_hansen_reject_005"] = float(row["stata_hansen_p"]) < 0.05
+    row["stata_sargan_reject_005"] = float(row["stata_sargan_p"]) < 0.05
     for diagnostic in (
         "hansen",
         "hansen_p",
@@ -329,6 +305,7 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
         bool(row[name])
         for name in (
             "same_nobs",
+            "same_spec_id",
             "same_n_groups",
             "same_instrument_count",
             "same_overid_df",
@@ -346,9 +323,19 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
         and float(row["abs_ar2_z_diff"]) <= AR_Z_TOL
         and float(row["abs_ar2_p_diff"]) <= AR_P_TOL
     )
-    diagnostic_pass = count_pass and overid_pass and ar_pass
+    comparator_pass = all(
+        bool(row[name])
+        for name in (
+            "same_stata_version",
+            "same_xtabond2_e_version",
+            "same_xtabond2_ado_header",
+            "stata_output_hashes_match_provenance",
+        )
+    ) and (not embedded_provenance or embedded_provenance_matches is True)
+    diagnostic_pass = comparator_pass and count_pass and overid_pass and ar_pass
     parameter_pass = row["parameter_status"] == "PASS_PARAMETER_PARITY"
     row["count_status"] = "PASS" if count_pass else "FAIL"
+    row["comparator_status"] = "PASS" if comparator_pass else "FAIL"
     row["overid_status"] = "PASS" if overid_pass else "FAIL"
     row["ar_status"] = "PASS" if ar_pass else "FAIL"
     row["diagnostic_status"] = (
@@ -378,10 +365,21 @@ def main() -> None:
         "max_abs_coef_diff",
         "max_rel_se_diff",
         "parameter_status",
+        "same_spec_id",
+        "same_stata_version",
+        "same_xtabond2_e_version",
+        "same_xtabond2_ado_header",
+        "stata_output_hashes_match_provenance",
+        "stata_export_provenance_embedded",
+        "comparator_status",
         "same_nobs",
         "same_n_groups",
         "same_instrument_count",
         "same_overid_df",
+        "stata_hansen_p",
+        "stata_hansen_reject_005",
+        "stata_sargan_p",
+        "stata_sargan_reject_005",
         "abs_hansen_diff",
         "abs_hansen_p_diff",
         "abs_sargan_diff",
@@ -396,8 +394,16 @@ def main() -> None:
     report = [
         "# xtabond2 System GMM Unified Parity Certificate",
         "",
-        "This certificate compares native SystemGMMKit with Stata `xtabond2` on four",
+        f"This certificate compares native SystemGMMKit with Stata `xtabond2` on {len(SPECS)}",
         "maintained, specification-aligned fixtures. Claims are benchmark-specific.",
+        "The maintained specification list and numerical gates come from",
+        f"`{REGISTRY_PATH.relative_to(REPOSITORY_ROOT).as_posix()}`.",
+        "Comparator identity is carried by the path-free, machine-generated provenance",
+        f"attestation `{REGISTRY.comparator_provenance.as_posix()}`. The historical Stata",
+        "exports predate embedded comparator columns, so the attestation binds their current",
+        "hashes to allowlisted fields from the completed local run log. The source log is not",
+        "committed because it contains machine-specific paths; its hash and this limitation are",
+        "preserved in the attestation.",
         "",
         frame[display_columns].to_markdown(index=False),
         "",
@@ -405,6 +411,7 @@ def main() -> None:
         "",
         "- expected parameter sets: exact and unique; coefficients and standard errors: finite",
         "- standard errors: strictly positive",
+        "- Stata and xtabond2 versions: exact match to the certification registry",
         f"- coefficient absolute differences: `<= {COEF_TOL:g}`",
         "- Windmeijer standard-error relative differences: specification-specific",
         "  tolerances recorded in `se_rel_tol`",
@@ -414,8 +421,11 @@ def main() -> None:
         f"- AR(1)/AR(2) p-value absolute differences: `<= {AR_P_TOL:g}`",
         "",
         "Overall status passes only when both parameter and diagnostic gates pass.",
-        "SHA-256 hashes bind the certificate to the fixture, do-file, and exact native",
-        "and Stata parameter and diagnostic exports. The Stata-reported date and time",
+        "Parity status means cross-software agreement on the maintained fixture; it does not",
+        "endorse instrument validity or the model specification. The Stata Hansen/Sargan",
+        "p-values and reject-at-0.05 flags are reported explicitly and are not parity gates.",
+        "SHA-256 hashes bind the certificate to the registry, fixture, do-file, and exact",
+        "native and Stata parameter and diagnostic exports. The Stata-reported date and time",
         "are retained as informational metadata only and are not conformity gates.",
         "",
     ]

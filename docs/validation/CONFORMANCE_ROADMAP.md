@@ -24,6 +24,12 @@ The conformance suite keeps these dynamic-GMM benchmark names:
 | `system_gmm_decomposition_controls` | `PASS_XTABOND2_PARITY` | Complete parameters, Windmeijer SEs, counts, Hansen/Sargan, and signed AR diagnostics pass the aligned `xtabond2` gates. |
 | `system_gmm_three_way_no_controls` | `EXPERIMENTAL_PARITY_PENDING` | No committed certification artifact currently supports this specification. |
 
+`PASS_XTABOND2_PARITY` denotes numerical cross-software agreement on these
+maintained fixtures; it does not establish instrument validity or endorse a
+specification. Stata rejects both Hansen and Sargan at 5% for no-controls,
+three-way-controls, and decomposition, while baseline does not. The unified
+certificate retains the exact p-values and reject-at-0.05 flags.
+
 The pending status intentionally retires an older unsupported AR-parity label: the
 historical comparison artifact contained no `system_gmm_three_way_no_controls` row,
 and the specification has never had a complete coefficient/SE/diagnostic certificate.
@@ -41,9 +47,24 @@ The completed conformance base includes:
 7. Hansen and Sargan statistic and p-value parity at `1e-6` absolute tolerance;
 8. signed AR(1)/AR(2) z-statistic parity at `0.10` absolute tolerance;
 9. AR(1)/AR(2) p-value parity at `0.03` absolute tolerance;
-10. fresh-current-engine numerical pytest guards and a machine-readable unified certificate; and
-11. SHA-256 provenance for controlled fixtures, generated Stata do-files, and exact
-    native/Stata parameter and diagnostic exports.
+10. fresh-current-engine numerical pytest guards and a machine-readable unified certificate;
+11. one central registry for the four maintained System-GMM specifications, oracle,
+    and numerical gates; and
+12. LF-normalized canonical SHA-256 provenance for the registry, comparator,
+    generators, controlled fixtures, generated Stata do-files, and exact native/Stata
+    parameter and diagnostic exports.
+
+## Static fixed-effects runtime boundary
+
+The native fixed-effects backend now reports `native-within`. It estimates structural
+slopes on a compact within-transformed design instead of constructing a full LSDV dummy
+matrix for ordinary one-way and two-way FE fits. The old LSDV construction remains an
+internal audit path and is used in tests to confirm slope equivalence, including an
+unbalanced two-way panel case.
+
+This is a runtime and memory-scaling improvement, not a broader validation claim.
+Conformance language remains benchmark-specific and tied to the maintained static-panel
+paths.
 
 ## Remaining validation-extension work
 
@@ -64,9 +85,17 @@ Future priorities are extensions beyond the current certified boundary:
 
 ## Certification boundary
 
+For the maintained System-GMM/`xtabond2` boundary only,
+`artifacts/parity/xtabond2/system_gmm_certification_specs.json` is the sole
+specification/oracle/tolerance registry and
+`artifacts/parity/xtabond2/diagnostic_parity_certificate.csv` is the sole
+numerical decision artifact. The path-free comparator attestation is historical-
+log-derived; it discloses that the local log is uncommitted and that output/ado
+hashes were observed when the attestation was generated.
+
 Correct wording:
 
-> `systemgmmkit` provides benchmark-specific conformance evidence for static panel estimators, panel IV / 2SLS, native Difference GMM, and native System GMM. On four maintained, aligned System GMM fixtures, the native estimator passes Stata `xtabond2` gates for the complete expected parameter set, Windmeijer-corrected two-step standard errors, exact observations/groups/instruments/overidentification degrees of freedom, Hansen and Sargan diagnostics, and signed Arellano-Bond AR(1)/AR(2) diagnostics. This evidence does not imply universal Stata identity across other data or specifications.
+> `systemgmmkit` provides benchmark-specific conformance evidence for static panel estimators, panel IV / 2SLS, native Difference GMM, and native System GMM. On four maintained, aligned System GMM fixtures, the native estimator passes Stata `xtabond2` numerical-agreement gates for the complete expected parameter set, Windmeijer-corrected two-step standard errors, exact observations/groups/instruments/overidentification degrees of freedom, Hansen and Sargan diagnostics, and signed Arellano-Bond AR(1)/AR(2) diagnostics. This evidence does not imply universal Stata identity, instrument validity, or specification endorsement across other data or specifications.
 
 Stata `xtabond2` is the formal System GMM certification oracle. `pydynpd` is an
 optional execution backend and auxiliary comparator. Unaligned `pydynpd` results

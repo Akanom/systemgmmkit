@@ -31,11 +31,12 @@ The results are included in:
 
 ## Interpretation
 
-The pydynpd numerical results are retained as cross-software ecosystem comparison outputs.
+The pydynpd numerical results are retained as auxiliary external-reference notes outside the formal package validation workflow.
 
 They are not treated as failed parity tests. The comparison status is REVIEW because pydynpd differs from systemgmmkit beyond the predefined auxiliary tolerance band. This is expected unless instrument construction, sample trimming, equation scope, finite-sample correction, and covariance scaling are exactly aligned across packages.
 
 Formal parity evidence in the paper relies on:
 
-- Artifact 24: maintained dynamic-GMM parity certificate
+- central registry + unified certificate: maintained four-spec System-GMM authority
+- Artifact 24: frozen legacy single-spec snapshot
 - Artifact 22: controlled Stata/systemgmmkit comparison

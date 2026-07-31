@@ -7,6 +7,7 @@ from .fixed_effects import (
     run_fixed_effects,
     run_fixed_effects_native,
 )
+from .integrations import add_to_outputhub, outputhub_diagnostics_frame, to_outputhub_model
 from .native_gmm import NativeGMMResult, run_native_dynamic_panel_gmm
 from .panel_iv import PanelIVResult, PanelIVSpec, run_panel_2sls
 from .parity import stata_xtabond2_command, stata_xtreg_fe_command, write_stata_parity_do_file
@@ -22,7 +23,12 @@ from .random_effects import RandomEffectsResult, RandomEffectsSpec, run_random_e
 from .reporting import model_card_markdown
 from .spec import DynamicPanelSpec, GMMStyle, IVStyle
 from .suite import PanelModelSuite, PanelModelSuiteResult, run_panel_model_suite
-from .tables import combine_result_frames, export_regression_table, result_to_frame
+from .tables import (
+    combine_result_frames,
+    export_regression_table,
+    format_inference_frame,
+    result_to_frame,
+)
 from .validation import PanelValidationReport, validate_panel
 
 __all__ = [
@@ -43,6 +49,7 @@ __all__ = [
     "RandomEffectsResult",
     "RandomEffectsSpec",
     "assess_diagnostics",
+    "add_to_outputhub",
     "build_difference_gmm_spec",
     "build_dynamic_panel_gmm_spec",
     "build_fixed_effects_spec",
@@ -51,7 +58,9 @@ __all__ = [
     "build_system_gmm_spec",
     "combine_result_frames",
     "export_regression_table",
+    "format_inference_frame",
     "model_card_markdown",
+    "outputhub_diagnostics_frame",
     "result_to_frame",
     "run_fixed_effects",
     "run_fixed_effects_native",
@@ -62,6 +71,7 @@ __all__ = [
     "run_random_effects",
     "stata_xtabond2_command",
     "stata_xtreg_fe_command",
+    "to_outputhub_model",
     "validate_panel",
     "write_stata_parity_do_file",
     "DynamicPanelBackendError",

@@ -4,7 +4,13 @@ from pathlib import Path
 
 import pandas as pd
 
+from scripts.parity.system_gmm_certification_registry import (
+    REGISTRY_PATH,
+    load_certification_registry,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
+REGISTRY = load_certification_registry(REGISTRY_PATH)
 
 
 def _normalized(path: str) -> str:
@@ -24,6 +30,7 @@ def test_system_gmm_documents_share_the_diagnostic_certification_boundary() -> N
         text = _normalized(path)
         assert "not currently ci-certified" not in text
         assert "benchmark-specific" in text
+        assert "instrument validity" in text
 
     readme = _normalized("README.md")
     matrix = _normalized("docs/parity/system_gmm_parity_matrix.md")
@@ -37,6 +44,9 @@ def test_system_gmm_documents_share_the_diagnostic_certification_boundary() -> N
     assert "system_gmm_three_way_no_controls" in matrix
     assert "experimental_parity_pending" in matrix
     assert "experimental_parity_pending" in roadmap
+    assert "sole specification/oracle/tolerance registry" in readme
+    assert "sole specification/oracle/tolerance" in matrix
+    assert "sole specification/oracle/tolerance registry" in roadmap
 
 
 def test_xtabond2_and_pydynpd_have_distinct_reference_roles() -> None:
@@ -60,18 +70,36 @@ def test_runtime_note_states_benchmark_specific_diagnostic_parity() -> None:
         assert "four maintained" in text
 
     assert "does not imply universal stata identity" in dynamic_panel
+    assert "windmeijer-corrected two-step standard errors are not yet certified" not in native_gmm
+    assert "sargan parity against xtabond2 is not certified" not in native_gmm
 
 
 def test_claimed_system_gmm_specs_have_passing_machine_certificate() -> None:
     certificate = pd.read_csv(
         ROOT / "artifacts" / "parity" / "xtabond2" / "diagnostic_parity_certificate.csv"
     )
-    assert set(certificate["spec"]) == {
-        "system_gmm_baseline_controls",
-        "system_gmm_no_controls",
-        "system_gmm_three_way_controls",
-        "system_gmm_decomposition_controls",
-    }
+    assert certificate["spec"].is_unique
+    assert len(certificate) == len(REGISTRY.specifications)
+    assert tuple(certificate["spec"]) == tuple(REGISTRY.specifications)
     assert certificate["parameter_status"].eq("PASS_PARAMETER_PARITY").all()
     assert certificate["diagnostic_status"].eq("PASS_DIAGNOSTIC_PARITY").all()
     assert certificate["status"].eq("PASS_XTABOND2_PARITY").all()
+
+
+def test_joss_snapshots_do_not_override_the_unified_certificate() -> None:
+    stale_claims = (
+        "rely on artifact 24",
+        "artifact 24, the maintained",
+        "artifact 24: maintained",
+        "this is the authoritative parity evidence",
+    )
+    for path in (ROOT / "artifacts" / "joss").rglob("*"):
+        if path.suffix.lower() not in {".md", ".py"}:
+            continue
+        text = path.read_text(encoding="utf-8").lower()
+        for stale_claim in stale_claims:
+            assert stale_claim not in text, path
+
+    artifact_24 = _normalized("artifacts/joss/tables/24_maintained_xtabond2_parity/README.md")
+    assert "frozen legacy" in artifact_24
+    assert "artifacts/parity/xtabond2/" in artifact_24

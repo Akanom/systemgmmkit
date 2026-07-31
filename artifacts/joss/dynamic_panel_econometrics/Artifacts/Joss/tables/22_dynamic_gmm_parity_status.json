@@ -1,6 +1,6 @@
 {
   "systemgmmkit_version": "0.5.11",
-  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py",
+  "systemgmmkit_path": "src/systemgmmkit/__init__.py",
   "status": "PASS",
   "models": [
     "Difference GMM",

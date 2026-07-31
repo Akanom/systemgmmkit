@@ -2,7 +2,10 @@
 clear all
 set more off
 
-cd "C:/Users/omoko/OneDrive/Python packages/systemgmmkit"
+args project_root
+if `"`project_root'"' != "" {
+    cd `"`project_root'"'
+}
 
 capture mkdir "artifacts"
 capture mkdir "artifacts/parity"

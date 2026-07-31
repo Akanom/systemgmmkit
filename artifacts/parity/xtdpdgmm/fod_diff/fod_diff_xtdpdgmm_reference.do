@@ -3,13 +3,21 @@ set more off
 set varabbrev off
 capture log close _all
 
-log using "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/fod_diff_xtdpdgmm_reference.log", text replace
+args project_root
+if `"`project_root'"' != "" {
+    cd `"`project_root'"'
+}
+
+local data_path "artifacts/parity/xtabond2/system_gmm_benchmark.csv"
+local output_dir "artifacts/parity/xtdpdgmm/fod_diff"
+
+log using "`output_dir'/fod_diff_xtdpdgmm_reference.log", text replace
 
 display as text "============================================================"
 display as text "FOD Difference GMM reference using xtdpdgmm model(fodev)"
-display as text "Repo: C:/Users/omoko/OneDrive/Python packages/systemgmmkit"
-display as text "Data: C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtabond2/system_gmm_benchmark.csv"
-display as text "Output: C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff"
+display as text "Repo: `c(pwd)'"
+display as text "Data: `data_path'"
+display as text "Output: `output_dir'"
 display as text "============================================================"
 
 capture which xtdpdgmm
@@ -18,9 +26,9 @@ if _rc {
     exit 499
 }
 
-confirm file "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtabond2/system_gmm_benchmark.csv"
+confirm file "`data_path'"
 
-import delimited using "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtabond2/system_gmm_benchmark.csv", clear varnames(1) numericcols(_all)
+import delimited using "`data_path'", clear varnames(1) numericcols(_all)
 
 describe
 
@@ -290,29 +298,29 @@ ereturn list
 matrix list e(b)
 matrix list e(V)
 ereturn list
-dump_xtdpdgmm_diag, spec("fod_diff_endog_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_diagnostics.csv")
-dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_ereturn.csv")
+dump_xtdpdgmm_diag, spec("fod_diff_endog_x_onestep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_onestep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_ereturn.csv")
 capture noisily estat overid
 local __rc_overid = _rc
 if `__rc_overid' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_overid_return.csv")
+    dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_overid_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
+    dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
 }
 
 capture noisily estat serial, ar(1/2)
 local __rc_serial = _rc
 if `__rc_serial' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_serial_return.csv")
+    dump_return_scalars, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_serial_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
+    dump_failed_postestimation, spec("fod_diff_endog_x_onestep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
 }
 
-export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv")
+export_last_xtdpdgmm, spec("fod_diff_endog_x_onestep") output("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_onestep.csv")
 
 
 display as text "============================================================"
@@ -332,29 +340,29 @@ ereturn list
 matrix list e(b)
 matrix list e(V)
 ereturn list
-dump_xtdpdgmm_diag, spec("fod_diff_endog_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_diagnostics.csv")
-dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_ereturn.csv")
+dump_xtdpdgmm_diag, spec("fod_diff_endog_x_twostep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_endog_x_twostep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_ereturn.csv")
 capture noisily estat overid
 local __rc_overid = _rc
 if `__rc_overid' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_overid_return.csv")
+    dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_overid_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
+    dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
 }
 
 capture noisily estat serial, ar(1/2)
 local __rc_serial = _rc
 if `__rc_serial' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_serial_return.csv")
+    dump_return_scalars, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_serial_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
+    dump_failed_postestimation, spec("fod_diff_endog_x_twostep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
 }
 
-export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv")
+export_last_xtdpdgmm, spec("fod_diff_endog_x_twostep") output("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_endog_x_twostep.csv")
 
 
 display as text "============================================================"
@@ -374,29 +382,29 @@ ereturn list
 matrix list e(b)
 matrix list e(V)
 ereturn list
-dump_xtdpdgmm_diag, spec("fod_diff_predet_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_diagnostics.csv")
-dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_onestep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_ereturn.csv")
+dump_xtdpdgmm_diag, spec("fod_diff_predet_x_onestep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_onestep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_ereturn.csv")
 capture noisily estat overid
 local __rc_overid = _rc
 if `__rc_overid' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_overid_return.csv")
+    dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_overid_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
+    dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_overid_return.csv") rc(`__rc_overid')
 }
 
 capture noisily estat serial, ar(1/2)
 local __rc_serial = _rc
 if `__rc_serial' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_serial_return.csv")
+    dump_return_scalars, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_serial_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
+    dump_failed_postestimation, spec("fod_diff_predet_x_onestep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep_estat_serial_return.csv") rc(`__rc_serial')
 }
 
-export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv")
+export_last_xtdpdgmm, spec("fod_diff_predet_x_onestep") output("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_onestep.csv")
 
 
 display as text "============================================================"
@@ -416,29 +424,29 @@ ereturn list
 matrix list e(b)
 matrix list e(V)
 ereturn list
-dump_xtdpdgmm_diag, spec("fod_diff_predet_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_diagnostics.csv")
-dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_twostep") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_ereturn.csv")
+dump_xtdpdgmm_diag, spec("fod_diff_predet_x_twostep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_diagnostics.csv")
+dump_xtdpdgmm_ereturn, spec("fod_diff_predet_x_twostep") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_ereturn.csv")
 capture noisily estat overid
 local __rc_overid = _rc
 if `__rc_overid' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_overid_return.csv")
+    dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_overid_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
+    dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_overid") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_overid_return.csv") rc(`__rc_overid')
 }
 
 capture noisily estat serial, ar(1/2)
 local __rc_serial = _rc
 if `__rc_serial' == 0 {
     return list
-    dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_serial_return.csv")
+    dump_return_scalars, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_serial_return.csv")
 }
 else {
-    dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
+    dump_failed_postestimation, spec("fod_diff_predet_x_twostep") command("estat_serial_ar12") outfile("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep_estat_serial_return.csv") rc(`__rc_serial')
 }
 
-export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv")
+export_last_xtdpdgmm, spec("fod_diff_predet_x_twostep") output("artifacts/parity/xtdpdgmm/fod_diff/stata_fod_diff_predet_x_twostep.csv")
 
 display as text "============================================================"
 display as text "FOD xtdpdgmm oracle export complete"

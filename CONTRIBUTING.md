@@ -17,6 +17,11 @@ The project prioritizes:
 
 Contributions should improve the package without weakening estimator reliability, validation discipline, or public API consistency.
 
+Early design questions, parity reports, roadmap ideas, and adoption notes should be
+opened in GitHub Discussions when they are broader than a single implementation task.
+The public-development expectations are summarized in
+[docs/OPEN_DEVELOPMENT.md](docs/OPEN_DEVELOPMENT.md).
+
 ---
 
 # Development Setup
@@ -197,6 +202,10 @@ Code should be:
 
 Avoid hidden behaviour in estimator code. Econometric assumptions should be visible in the model specification, result metadata, or documentation.
 
+Do not commit machine-specific user-profile, checkout, or cloud-sync paths. Use
+repository-relative paths, command arguments, or documented environment variables;
+`tests/test_repository_path_hygiene.py` enforces this for tracked text files.
+
 ## Public API rules
 
 Public APIs should be stable, predictable, and documented.
@@ -240,6 +249,10 @@ For OLS, pooled OLS, fixed effects, random effects, and panel IV / 2SLS changes,
 * comparison against known results;
 * comparison against Stata, R, or another trusted implementation;
 * regression tests against maintained benchmark artifacts.
+
+Fixed-effects changes should preserve the compact native within-transformation runtime
+path. When modifying the FE backend, include slope comparisons against the internal LSDV
+audit construction for at least one balanced and one unbalanced panel design.
 
 ## Dynamic GMM estimators
 

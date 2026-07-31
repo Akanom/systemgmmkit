@@ -11,19 +11,23 @@ Results:
 
 The System GMM comparison reaches numerical agreement after effective-sample alignment. The Difference GMM comparison falls within the predefined auxiliary tolerance band.
 
-## Artifact 24: Maintained Dynamic-GMM Parity Certificate
+## Current Maintained Dynamic-GMM Parity Certificate
 
-Artifact 24 is the authoritative dynamic-GMM parity evidence for the paper.
+The central registry and unified certificate under `artifacts/parity/xtabond2/`
+are the authoritative System-GMM parity evidence for the paper. Artifact 24 is a
+frozen single-spec snapshot retained only for provenance.
 
 The maintained systemgmmkit validation suite reports:
 
 - System GMM xtabond2 parity: PASS_XTABOND2_PARITY
 
-This artifact should be used for formal dynamic-GMM parity claims.
+The current unified certificate should be used for benchmark-specific numerical
+agreement claims. A pass does not establish instrument validity or endorse a
+specification.
 
-## Artifact 25: Dynamic-GMM Cross-Software Ecosystem Comparison
+## Artifact 25: Archived Dynamic-GMM External-Reference Notes
 
-Artifact 25 compares systemgmmkit with related Python, R, and Stata dynamic-panel GMM tools.
+Artifact 25 records auxiliary dynamic-GMM outputs from related Python, R, and Stata tools. It is retained for transparency, but it is not part of the formal package validation workflow.
 
 Results:
 
@@ -37,7 +41,7 @@ Results:
   - Difference GMM: REVIEW
   - System GMM: REVIEW
 
-The plm::pgmm and pydynpd results are interpreted as ecosystem comparison outputs, not failed parity tests. Different dynamic-panel GMM packages use different instrument-construction, sample-trimming, equation-scope, finite-sample correction, and covariance-scaling conventions.
+The plm::pgmm and pydynpd results are interpreted as auxiliary external-reference notes, not failed parity tests or package-ranking evidence. Different dynamic-panel GMM packages use different instrument-construction, sample-trimming, equation-scope, finite-sample correction, and covariance-scaling conventions.
 
 ## Artifact 26: Python Static/Post-Estimation Validation
 
@@ -85,9 +89,10 @@ Fixed-effects intercepts are excluded from parity assessment because intercept n
 
 ## Paper-Safe Interpretation
 
-The paper should make formal dynamic-GMM parity claims using Artifact 24 and, secondarily, Artifact 22.
+The paper should make formal System-GMM parity claims using the central registry
+and unified certificate and may cite Artifact 22 as auxiliary context.
 
-Artifact 25 should be used for dynamic-GMM ecosystem positioning.
+Artifact 25 is archived as auxiliary reference context and should not be used for formal parity claims or unrelated-software positioning.
 
 Artifacts 26 and 27 support the static, panel, IV, and post-estimation parts of the package. They show that systemgmmkit reproduces established Python, R, and Stata behaviour for OLS, pooled OLS, fixed effects, random effects, and 2SLS under aligned specifications.
 

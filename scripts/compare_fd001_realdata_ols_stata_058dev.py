@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,7 +19,13 @@ from systemgmmkit import (
 )
 
 PKG = Path(__file__).resolve().parents[1]
-REAL = Path(r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers")
+publication_root = os.environ.get("SYSTEMGMMKIT_PUBLICATION_ROOT")
+if not publication_root:
+    raise SystemExit(
+        "Set SYSTEMGMMKIT_PUBLICATION_ROOT to the directory containing the "
+        "FD001 publication data and results directories."
+    )
+REAL = Path(publication_root).expanduser().resolve()
 OUT = REAL / "results" / "systemgmmkit_058dev_realdata_stata_ols"
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -56,9 +63,9 @@ preferred = [
     if any(k in p.name.lower() for k in ["prepared", "panel", "verification", "fd001"])
 ]
 
-data_path = Path(
-    r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers\data_prepared\fd001_prepared_panel.csv"
-)
+data_path = REAL / "data_prepared" / "fd001_prepared_panel.csv"
+if not data_path.exists() and preferred:
+    data_path = preferred[0]
 print("\nUsing data file:", data_path)
 
 if data_path.suffix.lower() == ".parquet":
