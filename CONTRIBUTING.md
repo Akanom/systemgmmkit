@@ -122,6 +122,7 @@ Before opening a pull request or merging into `main`, run the core quality gate:
 ```bash
 ruff check .
 ruff format --check .
+python -m mypy
 pytest
 python -m build
 ```
@@ -131,11 +132,15 @@ For Windows PowerShell:
 ```powershell
 ruff check .
 ruff format --check .
+python -m mypy
 pytest
 python -m build
 ```
 
-A change is not ready if any of these fail.
+Install `.[typing]` in a Python 3.12 or newer environment before running mypy.
+The command enforces the explicit stage-1 core estimator/result scope documented
+in [docs/TYPE_CHECKING.md](docs/TYPE_CHECKING.md); it is not yet a claim that the
+whole package is type-clean. A change is not ready if any applicable gate fails.
 
 ---
 

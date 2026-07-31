@@ -290,6 +290,17 @@ Local development installation:
 pip install -e ".[dev,all]"
 ```
 
+Core estimator type-checking uses a separate, typed dependency set and an
+explicit progressive scope:
+
+```bash
+pip install -e ".[typing]"
+python -m mypy
+```
+
+See [Progressive Type Checking](docs/TYPE_CHECKING.md) for the enforced files,
+current debt baseline, and expansion plan.
+
 For graphics support, ensure `matplotlib` is available:
 
 ```bash
