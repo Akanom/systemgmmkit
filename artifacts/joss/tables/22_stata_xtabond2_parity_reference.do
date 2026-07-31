@@ -7,8 +7,7 @@ set more off
 * systemgmmkit JOSS Artifact 22
 * Stata xtabond2 Dynamic GMM parity reference
 *
-* Run this file from the project root:
-* C:/Users/omoko/OneDrive/Papers/Dynamic_Panel_Econometrics
+* Run this file from the Dynamic_Panel_Econometrics project root.
 ********************************************************************************
 
 capture mkdir "Results"

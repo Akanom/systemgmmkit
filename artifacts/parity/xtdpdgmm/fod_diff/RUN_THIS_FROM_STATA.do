@@ -2,6 +2,9 @@ clear all
 set more off
 set varabbrev off
 
-cd "C:/Users/omoko/OneDrive/Python packages/systemgmmkit"
+args project_root
+if `"`project_root'"' != "" {
+    cd `"`project_root'"'
+}
 
-do "C:/Users/omoko/OneDrive/Python packages/systemgmmkit/artifacts/parity/xtdpdgmm/fod_diff/fod_diff_xtdpdgmm_reference.do"
+do "artifacts/parity/xtdpdgmm/fod_diff/fod_diff_xtdpdgmm_reference.do"

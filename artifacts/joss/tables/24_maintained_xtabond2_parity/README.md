@@ -1,8 +1,8 @@
-# Artifact 24: Maintained Dynamic-GMM Parity Evidence
+# Artifact 24: Frozen Legacy Dynamic-GMM Snapshot
 
 ## Status
 
-PASS_XTABOND2_PARITY
+FROZEN_LEGACY_SNAPSHOT
 
 ## Source
 
@@ -12,9 +12,14 @@ Copied from the maintained systemgmmkit repository after commit:
 
 ## Interpretation
 
-The maintained System GMM benchmark passes xtabond2 parity for compared structural coefficients and Windmeijer-corrected standard errors within numerical tolerance. Native-only constant terms are reported separately where applicable.
+This directory is a frozen single-spec snapshot copied from an earlier commit. Its
+historical exclusion of the constant is not the current certification contract.
+It is retained for submission provenance only and is not an independent authority.
 
-This is the authoritative parity evidence for the JOSS submission.
+The current authority is the four-spec registry and unified certificate under
+`artifacts/parity/xtabond2/`. That certificate requires the complete expected
+parameter set, including the constant where specified, and reports diagnostic
+agreement separately from instrument validity.
 
 Artifact 22 is retained only as an auxiliary controlled Stata comparison:
 - Difference GMM: PASS_TOLERANT_AUXILIARY

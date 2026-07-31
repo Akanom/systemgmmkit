@@ -24,4 +24,3 @@ body:
     attributes:
       label: Environment
       description: Include Python, systemgmmkit, NumPy, SciPy, pandas, statsmodels, and optional backend versions.
-

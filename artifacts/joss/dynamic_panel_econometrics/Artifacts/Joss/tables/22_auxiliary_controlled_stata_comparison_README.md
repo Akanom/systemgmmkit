@@ -28,4 +28,5 @@ The Artifact 22 controlled panel data is valid and clean. Earlier mismatches wer
 
 Difference GMM is not strict numerical parity in this ad hoc comparison, but it falls within the predefined tolerant auxiliary agreement band.
 
-Formal parity claims are based on Artifact 24, the maintained xtabond2 / xtdpdgmm parity certificate from the systemgmmkit repository.
+Formal System-GMM claims are based on the central registry and unified certificate
+under `artifacts/parity/xtabond2/`. Artifact 24 is a frozen legacy snapshot.

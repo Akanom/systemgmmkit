@@ -32,6 +32,44 @@ The project follows a practical semantic-versioning style:
 * Replaced the deprecated pandas `DataFrameGroupBy.apply` AR-diagnostic reduction
   with an equivalent vectorized product-and-sum implementation.
 
+### Fixed
+
+* Reconciled System-GMM certification language with the committed evidence:
+  `xtabond2` remains the formal oracle, and four aligned specifications now have
+  fresh-current-engine and raw-artifact numerical guards for complete parameters,
+  Windmeijer standard errors, exact counts, Hansen/Sargan, and signed AR diagnostics.
+* Corrected the expanded parity runners to mirror Stata's selector contract:
+  first differences, `L1.y` as the instrumented lagged-dependent regressor, and
+  explicit level-equation IV classification.
+* Repaired generated Stata do-files by removing invalid trailing continuations,
+  storing the numeric Stata version with a numeric type, pinning Stata 17 syntax,
+  and making `eq(both)` explicit.
+* Added a portable Stata rerun driver, hashes for fixtures/do-files/exact result
+  exports, signed diagnostic comparisons, and a unified four-spec
+  `PASS_XTABOND2_PARITY` certificate.
+* Centralized the four maintained System-GMM specifications, comparator identity,
+  oracle, and numerical gates in one machine-readable registry. The unified
+  certificate is now regenerated from that registry and a sanitized, path-free
+  historical-run provenance attestation.
+* Bound the certificate to LF-normalized canonical digests of the registry,
+  comparator, builders, runners, inputs, and outputs. Comparator provenance is
+  fail-closed and explicitly records the historical-log/output-hash binding
+  limitation instead of embedding a user profile path.
+* Made CI rerun every maintained native System-GMM specification in a temporary
+  workspace and compare the fresh outputs directly with the committed Stata exports;
+  non-finite values, incomplete parameter sets, or stale certificate hashes now fail.
+* Clarified that `pydynpd` is an optional execution backend and auxiliary
+  comparator; unaligned results cannot support parity or speed-ranking claims.
+* Clarified that `PASS_XTABOND2_PARITY` is a numerical-agreement result, not an
+  instrument-validity or specification-endorsement result; Hansen/Sargan p-values
+  and reject-at-0.05 flags remain visible in the authoritative certificate.
+* Retired the unsupported historical AR-pass label for
+  `system_gmm_three_way_no_controls`; no dedicated comparison row or complete
+  certificate existed, so it remains explicitly pending.
+* Removed committed local user-profile and OneDrive paths from executable parity
+  scripts and historical artifacts, replaced them with portable roots, and added
+  a repository-wide path-disclosure regression gate.
+
 ---
 
 ## 0.5.13 - 2026-07-28

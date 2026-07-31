@@ -15,12 +15,12 @@ from .spec import DynamicPanelSpec
 class NativeGMMResult:
     """Native dynamic-panel GMM result.
 
-    The native Difference GMM path has strict benchmark parity. The native
-    System GMM path has baseline xtabond2 parity for the current collapsed
-    two-step benchmark covering coefficients, raw moments, group-scaled A2,
-    and Hansen J.
-
-    Windmeijer-corrected two-step standard errors are not yet certified.
+    The native Difference GMM path has strict benchmark parity. Native System
+    GMM has benchmark-specific ``xtabond2`` parity on four maintained, aligned
+    collapsed two-step specifications. The certificate covers complete
+    parameters, Windmeijer-corrected standard errors, exact structural counts,
+    Hansen/Sargan statistics, and signed AR diagnostics under declared gates;
+    it does not extend automatically to other data designs or options.
     """
 
     spec: DynamicPanelSpec
@@ -1516,10 +1516,10 @@ def _native_overid_diagnostics(
     W: np.ndarray,
     n_params: int,
 ) -> tuple[float | None, float | None]:
-    """Experimental Hansen/Sargan-style overidentification diagnostics.
+    """Compute the native Hansen/Sargan-style overidentification diagnostic.
 
-    This is a native diagnostic approximation. It is intentionally exposed as
-    experimental until strict xtabond2 parity is certified.
+    External parity is benchmark-specific. A passing maintained certificate
+    does not establish universal identity for other samples or specifications.
     """
     n_instr = int(Z.shape[1])
     df = n_instr - int(n_params)
@@ -1623,8 +1623,8 @@ def _native_ab_serial_correlation_diagnostics(
 
             # Cluster/group-based candidate: sum the residual products within
             # entity and standardize across groups.
-            residual_lag_product = (
-                d["_resid"].to_numpy(dtype=float) * d["_lag"].to_numpy(dtype=float)
+            residual_lag_product = d["_resid"].to_numpy(dtype=float) * d["_lag"].to_numpy(
+                dtype=float
             )
             g = (
                 d.assign(_resid_lag_product=residual_lag_product)
@@ -1986,8 +1986,8 @@ def run_native_dynamic_panel_gmm(
     exactly equivalent per-fit cache for repeated source and transformed Series;
     estimator algebra, tolerances, and diagnostics are shared unchanged.
 
-    Native System GMM has benchmark-specific ``xtabond2`` certification for the
-    maintained collapsed two-step baseline.  The certified surface includes
+    Native System GMM has benchmark-specific ``xtabond2`` certification for four
+    maintained, aligned collapsed two-step specifications. The certified surface includes
     structural coefficients, Windmeijer-corrected standard errors, sample and
     instrument counts, Hansen/Sargan diagnostics, and signed AR(1)/AR(2)
     diagnostics within their declared tolerances.  This claim does not extend
@@ -2529,7 +2529,8 @@ def run_native_dynamic_panel_gmm(
             system=spec.system,
         )
 
-    # System-GMM AR diagnostics use the certified xtabond2-compatible denominator mapping.
+    # System-GMM AR diagnostics use the xtabond2-oriented denominator mapping
+    # certified on the maintained aligned benchmark specifications.
     #
     # Production output exposes the diagnostics by default. The legacy
     # SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR flag is still honored as an
@@ -2567,7 +2568,8 @@ def run_native_dynamic_panel_gmm(
     _sargan_stat_raw = None
     _sargan_p_candidate = None
 
-    # Certified robust Hansen diagnostic.
+    # Robust Hansen diagnostic. Cross-software certification remains benchmark-
+    # specific and separate from exposing the diagnostic in the result contract.
     #
     # For native two-step System GMM, strict matrix-dump verification shows:
     #     Hansen J = (u' Z W_final Z' u) / n_groups
@@ -2597,17 +2599,9 @@ def run_native_dynamic_panel_gmm(
 
     # Sargan-style diagnostic.
     #
-    # Native System-GMM Sargan parity against xtabond2 is not certified. The
-    # closest current candidate is first-step residuals with W1 and a group
-    # finite-sample adjustment, but it still fails strict parity. Therefore
-    # production System-GMM output keeps Sargan unset unless an explicit
-    # diagnostic flag is enabled.
-    import os as _native_sargan_report_os
-
-    _report_experimental_system_sargan = _native_sargan_report_os.getenv(
-        "SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_SARGAN",
-        "0",
-    ).strip().lower() in {"1", "true", "yes", "on"}
+    # The native Sargan candidate passes the four maintained xtabond2 fixtures
+    # under the unified certificate. That bounded evidence does not establish
+    # universal parity for other samples or specifications.
 
     if _overid_df > 0:
         if bool(spec.system):
@@ -2955,10 +2949,11 @@ def run_native_dynamic_panel_gmm(
         backend="native-gmm",
         notes=[
             "Native dynamic-panel GMM engine.",
-            "Native System GMM parity with xtabond2 is verified for coefficients, N, groups, instruments, and close Hansen diagnostics on the maintained collapsed benchmark; Sargan and AR diagnostics are certified against xtabond2 for the maintained collapsed two-step System GMM benchmark within declared numerical tolerance.",
+            "Native System GMM coefficient, Windmeijer-SE, count, Hansen/Sargan, and signed AR diagnostic parity is verified against xtabond2 on four maintained aligned specifications under declared numerical gates.",
             (
                 "Windmeijer-corrected two-step standard errors are enabled via windmeijer=True "
-                "using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked."
+                "using the maintained native correction; matched structural-SE parity is certified "
+                "against xtabond2 only on the maintained aligned specifications."
                 if windmeijer_requested and use_twostep
                 else "Windmeijer-corrected two-step standard errors are available via windmeijer=True but are not the default."
             ),

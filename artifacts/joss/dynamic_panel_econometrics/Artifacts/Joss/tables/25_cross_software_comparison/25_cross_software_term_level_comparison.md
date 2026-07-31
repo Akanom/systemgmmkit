@@ -57,4 +57,7 @@ The pydynpd and plm::pgmm results are retained as auxiliary external-reference n
 
 The pydynpd Difference GMM run reported 960 observations, while the aligned Stata/systemgmmkit Difference GMM comparison uses 840 observations. This suggests that part of the cross-software difference may come from effective-sample construction. More generally, dynamic-panel GMM comparisons are sensitive to instrument construction, sample trimming, level-equation treatment, finite-sample correction, and covariance scaling.
 
-Formal parity claims in the paper should rely on Artifact 24 and the Stata-based validation results. Artifact 25 is archived as auxiliary reference context; it is not used for formal parity claims, unrelated-software ranking, or package positioning.
+Formal System-GMM claims in the paper should rely on the central registry and
+unified certificate under `artifacts/parity/xtabond2/`. Artifact 24 is frozen
+legacy provenance, and Artifact 25 is auxiliary reference context; neither is an
+independent authority or unrelated-software ranking source.

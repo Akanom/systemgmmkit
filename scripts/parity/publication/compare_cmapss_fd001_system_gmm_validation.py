@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-ROOT = Path(r"C:\Users\omoko\OneDrive\Desktop - Copy\Publication_papers")
+ROOT = Path(os.environ.get("SYSTEMGMMKIT_PUBLICATION_ROOT", Path.cwd())).expanduser().resolve()
 BASE = ROOT / "artifacts" / "parity" / "publication" / "cmapss_fd001"
 MODELS = ["risk", "degradation"]
 

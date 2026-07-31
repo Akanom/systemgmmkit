@@ -11,15 +11,19 @@ Results:
 
 The System GMM comparison reaches numerical agreement after effective-sample alignment. The Difference GMM comparison falls within the predefined auxiliary tolerance band.
 
-## Artifact 24: Maintained Dynamic-GMM Parity Certificate
+## Current Maintained Dynamic-GMM Parity Certificate
 
-Artifact 24 is the authoritative dynamic-GMM parity evidence for the paper.
+The central registry and unified certificate under `artifacts/parity/xtabond2/`
+are the authoritative System-GMM parity evidence for the paper. Artifact 24 is a
+frozen single-spec snapshot retained only for provenance.
 
 The maintained systemgmmkit validation suite reports:
 
 - System GMM xtabond2 parity: PASS_XTABOND2_PARITY
 
-This artifact should be used for formal dynamic-GMM parity claims.
+The current unified certificate should be used for benchmark-specific numerical
+agreement claims. A pass does not establish instrument validity or endorse a
+specification.
 
 ## Artifact 25: Archived Dynamic-GMM External-Reference Notes
 
@@ -85,7 +89,8 @@ Fixed-effects intercepts are excluded from parity assessment because intercept n
 
 ## Paper-Safe Interpretation
 
-The paper should make formal dynamic-GMM parity claims using Artifact 24 and, secondarily, Artifact 22.
+The paper should make formal System-GMM parity claims using the central registry
+and unified certificate and may cite Artifact 22 as auxiliary context.
 
 Artifact 25 is archived as auxiliary reference context and should not be used for formal parity claims or unrelated-software positioning.
 

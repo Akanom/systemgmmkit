@@ -3,7 +3,7 @@
   "platform": "Windows-11-10.0.26200-SP0",
   "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
   "systemgmmkit_version": "0.5.11",
-  "systemgmmkit_path": "C:\\Users\\omoko\\OneDrive\\Python packages\\systemgmmkit\\src\\systemgmmkit\\__init__.py",
+  "systemgmmkit_path": "src/systemgmmkit/__init__.py",
   "repetitions": 1,
   "timeout_seconds": 180,
   "backend": "native",

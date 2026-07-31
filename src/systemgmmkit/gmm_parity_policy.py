@@ -1,9 +1,12 @@
 """Policy helpers for interpreting GMM parity comparisons.
 
-Certification is attached to a declared benchmark, not to every possible native-GMM
-specification.  The maintained native System GMM baseline is certified against
-``xtabond2``; comparisons outside that scope must still pass their requested strict
-checks before they can inherit a parity claim.
+This module separates production backend validation from external parity certification.
+Native System-GMM estimation quantities and diagnostics have benchmark-specific
+`xtabond2` certification on four aligned fixtures. `pydynpd` is an optional execution
+backend and auxiliary comparator, not the formal certification oracle.
+Certification remains attached to those declared benchmarks, not to every possible
+native-GMM specification; results outside that scope must pass their own aligned
+strict checks before they can inherit a parity claim.
 """
 
 from __future__ import annotations

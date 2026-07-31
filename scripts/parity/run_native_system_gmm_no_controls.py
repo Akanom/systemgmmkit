@@ -8,8 +8,14 @@ import pandas as pd
 from systemgmmkit import DynamicPanelSpec, GMMStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
 
-OUT = Path("artifacts/parity/xtabond2/specs/system_gmm_no_controls")
-DATA = OUT / "system_gmm_no_controls_benchmark.csv"
+BASE_OUT = Path(os.getenv("SYSTEMGMMKIT_XTABOND2_OUTPUT_ROOT", "artifacts/parity/xtabond2"))
+OUT = BASE_OUT / "specs" / "system_gmm_no_controls"
+DATA = Path(
+    os.getenv(
+        "SYSTEMGMMKIT_XTABOND2_DATA",
+        str(OUT / "system_gmm_no_controls_benchmark.csv"),
+    )
+)
 
 
 def main() -> None:
@@ -27,14 +33,14 @@ def main() -> None:
         dependent="y",
         regressors=["L1.y", "x"],
         gmm=[
-            GMMStyle(variable="y", min_lag=2, max_lag=3),
+            GMMStyle(variable="L1.y", min_lag=2, max_lag=3),
             GMMStyle(variable="x", min_lag=2, max_lag=3),
         ],
         iv=[],
         time_dummies=False,
         system=True,
         collapse=True,
-        transformation="fod",
+        transformation="fd",
         steps="twostep",
         name="system_gmm_no_controls",
     )
@@ -68,6 +74,7 @@ def main() -> None:
             {
                 "spec": "system_gmm_no_controls",
                 "native_nobs": getattr(res, "nobs", None),
+                "native_n_groups": getattr(res, "n_groups", None),
                 "native_n_instruments": getattr(res, "n_instruments", None),
                 "native_backend": getattr(res, "backend", None),
                 "native_covariance_type": getattr(res, "covariance_type", None),

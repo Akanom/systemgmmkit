@@ -8,9 +8,9 @@ import pandas as pd
 from systemgmmkit import DynamicPanelSpec, GMMStyle, IVStyle
 from systemgmmkit.native_gmm import run_native_dynamic_panel_gmm
 
-BASE_OUT = Path("artifacts/parity/xtabond2")
+BASE_OUT = Path(os.getenv("SYSTEMGMMKIT_XTABOND2_OUTPUT_ROOT", "artifacts/parity/xtabond2"))
 SPEC_OUT = BASE_OUT / "specs" / "system_gmm_baseline_controls"
-DATA = BASE_OUT / "system_gmm_benchmark.csv"
+DATA = Path(os.getenv("SYSTEMGMMKIT_XTABOND2_DATA", str(BASE_OUT / "system_gmm_benchmark.csv")))
 
 
 def _native_output_dir(*, windmeijer: bool) -> Path:
@@ -74,6 +74,7 @@ def main() -> None:
             {
                 "spec": "system_gmm_baseline_controls",
                 "native_nobs": getattr(res, "nobs", None),
+                "native_n_groups": getattr(res, "n_groups", None),
                 "native_n_instruments": getattr(res, "n_instruments", None),
                 "native_backend": getattr(res, "backend", None),
                 "native_covariance_type": getattr(res, "covariance_type", None),

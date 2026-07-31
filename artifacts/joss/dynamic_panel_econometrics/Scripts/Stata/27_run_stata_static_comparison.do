@@ -1,7 +1,10 @@
 clear all
 set more off
 
-cd "C:/Users/omoko/OneDrive/Papers/Dynamic_Panel_Econometrics"
+args project_root
+if `"`project_root'"' != "" {
+    cd `"`project_root'"'
+}
 
 capture mkdir "Artifacts/Joss/tables/27_static_cross_software_comparison"
 

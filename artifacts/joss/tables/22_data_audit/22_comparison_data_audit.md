@@ -28,4 +28,5 @@
 - If panel structure, duplicate checks, and L1_y lag checks pass, the data itself is probably clean.
 - If Artifact 22 still shows REVIEW after the data passes, the issue is more likely model-command semantics, sample construction, instrument architecture, or export logic rather than the raw comparison data.
 - Raw debug-workflow data dumps are intentionally not part of the committed reviewer bundle; this audit relies on the controlled panel and committed comparison CSV outputs.
-- Artifact 22 remains auxiliary and should not replace the maintained parity certificate.
+- Artifact 22 remains auxiliary and should not replace the central registry and
+  unified certificate under `artifacts/parity/xtabond2/`.

@@ -16,4 +16,3 @@ body:
     attributes:
       label: Validation and documentation route
       description: List tests, parity evidence, examples, and docs needed for the change.
-

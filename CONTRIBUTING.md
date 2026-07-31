@@ -202,6 +202,10 @@ Code should be:
 
 Avoid hidden behaviour in estimator code. Econometric assumptions should be visible in the model specification, result metadata, or documentation.
 
+Do not commit machine-specific user-profile, checkout, or cloud-sync paths. Use
+repository-relative paths, command arguments, or documented environment variables;
+`tests/test_repository_path_hygiene.py` enforces this for tracked text files.
+
 ## Public API rules
 
 Public APIs should be stable, predictable, and documented.

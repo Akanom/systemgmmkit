@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -8,26 +9,45 @@ import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "artifacts" / "parity" / "xtabond2" / "specs" / "system_gmm_decomposition_controls"
 
 
 @pytest.mark.parity
-def test_system_gmm_decomposition_controls_scaffold_generates_native_artifacts() -> None:
+def test_system_gmm_decomposition_controls_scaffold_generates_native_artifacts(
+    tmp_path: Path,
+) -> None:
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT / "src")
     subprocess.run(
-        [sys.executable, "scripts/parity/build_xtabond2_system_gmm_decomposition_controls_do.py"],
-        cwd=ROOT,
+        [
+            sys.executable,
+            str(ROOT / "scripts/parity/build_xtabond2_system_gmm_decomposition_controls_do.py"),
+        ],
+        cwd=tmp_path,
+        env=env,
         check=True,
     )
 
     subprocess.run(
-        [sys.executable, "scripts/parity/run_native_system_gmm_decomposition_controls.py"],
-        cwd=ROOT,
+        [
+            sys.executable,
+            str(ROOT / "scripts/parity/run_native_system_gmm_decomposition_controls.py"),
+        ],
+        cwd=tmp_path,
+        env=env,
         check=True,
     )
 
-    params_path = OUT / "native_params.csv"
-    diagnostics_path = OUT / "native_diagnostics.csv"
-    dofile_path = OUT / "system_gmm_decomposition_controls.do"
+    out = (
+        tmp_path
+        / "artifacts"
+        / "parity"
+        / "xtabond2"
+        / "specs"
+        / "system_gmm_decomposition_controls"
+    )
+    params_path = out / "native_params.csv"
+    diagnostics_path = out / "native_diagnostics.csv"
+    dofile_path = out / "system_gmm_decomposition_controls.do"
 
     assert params_path.exists()
     assert diagnostics_path.exists()

@@ -1,5 +1,10 @@
 # xtabond2 System GMM Parity Certificate
 
+> Frozen legacy snapshot: this single-spec table is retained for provenance and
+> is not the current certification authority. Its native-only-constant treatment
+> is superseded by the complete-parameter-set four-spec certificate under
+> `artifacts/parity/xtabond2/`.
+
 ## Status
 
 `PASS_XTABOND2_PARITY`

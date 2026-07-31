@@ -73,4 +73,3 @@ Helpful notes include:
 
 This adoption record helps the project document real use beyond internal development and
 prioritize future work.
-

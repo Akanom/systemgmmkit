@@ -37,5 +37,6 @@ They are not treated as failed parity tests. The comparison status is REVIEW bec
 
 Formal parity evidence in the paper relies on:
 
-- Artifact 24: maintained dynamic-GMM parity certificate
+- central registry + unified certificate: maintained four-spec System-GMM authority
+- Artifact 24: frozen legacy single-spec snapshot
 - Artifact 22: controlled Stata/systemgmmkit comparison

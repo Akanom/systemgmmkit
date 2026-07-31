@@ -46,12 +46,20 @@ The package also balances native Python implementation with aligned reference ch
 
 # Package Validation and Aligned Reference Checks
 
-The validation suite is organized as reproducible repository artifacts. Artifact 24 is the maintained dynamic-GMM parity certificate and is the main evidence for formal System GMM parity claims against Stata `xtabond2`. It reports `PASS_XTABOND2_PARITY` for aligned structural coefficients and Windmeijer-corrected two-step standard errors.
+The validation suite is organized as reproducible repository artifacts. The current
+formal System GMM evidence is the machine-readable registry and unified certificate
+under `artifacts/parity/xtabond2/`. They report benchmark-specific
+`PASS_XTABOND2_PARITY` for complete parameter sets, Windmeijer-corrected two-step
+standard errors, exact counts, Hansen/Sargan values, and signed AR diagnostics.
+This status denotes numerical agreement, not instrument validity or specification
+endorsement. Artifact 24 is retained as a frozen linked snapshot and is not an
+independent authority.
 
 | Evidence | Scope | Comparison role |
 |---|---|---|
 | Artifact 22 | Controlled Difference/System GMM | Auxiliary Stata comparison |
-| Artifact 24 | Maintained System GMM certificate | Formal `xtabond2` parity evidence |
+| Registry + unified certificate | Maintained four-spec System GMM certificate | Formal `xtabond2` numerical-agreement evidence |
+| Artifact 24 | Frozen single-spec snapshot | Historical linked provenance only |
 | Artifacts 26--27 | Static, panel, IV, and post-estimation checks | `statsmodels`, `linearmodels`, R, and Stata comparisons |
 | Artifact 28 | Performance benchmarks | Practical runtime evidence |
 

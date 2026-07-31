@@ -19,7 +19,9 @@ for (pkg in required) {
 
 library(plm)
 
-root <- "C:/Users/omoko/OneDrive/Papers/Dynamic_Panel_Econometrics"
+args <- commandArgs(trailingOnly = TRUE)
+root <- if (length(args) >= 1 && nzchar(args[[1]])) args[[1]] else getwd()
+root <- normalizePath(root, mustWork = TRUE)
 setwd(root)
 
 outdir <- file.path(root, "Artifacts/Joss/tables/25_cross_software_comparison")

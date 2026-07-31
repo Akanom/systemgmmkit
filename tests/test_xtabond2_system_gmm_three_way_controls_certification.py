@@ -12,8 +12,7 @@ OUT = ROOT / "artifacts" / "parity" / "xtabond2" / "specs" / "system_gmm_three_w
 @pytest.mark.parity
 def test_system_gmm_three_way_controls_certified_against_xtabond2_artifacts() -> None:
     required = [
-        OUT / "summary.csv",
-        OUT / "native_vs_stata_params.csv",
+        OUT / "native_params.csv",
         OUT / "native_diagnostics.csv",
         OUT / "stata_diagnostics.csv",
         OUT / "stata_params.csv",
@@ -26,18 +25,13 @@ def test_system_gmm_three_way_controls_certified_against_xtabond2_artifacts() ->
         str(path) for path in missing
     )
 
-    summary = pd.read_csv(OUT / "summary.csv").iloc[0]
-
-    assert summary["spec"] == "system_gmm_three_way_controls"
-    assert summary["status"] == "COMPARISON_GENERATED"
-    assert int(summary["n_params_native"]) == 10
-    assert int(summary["n_params_stata"]) == 10
-    assert float(summary["max_abs_coef_diff"]) < 1e-6
-    assert float(summary["mean_abs_coef_diff"]) < 1e-6
-    assert float(summary["max_rel_se_diff"]) < 1e-5
-    assert float(summary["mean_rel_se_diff"]) < 1e-5
-
-    params = pd.read_csv(OUT / "native_vs_stata_params.csv")
+    native_params = pd.read_csv(OUT / "native_params.csv")
+    stata_params = pd.read_csv(OUT / "stata_params.csv").rename(
+        columns={"parm": "param", "estimate": "stata_coef", "stderr": "stata_std_err"}
+    )
+    stata_params["param"] = stata_params["param"].replace({"L.y": "L1.y", "_cons": "_con"})
+    params = native_params.merge(stata_params, on="param", how="outer", indicator=True)
+    assert params["_merge"].eq("both").all()
     expected_params = {
         "L1.y",
         "x",
@@ -51,19 +45,19 @@ def test_system_gmm_three_way_controls_certified_against_xtabond2_artifacts() ->
         "_con",
     }
     assert set(params["param"]) == expected_params
+    assert (params["native_coef"] - params["stata_coef"]).abs().max() < 1e-6
+    relative_se_diff = (params["native_std_err"] - params["stata_std_err"]).abs() / params[
+        "stata_std_err"
+    ].abs()
+    assert relative_se_diff.max() < 1e-5
 
     native_diag = pd.read_csv(OUT / "native_diagnostics.csv").iloc[0]
     stata_diag = pd.read_csv(OUT / "stata_diagnostics.csv").iloc[0]
 
     assert int(native_diag["native_nobs"]) == int(stata_diag["stata_nobs"]) == 1248
+    assert int(native_diag["native_n_groups"]) == int(stata_diag["stata_n_groups"]) == 96
 
-    # Expanded-spec instrument-count exact parity is not part of the current
-    # certified claim. Coefficient and Windmeijer-SE parity are certified above.
-    assert int(stata_diag["stata_n_instruments"]) == 16
-    assert int(native_diag["native_n_instruments"]) >= int(stata_diag["stata_n_instruments"])
+    assert int(native_diag["native_n_instruments"]) == int(stata_diag["stata_n_instruments"]) == 16
     assert native_diag["native_covariance_type"] == "robust-clustered-two-step-windmeijer"
 
-    # Exact robust Hansen parity is not part of the current certified claim.
-    # This certification guards coefficient and Windmeijer-SE parity.
-    assert "native_hansen_p" in native_diag.index
-    assert "stata_hansen_p" in stata_diag.index
+    assert abs(float(native_diag["native_hansen_p"]) - float(stata_diag["stata_hansen_p"])) < 1e-6

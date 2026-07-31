@@ -1,6 +1,6 @@
 ## Summary
 
-- 
+-
 
 ## Public-development record
 
@@ -14,4 +14,3 @@
 - [ ] Documentation updated for public API, estimator, or workflow changes.
 - [ ] Parity claims are tied to specific scripts, artifacts, data, and tolerances.
 - [ ] Generated or private data are not included.
-
