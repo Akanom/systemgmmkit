@@ -11,7 +11,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / "artifacts" / "parity" / "xtabond2"
-UNCORRECTED_ART = ART / "specs" / "system_gmm_baseline_controls" / "uncorrected"
 
 EXPECTED_PARAMS = ["L1.y", "x", "w", "_con"]
 
@@ -25,7 +24,9 @@ def _read_matrix(path: Path) -> np.ndarray:
 
 
 @pytest.mark.parity
-def test_native_system_gmm_uncorrected_clustered_se_baseline_vs_xtabond2() -> None:
+def test_native_system_gmm_uncorrected_clustered_se_baseline_vs_xtabond2(
+    tmp_path: Path,
+) -> None:
     required = [
         ART / "system_gmm_benchmark.csv",
         ART / "stata_V.csv",
@@ -40,7 +41,10 @@ def test_native_system_gmm_uncorrected_clustered_se_baseline_vs_xtabond2() -> No
 
     env = os.environ.copy()
     env["SYSTEMGMMKIT_EXPORT_GMM_DEBUG"] = "1"
-    env["SYSTEMGMMKIT_GMM_DEBUG_DIR"] = "artifacts/parity/xtabond2"
+    output_root = tmp_path / "xtabond2"
+    env["SYSTEMGMMKIT_XTABOND2_OUTPUT_ROOT"] = str(output_root)
+    env["SYSTEMGMMKIT_XTABOND2_DATA"] = str(ART / "system_gmm_benchmark.csv")
+    env["SYSTEMGMMKIT_GMM_DEBUG_DIR"] = str(tmp_path / "debug")
     env["SYSTEMGMMKIT_NATIVE_WINDMEIJER"] = "0"
 
     subprocess.run(
@@ -50,8 +54,9 @@ def test_native_system_gmm_uncorrected_clustered_se_baseline_vs_xtabond2() -> No
         check=True,
     )
 
-    params_path = UNCORRECTED_ART / "native_params.csv"
-    diagnostics_path = UNCORRECTED_ART / "native_diagnostics.csv"
+    uncorrected_art = output_root / "specs" / "system_gmm_baseline_controls" / "uncorrected"
+    params_path = uncorrected_art / "native_params.csv"
+    diagnostics_path = uncorrected_art / "native_diagnostics.csv"
 
     params = pd.read_csv(params_path)
     diagnostics = pd.read_csv(diagnostics_path)

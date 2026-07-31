@@ -41,7 +41,7 @@ def _read_vector(path: Path) -> np.ndarray:
 
 
 @pytest.mark.parity
-def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
+def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen(tmp_path: Path) -> None:
     required = [
         ART / "system_gmm_benchmark.csv",
         ART / "stata_Ze.csv",
@@ -65,7 +65,11 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
 
     # Only debug export is enabled so the test can inspect internals.
     env["SYSTEMGMMKIT_EXPORT_GMM_DEBUG"] = "1"
-    env["SYSTEMGMMKIT_GMM_DEBUG_DIR"] = "artifacts/parity/xtabond2"
+    output_root = tmp_path / "xtabond2"
+    debug_root = tmp_path / "debug"
+    env["SYSTEMGMMKIT_XTABOND2_OUTPUT_ROOT"] = str(output_root)
+    env["SYSTEMGMMKIT_XTABOND2_DATA"] = str(ART / "system_gmm_benchmark.csv")
+    env["SYSTEMGMMKIT_GMM_DEBUG_DIR"] = str(debug_root)
 
     subprocess.run(
         [sys.executable, "scripts/parity/run_native_system_gmm_benchmark.py"],
@@ -74,7 +78,7 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
         check=True,
     )
 
-    debug = pd.read_csv(ART / "native_debug_shapes.csv").iloc[0]
+    debug = pd.read_csv(debug_root / "native_debug_shapes.csv").iloc[0]
 
     assert int(debug["Z_rows"]) == 2400
     assert int(debug["Z_cols"]) == 8
@@ -102,7 +106,7 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
 
     assert abs(native_j - stata_hansen) <= 1e-5
 
-    native_ze = _read_vector(ART / "native_Ze.csv")
+    native_ze = _read_vector(debug_root / "native_Ze.csv")
     stata_ze = _read_vector(ART / "stata_Ze.csv")
 
     # Stata e(Ze) is not certified as plain final Z'u. Native exports plain
@@ -112,7 +116,7 @@ def test_native_system_gmm_matches_xtabond2_moments_a2_and_hansen() -> None:
     assert np.isfinite(native_ze).all()
     assert np.isfinite(stata_ze).all()
 
-    native_a2 = _read_matrix(ART / "native_A2.csv")
+    native_a2 = _read_matrix(debug_root / "native_A2.csv")
     stata_a2 = _read_matrix(ART / "stata_A2.csv")
 
     # Exact A2 parity is an xtabond2 internal-matrix convention check, not part

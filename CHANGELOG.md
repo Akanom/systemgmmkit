@@ -12,6 +12,30 @@ The project follows a practical semantic-versioning style:
 
 ## Unreleased
 
+### Fixed
+
+* Reconciled System-GMM certification language with the committed evidence:
+  `xtabond2` remains the formal oracle, and four aligned specifications now have
+  fresh-current-engine and raw-artifact numerical guards for complete parameters,
+  Windmeijer standard errors, exact counts, Hansen/Sargan, and signed AR diagnostics.
+* Corrected the expanded parity runners to mirror Stata's selector contract:
+  first differences, `L1.y` as the instrumented lagged-dependent regressor, and
+  explicit level-equation IV classification.
+* Repaired generated Stata do-files by removing invalid trailing continuations,
+  storing the numeric Stata version with a numeric type, pinning Stata 17 syntax,
+  and making `eq(both)` explicit.
+* Added a portable Stata rerun driver, hashes for fixtures/do-files/exact result
+  exports, signed diagnostic comparisons, and a unified four-spec
+  `PASS_XTABOND2_PARITY` certificate.
+* Made CI rerun every maintained native System-GMM specification in a temporary
+  workspace and compare the fresh outputs directly with the committed Stata exports;
+  non-finite values, incomplete parameter sets, or stale certificate hashes now fail.
+* Clarified that `pydynpd` is an optional execution backend and auxiliary
+  comparator; unaligned results cannot support parity or speed-ranking claims.
+* Retired the unsupported historical AR-pass label for
+  `system_gmm_three_way_no_controls`; no dedicated comparison row or complete
+  certificate existed, so it remains explicitly pending.
+
 ---
 
 ## 0.5.13 - 2026-07-28

@@ -1,7 +1,9 @@
 """Policy helpers for interpreting GMM parity comparisons.
 
-This module separates production backend validation from experimental native-GMM parity.
-Native Difference/System GMM is operational but not certified as pydynpd- or xtabond2-equivalent yet.
+This module separates production backend validation from external parity certification.
+Native System-GMM estimation quantities and diagnostics have benchmark-specific
+`xtabond2` certification on four aligned fixtures. `pydynpd` is an optional execution
+backend and auxiliary comparator, not the formal certification oracle.
 """
 
 from __future__ import annotations

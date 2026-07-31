@@ -27,25 +27,29 @@ Certified specifications:
 
 Certified quantities for System GMM include:
 
-- coefficient parity;
+- complete expected parameter sets and coefficient parity;
 - Windmeijer-corrected two-step standard-error parity;
-- Hansen p-value parity;
+- Hansen and Sargan statistic and p-value parity;
+- signed AR(1)/AR(2) statistic and p-value parity;
 - number of instruments;
 - number of observations;
+- number of groups and overidentification degrees of freedom;
 - covariance type;
 - committed benchmark artifacts;
-- automated pytest guards.
+- fresh-current-engine numerical pytest guards; and
+- fixture, do-file, parameter-export, and diagnostic-export SHA-256 provenance.
 
 ## Remaining validation work
 
 High-priority remaining items:
 
-- Certify AR(1)/AR(2) diagnostic parity.
+- Add a certificate for `system_gmm_three_way_no_controls` or keep it outside the certified suite.
 - Add unbalanced-panel System GMM parity tests.
 - Add missing-data parity tests.
 - Add alternative lag-window parity tests.
 - Add alternative instrument-classification parity tests.
 - Prepare reviewer-facing software-paper evidence tables.
+- Build a separately aligned `pydynpd` contract before any cross-package speed ranking.
 
 ## Release discipline
 

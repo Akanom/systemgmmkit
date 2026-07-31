@@ -1,2 +1,2 @@
-spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen_p,stata_sargan_p,stata_ar1,stata_ar1_p,stata_ar2,stata_ar2_p
-system_gmm_three_way_controls,1248,96,16,.021436349,.000036873629,-7.2195606,5.2155811e-13,-.012780492,.9898029
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen,stata_hansen_p,stata_hansen_df,stata_sargan,stata_sargan_p,stata_sargan_df,stata_ar1_z,stata_ar1_p,stata_ar2_z,stata_ar2_p,stata_reported_date,stata_reported_time,stata_version
+system_gmm_three_way_controls,1248,96,16,14.85239667747326,.021436332137925,6,30.14603089318639,.0000368735654963,6,-7.219560545286142,5.21558436395e-13,-.0127805784362454,.9898028513941344,30 Jul 2024,02:09:39,17

@@ -62,6 +62,7 @@ def main() -> None:
     df.to_csv(DATA, index=False)
 
     do = f"""
+version 17.0
 clear all
 set more off
 
@@ -80,7 +81,7 @@ if _rc {{
 }}
 
 xtabond2 y L.y x_long x_short w c1, ///
-    gmm(L.y x_long x_short, lag(2 3) collapse) ///
+    gmm(L.y x_long x_short, lag(2 3) collapse eq(both)) ///
     iv(w c1, eq(level)) ///
     twostep robust small
 
@@ -107,6 +108,9 @@ gen stata_ar1_z = e(ar1)
 gen stata_ar1_p = e(ar1p)
 gen stata_ar2_z = e(ar2)
 gen stata_ar2_p = e(ar2p)
+gen str20 stata_reported_date = c(current_date)
+gen str20 stata_reported_time = c(current_time)
+gen double stata_version = c(stata_version)
 
 export delimited using "{(OUT / "stata_diagnostics.csv").as_posix()}", replace
 restore

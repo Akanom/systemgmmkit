@@ -2529,7 +2529,8 @@ def run_native_dynamic_panel_gmm(
             system=spec.system,
         )
 
-    # System-GMM AR diagnostics use the certified xtabond2-compatible denominator mapping.
+    # System-GMM AR diagnostics use the xtabond2-oriented denominator mapping
+    # certified on the maintained aligned benchmark specifications.
     #
     # Production output exposes the diagnostics by default. The legacy
     # SYSTEMGMMKIT_REPORT_EXPERIMENTAL_SYSTEM_AR flag is still honored as an
@@ -2567,7 +2568,8 @@ def run_native_dynamic_panel_gmm(
     _sargan_stat_raw = None
     _sargan_p_candidate = None
 
-    # Certified robust Hansen diagnostic.
+    # Robust Hansen diagnostic. Cross-software certification remains benchmark-
+    # specific and separate from exposing the diagnostic in the result contract.
     #
     # For native two-step System GMM, strict matrix-dump verification shows:
     #     Hansen J = (u' Z W_final Z' u) / n_groups
@@ -2955,10 +2957,11 @@ def run_native_dynamic_panel_gmm(
         backend="native-gmm",
         notes=[
             "Native dynamic-panel GMM engine.",
-            "Native System GMM parity with xtabond2 is verified for coefficients, N, groups, instruments, and close Hansen diagnostics on the maintained collapsed benchmark; Sargan and AR diagnostics are certified against xtabond2 for the maintained collapsed two-step System GMM benchmark within declared numerical tolerance.",
+            "Native System GMM coefficient, Windmeijer-SE, count, Hansen/Sargan, and signed AR diagnostic parity is verified against xtabond2 on four maintained aligned specifications under declared numerical gates.",
             (
                 "Windmeijer-corrected two-step standard errors are enabled via windmeijer=True "
-                "using the pydynpd 0.2.2 formula path; xtabond2 e(V) parity must still be checked."
+                "using the pydynpd 0.2.2 formula path; matched structural-SE parity is certified "
+                "only on the maintained xtabond2 specifications."
                 if windmeijer_requested and use_twostep
                 else "Windmeijer-corrected two-step standard errors are available via windmeijer=True but are not the default."
             ),

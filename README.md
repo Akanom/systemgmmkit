@@ -1679,7 +1679,7 @@ The goal is not merely to produce estimates. The goal is to provide transparent 
 | Random Effects                       | PASS_STATA_COMPARISON    |
 | Panel IV / 2SLS                      | PASS_STATA_COMPARISON    |
 | Difference GMM                       | PASS_XTABOND2_PARITY     |
-| System GMM                           | PASS_XTABOND2_PARITY     |
+| System GMM structural coefficients   | PASS_XTABOND2_PARITY     |
 | Windmeijer standard errors           | PASS_XTABOND2_PARITY     |
 | Hansen diagnostics                   | PASS_XTABOND2_PARITY     |
 | Sargan diagnostics                   | PASS_XTABOND2_PARITY     |
@@ -1696,7 +1696,7 @@ The goal is not merely to produce estimates. The goal is to provide transparent 
 | GMM instrument-count validation      | PASS_TESTED_VALIDATION   |
 | FD001 easy-GMM lag-window validation | PASS_REALDATA_VALIDATION |
 
-Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. The CMAPSS FD001 application is used as an external validation case.
+Validation claims apply to the maintained benchmark specifications and validation workflows in the repository. The controlled `xtabond2` benchmark is used for strict certification. CMAPSS FD001 is an application scaffold, not part of the formal parity certificate.
 
 Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
 
@@ -1704,18 +1704,40 @@ Users should still inspect their own model diagnostics, instrument counts, sampl
 
 # System GMM xtabond2 Certification
 
-The native System GMM implementation has been certified against Stata `xtabond2` on a maintained collapsed two-step benchmark specification.
+The native System GMM implementation has benchmark-specific parity against Stata
+`xtabond2` on four maintained, collapsed two-step specifications: baseline
+controls, no controls, three-way controls, and decomposition controls.
+`system_gmm_three_way_no_controls` is outside this certified set and remains
+pending because no dedicated Stata comparison artifact has been committed.
 
 Certified components include:
 
-* coefficient estimates;
+* the complete expected parameter set and coefficient estimates;
 * Windmeijer-corrected two-step standard errors;
-* sample size;
-* instrument count;
-* Hansen overidentification diagnostic;
-* Sargan overidentification diagnostic;
-* Arellano-Bond AR(1) diagnostic;
-* Arellano-Bond AR(2) diagnostic.
+* observations, groups, instruments, and overidentification degrees of freedom;
+* Hansen and Sargan statistics and p-values; and
+* signed Arellano-Bond AR(1)/AR(2) statistics and p-values.
+
+The authoritative gate reruns the current native engine in an isolated temporary
+workspace and compares those fresh outputs directly with the committed Stata exports.
+It also verifies the committed unified certificate against SHA-256 hashes of every
+fixture, do-file, parameter export, and diagnostic export. Counts and degrees of
+freedom must match exactly; coefficient absolute
+differences must be at most `1e-6`; Windmeijer-SE tolerances are specification
+specific; Hansen/Sargan absolute differences must be at most `1e-6`; signed AR
+z-statistic differences must be at most `0.10`; and AR p-value differences must be
+at most `0.03`. The current four-spec certificate passes every gate. The largest
+observed signed-AR differences are approximately `0.02264` for z and `0.00638` for
+p. See the [System GMM parity matrix](docs/parity/system_gmm_parity_matrix.md) and
+the unified machine-readable certificate at
+`artifacts/parity/xtabond2/diagnostic_parity_certificate.csv`.
+
+Stata `xtabond2` is the formal certification oracle. `pydynpd` is an optional
+execution backend and auxiliary comparator, not part of the current formal native
+System-GMM certificate. A `pydynpd` result is parity- or speed-comparable only after
+the effective sample, equations, lag semantics, instruments, collapsing, estimation
+steps, finite-sample corrections, Windmeijer treatment, and covariance scaling have
+all been aligned.
 
 The maintained benchmark uses a controlled dynamic-panel specification with:
 
@@ -1725,7 +1747,11 @@ The maintained benchmark uses a controlled dynamic-panel specification with:
 * Windmeijer correction;
 * strict numerical comparison against `xtabond2`.
 
-Under this maintained benchmark, the native implementation reproduces the `xtabond2` reference results within declared strict numerical tolerance.
+Under these maintained benchmarks, the native implementation reproduces the
+certified estimation quantities and diagnostics within the declared numerical
+tolerances. This is not a claim of universal Stata identity. The Stata-reported date
+and time are informational metadata only; fixture, do-file, parameter-export, and
+diagnostic-export hashes identify the exact evidence used by the gate.
 
 ---
 
@@ -1781,9 +1807,10 @@ The FD001 validation is a real-data application check. The controlled `xtabond2`
 
 ---
 
-# External CMAPSS FD001 Validation
+# External CMAPSS FD001 Validation Scaffold
 
-In addition to the controlled benchmark, System GMM was externally validated on CMAPSS FD001 publication-style panel specifications.
+The repository includes a CMAPSS FD001 publication-style validation scaffold for
+two System GMM specifications.
 
 Two validation models were used.
 
@@ -1799,17 +1826,11 @@ Degradation model:
 degradation_index ~ L1.degradation_index + sensor_mean_z + pc2 + pc3 + op_setting1 + op_setting2
 ```
 
-Across the maintained FD001 validation models, `systemgmmkit` reproduces reference results for:
-
-* coefficient estimates;
-* Windmeijer-corrected standard errors;
-* sample size;
-* instrument count;
-* Hansen diagnostics;
-* Sargan diagnostics;
-* AR(1) and AR(2) diagnostics within declared external-validation tolerance.
-
-The FD001 validation is used as an independent application check. The controlled `xtabond2` benchmark remains the strict certification benchmark.
+This scaffold is not part of the current formal certificate: its comparator still
+depends on an external prepared-data location and does not yet have committed,
+portable numerical guards for coefficients, standard errors, and diagnostics. It
+must therefore not be cited as certified cross-software parity. The four controlled
+`xtabond2` fixtures above remain the strict System GMM certification benchmark.
 
 ---
 

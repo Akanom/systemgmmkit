@@ -3,7 +3,16 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pandas as pd
+
 REPORT_PATH = Path("artifacts/parity/panel_econometrics_certification_report.md")
+UNIFIED_CERTIFICATE = Path("artifacts/parity/xtabond2/diagnostic_parity_certificate.csv")
+CERTIFIED_SYSTEM_GMM_SPECS = {
+    "system_gmm_baseline_controls",
+    "system_gmm_no_controls",
+    "system_gmm_three_way_controls",
+    "system_gmm_decomposition_controls",
+}
 
 
 CERTIFICATION_ROWS = [
@@ -26,12 +35,39 @@ CERTIFICATION_ROWS = [
         "Balanced, unbalanced, missing periods, lag windows, collapse behavior.",
     ),
     (
-        "System GMM Certification",
-        "PASS",
+        "System GMM Structural Contract",
+        "CONTRACT_PASS",
         "tests/parity/gmm/test_system_gmm_certification.py",
-        "Balanced, unbalanced, missing periods, lag windows, collapse behavior, diagnostics contract.",
+        "Balanced, unbalanced, missing periods, lag windows, collapse behavior, and diagnostic availability.",
     ),
 ]
+
+
+def _unified_certificate_status() -> str:
+    if not UNIFIED_CERTIFICATE.exists():
+        return "MISSING"
+    frame = pd.read_csv(UNIFIED_CERTIFICATE)
+    required = {
+        "spec",
+        "status",
+        "parameter_status",
+        "diagnostic_status",
+        "parameter_set_complete",
+        "parameters_finite",
+        "standard_errors_positive",
+    }
+    if frame.empty or not required.issubset(frame.columns):
+        return "INVALID"
+    passes = (
+        set(frame["spec"]) == CERTIFIED_SYSTEM_GMM_SPECS
+        and frame["status"].eq("PASS_XTABOND2_PARITY").all()
+        and frame["parameter_status"].eq("PASS_PARAMETER_PARITY").all()
+        and frame["diagnostic_status"].eq("PASS_DIAGNOSTIC_PARITY").all()
+        and frame["parameter_set_complete"].eq(True).all()
+        and frame["parameters_finite"].eq(True).all()
+        and frame["standard_errors_positive"].eq(True).all()
+    )
+    return "PASS" if passes else "FAIL"
 
 
 def main() -> None:
@@ -49,7 +85,17 @@ def main() -> None:
     lines.append("| Suite | Status | Test Path | Scope |")
     lines.append("|---|---:|---|---|")
 
-    for suite, status, path, scope in CERTIFICATION_ROWS:
+    certification_rows = [
+        *CERTIFICATION_ROWS,
+        (
+            "System GMM xtabond2 Unified Parity",
+            _unified_certificate_status(),
+            UNIFIED_CERTIFICATE.as_posix(),
+            "Four aligned specifications: parameters, Windmeijer SEs, exact counts, Hansen/Sargan, and signed AR diagnostics.",
+        ),
+    ]
+
+    for suite, status, path, scope in certification_rows:
         lines.append(f"| {suite} | {status} | `{path}` | {scope} |")
 
     lines.append("")
@@ -62,10 +108,13 @@ def main() -> None:
         "- Difference GMM has expanded native certification coverage across balanced/unbalanced panels, missing periods, lag windows, and collapsed/uncollapsed instruments."
     )
     lines.append(
-        "- System GMM has native certification coverage across the same structural scenarios, but remains labelled experimental until strict coefficient and standard-error parity against xtabond2 and pydynpd is completed."
+        "- System GMM has benchmark-specific xtabond2 parity for complete parameter sets, Windmeijer standard errors, exact structural counts, Hansen/Sargan diagnostics, and signed AR diagnostics on four aligned specifications."
     )
     lines.append(
-        "- Windmeijer correction remains explicitly not certified unless separately implemented and benchmarked."
+        "- The numerical gate reads raw native and Stata artifacts and records fixture, do-file, parameter-export, and diagnostic-export SHA-256 hashes."
+    )
+    lines.append(
+        "- Stata xtabond2 is the formal certification oracle; pydynpd is an optional execution backend and auxiliary comparator."
     )
     lines.append("")
     lines.append("## Reviewer-Relevant Status")
@@ -76,24 +125,28 @@ def main() -> None:
         "| FE / RE / IV / FD | Implemented and certification-tested | Strict Stata/linearmodels parity for all SE variants |"
     )
     lines.append(
-        "| Difference GMM | Expanded native certification-tested | Full xtabond2/pydynpd parity table across benchmark specs |"
+        "| Difference GMM | Expanded native certification-tested | Additional aligned xtabond2 specifications |"
     )
     lines.append(
-        "| System GMM | Runs and passes structural certification | Strict xtabond2/pydynpd parity for coefficients, SEs, diagnostics, sample, and instruments |"
+        "| System GMM | Four-spec benchmark-specific xtabond2 estimation and diagnostic parity | Broader data/specification coverage |"
     )
     lines.append(
-        "| Diagnostics | Implemented and contract-tested | Numeric parity against reference implementations |"
+        "| Diagnostics | Four-spec Hansen/Sargan and signed AR numerical parity | Difference-in-Hansen and broader designs |"
     )
     lines.append("")
     lines.append("## Next Certification Milestone")
     lines.append("")
-    lines.append("Native System GMM strict parity against xtabond2 and pydynpd:")
+    lines.append("Extend the current System GMM certification boundary:")
     lines.append("")
-    lines.append("1. coefficient parity;")
-    lines.append("2. standard-error parity;")
-    lines.append("3. AR(1), AR(2), Hansen, Sargan, Diff-Hansen parity;")
-    lines.append("4. instrument-count parity;")
-    lines.append("5. exact estimation-sample parity.")
+    lines.append("1. add or explicitly exclude `system_gmm_three_way_no_controls`;")
+    lines.append("2. add unbalanced-panel and missing-data fixtures;")
+    lines.append("3. certify applicable Difference-in-Hansen diagnostics;")
+    lines.append("4. add alternative lag and instrument-classification designs;")
+    lines.append("5. create a separately aligned pydynpd contract before speed ranking.")
+    lines.append("")
+    lines.append(
+        "A pydynpd parity or speed comparison is a separate milestone and requires the full alignment gate to pass first."
+    )
     lines.append("")
 
     REPORT_PATH.write_text("\n".join(lines), encoding="utf-8")
