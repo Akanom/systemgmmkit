@@ -208,6 +208,11 @@ record. See [Open development](docs/OPEN_DEVELOPMENT.md) and the GitHub
 Discussion templates for specification questions, validation reports, and use
 cases.
 
+The dedicated Python 3.12 all-extras job enforces combined, statement, branch,
+and dynamic-panel routing coverage floors. See the
+[coverage policy](docs/validation/COVERAGE_POLICY.md) for measured baselines,
+local reproduction commands, and ratchet rules.
+
 Kaggle and Google Colab notebooks may be used as reproducibility aids only when
 they stay within the `systemgmmkit` package boundary. See
 [Kaggle and Google Colab usage](docs/CLOUD_NOTEBOOKS.md) for credential, data,
