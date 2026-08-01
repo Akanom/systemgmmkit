@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
 from pathlib import Path
@@ -78,6 +79,19 @@ def _parse_spec_versions(lines: list[str]) -> tuple[list[str], dict[str, str]]:
     return order, versions
 
 
+def _diagnostic_comparator_metadata(path: Path) -> dict[str, str]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    if len(rows) != 1:
+        raise ValueError(f"Expected one Stata diagnostic row in {path}, found {len(rows)}.")
+    row = rows[0]
+    required = ("spec", "stata_version", "xtabond2_e_version", "xtabond2_ado_header")
+    missing = [field for field in required if not str(row.get(field, "")).strip()]
+    if missing:
+        raise ValueError(f"Stata diagnostic export {path} lacks metadata: {missing}.")
+    return {field: str(row[field]).strip() for field in required}
+
+
 def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
     registry = load_certification_registry(REGISTRY_PATH)
     log_text = log_path.read_text(encoding="utf-8", errors="strict")
@@ -99,11 +113,26 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
 
     order, versions = _parse_spec_versions(run_lines)
     expected_order = list(registry.specifications)
-    if order != expected_order or set(versions) != set(expected_order):
+    if order != expected_order or not set(versions).issubset(expected_order):
         raise ValueError("Certification log does not cover the registry specifications exactly.")
-    unique_versions = set(versions.values())
-    if unique_versions != {registry.expected_xtabond2_e_version}:
-        raise ValueError(f"Unexpected xtabond2 e(version) values: {sorted(unique_versions)}")
+
+    embedded_versions: dict[str, str] = {}
+    for spec_id, config in registry.specifications.items():
+        metadata = _diagnostic_comparator_metadata(repository_path(config["stata_diagnostics"]))
+        if metadata["spec"] != spec_id:
+            raise ValueError(f"Stata diagnostic export has the wrong spec ID for {spec_id}.")
+        if float(metadata["stata_version"]) != registry.expected_stata_version:
+            raise ValueError(f"Unexpected embedded Stata version for {spec_id}.")
+        if metadata["xtabond2_e_version"] != registry.expected_xtabond2_e_version:
+            raise ValueError(f"Unexpected embedded xtabond2 version for {spec_id}.")
+        if metadata["xtabond2_ado_header"] != registry.expected_xtabond2_ado_header:
+            raise ValueError(f"Unexpected embedded xtabond2 ado header for {spec_id}.")
+        embedded_versions[spec_id] = metadata["xtabond2_e_version"]
+
+    for spec_id, version in versions.items():
+        if version != embedded_versions[spec_id]:
+            raise ValueError(f"Log/export xtabond2 version mismatch for {spec_id}.")
+    unique_versions = set(embedded_versions.values())
 
     stata_versions = _values(run_lines, "stata_version")
     stata_version = float(_single(stata_versions, "Stata version"))
@@ -122,10 +151,9 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
     ado_header = next((line.strip() for line in ado_lines if line.strip()), "")
     if ado_header != registry.expected_xtabond2_ado_header:
         raise ValueError(f"Unexpected installed xtabond2 ado header: {ado_header!r}")
-    if run_lines.count(ado_header) != 1:
-        raise ValueError(
-            "Certification log does not contain the expected xtabond2 ado header once."
-        )
+    observed_ado_headers = {line for line in run_lines if line.startswith("*! xtabond2 ")}
+    if observed_ado_headers != {ado_header}:
+        raise ValueError("Certification log has missing or inconsistent xtabond2 ado headers.")
 
     output_hashes: dict[str, dict[str, str]] = {}
     for spec_id, config in registry.specifications.items():
@@ -135,6 +163,10 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
                 repository_path(config["stata_diagnostics"])
             ),
         }
+        if "stata_sample" in config:
+            output_hashes[spec_id]["stata_sample_sha256"] = canonical_text_sha256(
+                repository_path(config["stata_sample"])
+            )
 
     return {
         "schema_version": 1,
@@ -148,9 +180,9 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
         "run_log_sha256": canonical_text_sha256(log_path),
         "source_log_committed": False,
         "source_binding_limitation": (
-            "The local source log records completed runs and comparator versions but not output "
-            "hashes; tracked output hashes were observed when this sanitized attestation was "
-            "generated."
+            "The local source log records the bounded completed run; comparator identity is "
+            "cross-checked against embedded metadata in each tracked diagnostic export, and "
+            "the tracked output hashes were observed when this sanitized attestation was generated."
         ),
         "stata_version": stata_version,
         "stata_flavor": _single(_values(run_lines, "stata_flavor"), "Stata flavor"),
@@ -165,7 +197,8 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
         "xtabond2_ado_sha256": canonical_text_sha256(ado_path),
         "xtabond2_ado_hash_observation": (
             "Observed from the installed ado at attestation generation; the certification log "
-            "records the matching ado header and e(version), not the ado hash."
+            "records the matching ado header, and the hash-bound diagnostic exports embed the "
+            "matching e(version); neither records the ado hash."
         ),
         "certified_specifications": expected_order,
         "output_hashes": output_hashes,

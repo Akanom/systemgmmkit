@@ -23,6 +23,8 @@ Certified specifications:
 | `system_gmm_no_controls` | Minimal System GMM construction and covariance behavior. | Certified |
 | `system_gmm_three_way_controls` | Interaction-heavy System GMM design. | Certified |
 | `system_gmm_decomposition_controls` | Multi-regressor decomposition-style System GMM design. | Certified |
+| `system_gmm_unbalanced_panel` | Physically unbalanced panel and exact sample-key alignment. | Certified |
+| `system_gmm_variable_missing` | Variable-specific missingness and exact sample-key alignment. | Certified |
 | `difference_gmm_baseline_controls` | Existing Difference GMM guard. | Certified |
 
 Certified quantities for System GMM include:
@@ -34,18 +36,21 @@ Certified quantities for System GMM include:
 - number of instruments;
 - number of observations;
 - number of groups and overidentification degrees of freedom;
+- exact native/Stata estimation-sample keys for the unbalanced-panel and
+  variable-missing specifications;
 - covariance type;
 - committed benchmark artifacts;
 - fresh-current-engine numerical pytest guards; and
-- fixture, do-file, parameter-export, and diagnostic-export SHA-256 provenance.
+- fixture, do-file, parameter-export, diagnostic-export, and declared
+  sample-export SHA-256 provenance.
 
 ## Remaining validation work
 
 High-priority remaining items:
 
 - Add a certificate for `system_gmm_three_way_no_controls` or keep it outside the certified suite.
-- Add unbalanced-panel System GMM parity tests.
-- Add missing-data parity tests.
+- Extend unbalanced-panel and missing-data certification beyond the two maintained
+  controlled designs.
 - Add alternative lag-window parity tests.
 - Add alternative instrument-classification parity tests.
 - Prepare reviewer-facing software-paper evidence tables.

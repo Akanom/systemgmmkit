@@ -1,47 +1,59 @@
 {
   "schema_version": 1,
   "attestation_kind": "historical-log-derived",
-  "capture_method": "allowlisted fields parsed from a completed Stata certification log",
+  "capture_method": "allowlisted fields parsed from a completed Stata certification log and hash-bound exports",
   "text_digest_algorithm": "sha256-lf-v1",
   "registry_path": "artifacts/parity/xtabond2/system_gmm_certification_specs.json",
-  "registry_sha256": "cb9c19e092e2aacf96254f3b4901258656162ea6fbeac49358db39956877d14c",
+  "registry_sha256": "371f034566e6646639f047f8651fe894e89b23c80d10305f6781161a45aa4765",
   "generator": "scripts/parity/build_xtabond2_comparator_provenance.py",
-  "generator_sha256": "3e0feb3ac746ff280e5c98b13ea1c40b1354805e6eca63007f1afb628b874143",
-  "run_log_sha256": "3e010569f6411406efc38eaa1b5196effb2af7726325379d87b302e8c75d165a",
+  "generator_sha256": "0da8713ef6bd0b66f71b1f752d604cd12e1d4eeb5eccdc3e3e80a6a74bbc05b0",
+  "run_log_sha256": "cdfbadc9dabf67747db99c54bc56e6859ba2e64dbdc2a2e0f18ac0ace809433e",
   "source_log_committed": false,
-  "source_binding_limitation": "The local source log records completed runs and comparator versions but not output hashes; tracked output hashes were observed when this sanitized attestation was generated.",
+  "source_binding_limitation": "The local source log records the bounded completed run; comparator identity is cross-checked against embedded metadata in each tracked diagnostic export, and the tracked output hashes were observed when this sanitized attestation was generated.",
   "stata_version": 17.0,
   "stata_flavor": "IC",
   "stata_os": "Windows",
   "stata_machine_type": "PC (64-bit x86-64)",
-  "stata_reported_start": "30 Jul 2024 02:09:34",
-  "stata_reported_end": "30 Jul 2024 02:09:41",
+  "stata_reported_start": "31 Jul 2024 08:06:17",
+  "stata_reported_end": "31 Jul 2024 08:06:26",
   "xtabond2_e_version": "03.07.00",
   "xtabond2_ado_header": "*! xtabond2 3.7.2 9 February 2025",
   "xtabond2_ado_sha256": "96a18e5a541b223ed20edf9301eddc4f6688d15cd38385325d910da13abfa66e",
-  "xtabond2_ado_hash_observation": "Observed from the installed ado at attestation generation; the certification log records the matching ado header and e(version), not the ado hash.",
+  "xtabond2_ado_hash_observation": "Observed from the installed ado at attestation generation; the certification log records the matching ado header, and the hash-bound diagnostic exports embed the matching e(version); neither records the ado hash.",
   "certified_specifications": [
     "system_gmm_baseline_controls",
     "system_gmm_no_controls",
     "system_gmm_three_way_controls",
-    "system_gmm_decomposition_controls"
+    "system_gmm_decomposition_controls",
+    "system_gmm_unbalanced_panel",
+    "system_gmm_variable_missing"
   ],
   "output_hashes": {
     "system_gmm_baseline_controls": {
       "stata_params_sha256": "91564089e8eb30f194d53ae908b99567b15dd9698604f2a560d4e3653c6f6c39",
-      "stata_diagnostics_sha256": "aa69c768125ff7d40093fb52fe538675fa064ae235d4a805ed8ac70419420902"
+      "stata_diagnostics_sha256": "58ca029f1d639b961ff74444104b5a370256f46064ed9cd941f6e6a06e161a1c"
     },
     "system_gmm_no_controls": {
       "stata_params_sha256": "6daef2081e3946a4b658db9538f1b47bfd7ff7065a45fb468cf18a427b70804c",
-      "stata_diagnostics_sha256": "3f60d11180d22ad474de1f3ba9d3192791219442409d6f80128f1c98f93b9771"
+      "stata_diagnostics_sha256": "b56d6990f81226c87bc2284491194ff2ef739a5c34a0f5d89c55498e936048dc"
     },
     "system_gmm_three_way_controls": {
       "stata_params_sha256": "f7cd74c5f20bad538abc3f06748317b28510c6767fec3c74a8687276decb2061",
-      "stata_diagnostics_sha256": "fbf6da4c4416c2325f31bf38d116cf84558d1792030178f75ab8a01e15d35774"
+      "stata_diagnostics_sha256": "5521c4c582356b0da9af7001ecd89088289c1519baafaa2e3e01b55ce521658b"
     },
     "system_gmm_decomposition_controls": {
       "stata_params_sha256": "7b0f505600057bbb851929c8631df14ec609b3dd528f5539c25c571c24fc1863",
-      "stata_diagnostics_sha256": "5afaaad48cbc28db179ebb71b6b999cd35ef6b59205bfa9df7188df533a6ad19"
+      "stata_diagnostics_sha256": "00e4afe7d2ef00b6408377346fa3964a06b53c63b8ef79c0b57a113692df975c"
+    },
+    "system_gmm_unbalanced_panel": {
+      "stata_params_sha256": "22b1b8602ae2d99e49f6715dfc6b8cf1d0b666e4856633381f17bd83afd5f216",
+      "stata_diagnostics_sha256": "0c18dcf775cd5ff444a0775b92d908bdcc8205c973c719db404950778a8fb840",
+      "stata_sample_sha256": "8ea0483237dc7ea210ff481f5da9fd1efed6ab0e804b042b09d0aab882c1e918"
+    },
+    "system_gmm_variable_missing": {
+      "stata_params_sha256": "6a7b64c5a77947bc6600803d7d06332f8c136b2a252b154f897cbdedb9dbcbc5",
+      "stata_diagnostics_sha256": "9e54896d477f57a7867cb5f65c5393c5c4026605ba177b752a18410a9bd179e5",
+      "stata_sample_sha256": "2ac0570b0ebac2584b50f78087c94b3e342a158ce204b77fde3ea6a7d38e39a5"
     }
   }
 }

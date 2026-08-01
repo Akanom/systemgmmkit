@@ -139,9 +139,10 @@ def build_report(*, generated_at: Optional[str] = None) -> str:
         "parameter exports, and diagnostic exports."
     )
     lines.append(
-        "- Comparator identity is supplied by a path-free historical-log-derived attestation. "
-        "Its local source log is intentionally uncommitted; the attestation discloses that its "
-        "output and installed-ado hashes were observed at attestation generation."
+        "- Comparator identity is supplied by a path-free attestation derived from the bounded "
+        "completed log and cross-checked against metadata embedded in every tracked Stata "
+        "diagnostic export. Its local source log is intentionally uncommitted; the attestation "
+        "binds the exact outputs and installed ado observed at generation."
     )
     lines.append(
         "- Stata xtabond2 is the formal certification oracle; pydynpd is an optional execution backend and auxiliary comparator."
@@ -191,7 +192,7 @@ def build_report(*, generated_at: Optional[str] = None) -> str:
         "1. generate and register evidence for `system_gmm_three_way_no_controls`, or keep it "
         "explicitly outside the certified boundary;"
     )
-    lines.append("2. add unbalanced-panel and missing-data fixtures;")
+    lines.append("2. add short-T, longer-T, and high-N/low-T aligned designs;")
     lines.append("3. certify applicable Difference-in-Hansen diagnostics;")
     lines.append("4. add alternative lag and instrument-classification designs;")
     lines.append("5. create a separately aligned pydynpd contract before speed ranking.")

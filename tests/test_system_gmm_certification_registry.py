@@ -45,11 +45,11 @@ PATH_FIELDS = (
 )
 
 
-def test_registry_is_portable_and_declares_the_maintained_four_specs() -> None:
+def test_registry_is_portable_and_declares_the_maintained_six_specs() -> None:
     registry = load_certification_registry(REGISTRY_PATH)
 
     assert registry.schema_version == 1
-    assert len(registry.specifications) == 4
+    assert len(registry.specifications) == 6
     assert registry.oracle == "Stata xtabond2"
     assert certification_registry_sha256(REGISTRY_PATH)
 
@@ -58,6 +58,10 @@ def test_registry_is_portable_and_declares_the_maintained_four_specs() -> None:
         for field in PATH_FIELDS:
             path = config[field]
             assert isinstance(path, Path)
+            assert not path.is_absolute()
+            assert ".." not in path.parts
+            assert (REPOSITORY_ROOT / path).is_file()
+        for path in config.get("support_files", ()):
             assert not path.is_absolute()
             assert ".." not in path.parts
             assert (REPOSITORY_ROOT / path).is_file()
@@ -88,6 +92,10 @@ def test_comparator_provenance_is_sanitized_and_bound_to_tracked_outputs() -> No
         assert hashes["stata_diagnostics_sha256"] == canonical_text_sha256(
             REPOSITORY_ROOT / config["stata_diagnostics"]
         )
+        if "stata_sample" in config:
+            assert hashes["stata_sample_sha256"] == canonical_text_sha256(
+                REPOSITORY_ROOT / config["stata_sample"]
+            )
 
 
 def _synthetic_certification_log(*, complete_before_specs: bool = False) -> str:
@@ -142,6 +150,42 @@ def test_attestation_parser_accepts_bounded_allowlisted_evidence(tmp_path: Path)
     assert attestation["certified_specifications"] == list(registry.specifications)
     assert attestation["stata_reported_start"] == "01 Jan 2000 00:00:00"
     assert attestation["stata_reported_end"] == "01 Jan 2000 00:00:01"
+
+
+def test_attestation_uses_embedded_metadata_when_log_omits_some_ereturn_lists(
+    tmp_path: Path,
+) -> None:
+    registry = load_certification_registry(REGISTRY_PATH)
+    log_path = tmp_path / "certification.log"
+    ado_path = tmp_path / "xtabond2.ado"
+    ado_path.write_text(registry.expected_xtabond2_ado_header + "\n", encoding="utf-8")
+
+    omitted = set(tuple(registry.specifications)[-2:])
+    active_spec = ""
+    lines: list[str] = []
+    for line in _synthetic_certification_log().splitlines():
+        if line.startswith("SYSTEMGMMKIT_RUNNING="):
+            active_spec = line.split("=", 1)[1]
+        if line.startswith("e(version)") and active_spec in omitted:
+            continue
+        lines.append(line)
+        if line == registry.expected_xtabond2_ado_header:
+            lines.append(line)
+    log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    attestation = build_attestation(log_path, ado_path)
+
+    assert attestation["certified_specifications"] == list(registry.specifications)
+
+
+def test_registry_requires_native_and_stata_sample_paths_together(tmp_path: Path) -> None:
+    raw = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    raw["specifications"][-1].pop("stata_sample")
+    path = tmp_path / "invalid-registry.json"
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="native_sample and stata_sample together"):
+        load_certification_registry(path)
 
 
 @pytest.mark.parametrize("invalid_value", [float("inf"), float("nan")])

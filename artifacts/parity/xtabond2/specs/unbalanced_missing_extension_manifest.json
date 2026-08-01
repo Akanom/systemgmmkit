@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "authority": "generation manifest only; certification authority is artifacts/parity/xtabond2/system_gmm_certification_specs.json",
+  "source_data": "artifacts/parity/xtabond2/system_gmm_benchmark.csv",
+  "source_data_sha256": "4689b5e2bc59b33bb68930313a89f44b31447e21a7db6f5d5fb42b1eb3c7781f",
+  "driver": "scripts/parity/rerun_xtabond2_unbalanced_missing.do",
+  "specifications": [
+    {
+      "id": "system_gmm_unbalanced_panel",
+      "status": "REGISTERED",
+      "fixture": "artifacts/parity/xtabond2/specs/system_gmm_unbalanced_panel/fixture.csv",
+      "fixture_sha256": "8a31a5d6f6ab94cf6cb9df843978bb49cd5cb774453cf60c9ba439657a6ee0c6",
+      "do_file": "artifacts/parity/xtabond2/specs/system_gmm_unbalanced_panel/system_gmm_unbalanced_panel.do",
+      "do_file_sha256": "4838b28c5d06f472566ccdba431985efb2f895c453f7f76d98b275ba85eec7f5",
+      "native_runner": "scripts/parity/run_native_unbalanced_missing_extension.py",
+      "stata_params": "artifacts/parity/xtabond2/specs/system_gmm_unbalanced_panel/stata_params.csv",
+      "stata_diagnostics": "artifacts/parity/xtabond2/specs/system_gmm_unbalanced_panel/stata_diagnostics.csv",
+      "stata_sample": "artifacts/parity/xtabond2/specs/system_gmm_unbalanced_panel/stata_sample.csv"
+    },
+    {
+      "id": "system_gmm_variable_missing",
+      "status": "REGISTERED",
+      "fixture": "artifacts/parity/xtabond2/specs/system_gmm_variable_missing/fixture.csv",
+      "fixture_sha256": "0f7d15612417881a38620ee74616a88532515b3b39873d4a707b4d3521fdb9a7",
+      "do_file": "artifacts/parity/xtabond2/specs/system_gmm_variable_missing/system_gmm_variable_missing.do",
+      "do_file_sha256": "39933246bc94150fb9d9d72db013b4b90314c8901b37069529e92c3807403aa2",
+      "native_runner": "scripts/parity/run_native_unbalanced_missing_extension.py",
+      "stata_params": "artifacts/parity/xtabond2/specs/system_gmm_variable_missing/stata_params.csv",
+      "stata_diagnostics": "artifacts/parity/xtabond2/specs/system_gmm_variable_missing/stata_diagnostics.csv",
+      "stata_sample": "artifacts/parity/xtabond2/specs/system_gmm_variable_missing/stata_sample.csv"
+    }
+  ]
+}

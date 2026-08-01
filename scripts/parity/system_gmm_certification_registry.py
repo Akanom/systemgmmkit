@@ -13,10 +13,12 @@ REGISTRY_PATH = (
     REPOSITORY_ROOT / "artifacts" / "parity" / "xtabond2" / "system_gmm_certification_specs.json"
 )
 HISTORICAL_ATTESTATION_KIND = "historical-log-derived"
-HISTORICAL_CAPTURE_METHOD = "allowlisted fields parsed from a completed Stata certification log"
+HISTORICAL_CAPTURE_METHOD = (
+    "allowlisted fields parsed from a completed Stata certification log and hash-bound exports"
+)
 
 
-class SpecConfig(TypedDict):
+class RequiredSpecConfig(TypedDict):
     data: Path
     do_file: Path
     builder: Path
@@ -33,6 +35,12 @@ class SpecConfig(TypedDict):
     max_rel_se_diff: float
     transformation: str
     requires_level_iv: bool
+
+
+class SpecConfig(RequiredSpecConfig, total=False):
+    native_sample: Path
+    stata_sample: Path
+    support_files: tuple[Path, ...]
 
 
 @dataclass(frozen=True)
@@ -59,9 +67,13 @@ class CertificationRegistry:
     specifications: dict[str, SpecConfig]
 
 
-class StataOutputHashes(TypedDict):
+class RequiredStataOutputHashes(TypedDict):
     stata_params_sha256: str
     stata_diagnostics_sha256: str
+
+
+class StataOutputHashes(RequiredStataOutputHashes, total=False):
+    stata_sample_sha256: str
 
 
 @dataclass(frozen=True)
@@ -101,6 +113,7 @@ _PATH_FIELDS = (
     "stata_params",
     "stata_diagnostics",
 )
+_OPTIONAL_SAMPLE_PATH_FIELDS = ("native_sample", "stata_sample")
 _POSITIVE_INTEGER_FIELDS = (
     "expected_nobs",
     "expected_n_groups",
@@ -175,6 +188,24 @@ def _load_spec(
         field: _require_repository_path(spec.get(field), f"{spec_id}.{field}")
         for field in _PATH_FIELDS
     }
+    raw_sample_paths = {field: spec.get(field) for field in _OPTIONAL_SAMPLE_PATH_FIELDS}
+    if any(value is not None for value in raw_sample_paths.values()) and not all(
+        value is not None for value in raw_sample_paths.values()
+    ):
+        raise ValueError(f"{spec_id} must declare native_sample and stata_sample together.")
+    sample_paths = {
+        field: _require_repository_path(value, f"{spec_id}.{field}")
+        for field, value in raw_sample_paths.items()
+        if value is not None
+    }
+    raw_support_files = spec.get("support_files", [])
+    if not isinstance(raw_support_files, list):
+        raise ValueError(f"{spec_id}.support_files must be a JSON array.")
+    support_files = tuple(
+        _require_repository_path(value, f"{spec_id}.support_files") for value in raw_support_files
+    )
+    if len(support_files) != len(set(support_files)):
+        raise ValueError(f"{spec_id}.support_files must not contain duplicates.")
 
     raw_params = spec.get("expected_params")
     if not isinstance(raw_params, list) or not raw_params:
@@ -219,6 +250,11 @@ def _load_spec(
         transformation=transformation,
         requires_level_iv=requires_level_iv,
     )
+    if sample_paths:
+        config["native_sample"] = sample_paths["native_sample"]
+        config["stata_sample"] = sample_paths["stata_sample"]
+    if support_files:
+        config["support_files"] = support_files
     return spec_id, config
 
 
@@ -348,8 +384,12 @@ def load_comparator_provenance(
         raise ValueError("Comparator provenance output hashes do not cover the registry exactly.")
     output_hashes: dict[str, StataOutputHashes] = {}
     for spec_id in certified_specifications:
+        config = registry.specifications[spec_id]
         hashes = _require_mapping(raw_output_hashes.get(spec_id), f"output_hashes.{spec_id}")
-        if set(hashes) != {"stata_params_sha256", "stata_diagnostics_sha256"}:
+        expected_hash_fields = {"stata_params_sha256", "stata_diagnostics_sha256"}
+        if "stata_sample" in config:
+            expected_hash_fields.add("stata_sample_sha256")
+        if set(hashes) != expected_hash_fields:
             raise ValueError(f"output_hashes.{spec_id} has unexpected fields.")
         output_hashes[spec_id] = StataOutputHashes(
             stata_params_sha256=_require_sha256(
@@ -361,6 +401,11 @@ def load_comparator_provenance(
                 f"output_hashes.{spec_id}.stata_diagnostics_sha256",
             ),
         )
+        if "stata_sample" in config:
+            output_hashes[spec_id]["stata_sample_sha256"] = _require_sha256(
+                hashes.get("stata_sample_sha256"),
+                f"output_hashes.{spec_id}.stata_sample_sha256",
+            )
 
     stata_version = _require_positive_number(raw.get("stata_version"), "provenance.stata_version")
     xtabond2_e_version = _require_nonempty_string(
