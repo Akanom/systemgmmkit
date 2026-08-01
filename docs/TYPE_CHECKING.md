@@ -15,8 +15,9 @@ python -m mypy
 
 The command and its file list live in `[tool.mypy]` in `pyproject.toml`. CI runs
 the same command on Python 3.12. The `typing` extra installs maintained pandas
-and SciPy stubs; the configuration does not use `ignore_missing_imports` or
-disable error codes.
+and SciPy stubs plus the typed optional `linearmodels` backend imported by the
+fixed-effects target; the configuration does not use `ignore_missing_imports`
+or disable error codes.
 
 ## Stage-1 scope
 

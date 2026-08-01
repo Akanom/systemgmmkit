@@ -74,6 +74,7 @@ typing = [
   "mypy>=1.20,<3",
   "pandas-stubs>=2.0,<3",
   "scipy-stubs>=1.9,<2",
+  "linearmodels>=5,<8",
 ]
 all = [
   "pydynpd>=0.2.2,<1",

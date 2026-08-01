@@ -23,7 +23,8 @@ EXPECTED_STAGE1_FILES = [
 
 
 def test_mypy_stage1_scope_is_explicit_and_fail_closed() -> None:
-    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["mypy"]
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    config = pyproject["tool"]["mypy"]
 
     assert config["files"] == EXPECTED_STAGE1_FILES
     assert config["follow_imports"] == "silent"
@@ -33,3 +34,6 @@ def test_mypy_stage1_scope_is_explicit_and_fail_closed() -> None:
     assert config.get("ignore_missing_imports") is not True
     assert "disable_error_code" not in config
     assert all((ROOT / relative_path).is_file() for relative_path in config["files"])
+
+    typing_dependencies = pyproject["project"]["optional-dependencies"]["typing"]
+    assert any(dependency.startswith("linearmodels") for dependency in typing_dependencies)
