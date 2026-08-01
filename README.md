@@ -68,6 +68,27 @@ For compact notebook display of linear combinations and Wald tests, use
 redundant test-statistic fields, and displays very small p-values as bounds such
 as `<0.0001` instead of rounding them to zero.
 
+## Import surface
+
+The package root exposes the dependency-free estimator, workflow, diagnostics,
+reporting, and post-estimation API. This includes the easy-GMM interfaces:
+
+```python
+from systemgmmkit import DynamicGMMWorkflowResult, difference_gmm, system_gmm
+```
+
+Plot themes, plotting functions, SGM-Viz dashboards, and result-plot helpers
+belong to the optional `systemgmmkit.postestimation` namespace:
+
+```python
+from systemgmmkit.postestimation import coefficient_plot, health_dashboard
+```
+
+Existing explicit imports of plotting names from `systemgmmkit` remain
+supported through lazy compatibility aliases. Wildcard imports intentionally
+include only the dependency-free root API and do not import optional plotting
+names.
+
 ## Controlled performance mode
 
 Native dynamic-panel GMM and native panel IV retain their validated preparation

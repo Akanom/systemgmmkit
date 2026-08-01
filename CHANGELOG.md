@@ -21,6 +21,19 @@ The project follows a practical semantic-versioning style:
 
 ### Changed
 
+* Tightened the root wildcard-import contract from 121 names to 77
+  dependency-free estimator, workflow, diagnostics, reporting, and
+  post-estimation names. Optional plot themes/functions, SGM-Viz dashboards,
+  and result-plot integration helpers now remain on their canonical
+  `systemgmmkit.postestimation` namespace; existing explicit imports of those
+  names from `systemgmmkit` continue to resolve lazily for compatibility.
+* Added the documented easy-GMM `DynamicGMMWorkflowResult`, `difference_gmm`,
+  and `system_gmm` interfaces to the root wildcard contract, removed the
+  accidental `contextlib` root attribute, and eliminated redundant guarded
+  root imports without changing estimator execution.
+* Removed obsolete same-named module files that were permanently shadowed by
+  the `diagnostics`, `postestimation`, and `reporting` package directories.
+  Their normal import paths continue to resolve to the maintained packages.
 * Added compact, display-only inference-table formatting for post-estimation
   results and applied it to the public Kaggle quickstart. Raw inferential values
   and schemas remain unchanged.
