@@ -14,6 +14,10 @@ The project follows a practical semantic-versioning style:
 
 ### Added
 
+* Added an enforceable progressive mypy gate for nine core specification,
+  static-estimator, result, validation, and table modules, with typed pandas and
+  SciPy interfaces, the typed optional `linearmodels` backend required by the
+  fixed-effects target, a dedicated CI job, and an explicit expansion roadmap.
 * Added an optional Universal Output Hub adapter for pooled OLS, fixed effects,
   random effects, panel IV/2SLS, and native or pydynpd dynamic-panel GMM
   results, including estimator metadata and GMM diagnostic tables. The adapter
