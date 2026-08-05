@@ -12,6 +12,10 @@ The project follows a practical semantic-versioning style:
 
 ## Unreleased
 
+---
+
+## 0.5.14 - 2026-08-06
+
 ### Added
 
 * Added an enforceable progressive mypy gate for nine core specification,
@@ -27,6 +31,9 @@ The project follows a practical semantic-versioning style:
   the authoritative six-spec certificate after passing complete-parameter,
   Windmeijer-SE, exact count, exact estimation-sample-key, Hansen/Sargan, and
   signed-AR gates.
+* Added release-job CycloneDX SBOM generation and separate isolated install,
+  dependency-consistency, and public-API smoke tests for the exact wheel and sdist
+  before either artifact can reach the protected PyPI publishing job.
 
 ### Changed
 
@@ -53,9 +60,22 @@ The project follows a practical semantic-versioning style:
   fixed-effects design; estimator and covariance algebra remain shared.
 * Replaced the deprecated pandas `DataFrameGroupBy.apply` AR-diagnostic reduction
   with an equivalent vectorized product-and-sum implementation.
+* Updated the PyPI publishing action to its verified v1.14.2 immutable commit
+  while preserving the protected environment, OIDC permissions, provenance
+  attestation, and single-build artifact path.
+* Prepared the tracked Kaggle quickstart to install the exact
+  `systemgmmkit==0.5.14` PyPI distribution with `--no-deps` instead of an
+  unreleased Git commit, pinned its Output Hub companion to 0.2.4, and aligned
+  its metadata with the configured kernel ID.
+* Sanitized installed-distribution smoke output and notebook diagnostics so
+  recorded evidence cannot disclose a maintainer's local installation path;
+  added stable notebook cell IDs and ignored its local fallback output directory.
 
 ### Fixed
 
+* Replaced the vulnerable `cryptography` 49.0.0 release-tooling dependency with
+  the explicit `cryptography>=50,<51` floor and hash-pinned 50.0.0 artifact set,
+  while preserving the Windows and Linux release requirements.
 * Made native System-GMM diagnostics consume explicit per-row equation metadata
   instead of inferring differenced rows from balanced block sizes. Arellano-Bond
   lag pairs now require an exact gap on the panel-time grid, including integral

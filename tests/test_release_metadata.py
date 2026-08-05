@@ -22,11 +22,14 @@ def test_release_version_metadata_is_consistent() -> None:
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
     citation_match = re.search(r'^version: "([^"]+)"$', citation, flags=re.MULTILINE)
+    citation_date_match = re.search(r'^date-released: "([^"]+)"$', citation, flags=re.MULTILINE)
 
     assert citation_match is not None
+    assert citation_date_match is not None
     assert systemgmmkit.__version__ == project_version == citation_match.group(1)
     assert f"# systemgmmkit {project_version} Release Notes" in release_notes
-    assert f"## {project_version} - " in changelog
+    assert f"## {project_version} - {citation_date_match.group(1)}" in changelog
+    assert f"Version {project_version}" in citation
 
 
 def test_outputhub_dependency_preserves_python_39_core_support() -> None:

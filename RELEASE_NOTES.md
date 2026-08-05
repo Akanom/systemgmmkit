@@ -1,3 +1,83 @@
+# systemgmmkit 0.5.14 Release Notes
+
+## Certified System GMM evidence and safer panel handling
+
+Version `0.5.14` promotes one machine-generated source of truth for native
+System GMM certification. The registry and unified certificate cover six
+maintained, aligned, collapsed two-step specifications against Stata 17 and
+`xtabond2` 3.7.2 (`e(version)=03.07.00`): baseline controls, no controls,
+three-way controls, decomposition controls, an unbalanced panel, and a
+variable-specific missing-data design.
+
+The authoritative gate reruns the current native engine and verifies the
+complete expected parameter set, Windmeijer-corrected standard errors, exact
+observations/groups/instruments/overidentification degrees of freedom,
+Hansen/Sargan statistics and p-values, and signed AR(1)/AR(2) statistics and
+p-values. The unbalanced-panel and variable-missing fixtures additionally pass
+exact estimation-sample-key gates. Canonical SHA-256 digests bind the generated
+certificate to the registry, comparator, code, fixtures, do-files, and exact
+native/Stata exports. The historical local Stata log is excluded because it
+contains machine-specific paths; a path-free attestation preserves its hash and
+records that limitation.
+
+`PASS_XTABOND2_PARITY` means numerical agreement on these fixtures. It does not
+establish instrument validity or endorse a specification. Stata rejects both
+Hansen and Sargan at 5% for the no-controls (`0.02356` / `0.00568`),
+three-way-controls (`0.02144` / `0.0000369`), decomposition (`0.00640` /
+`0.0000128`), and variable-missing (`0.01151` / `0.0007838`) fixtures. The
+baseline (`0.15998` / `0.08792`) and unbalanced-panel (`0.23240` / `0.29722`)
+fixtures do not reject. The raw p-values and reject-at-0.05 flags remain visible
+in the certificate. `system_gmm_three_way_no_controls` remains outside the
+certified set because no complete Stata comparison artifact exists for it.
+
+Native System GMM now preserves each variable's missing-value history, uses
+explicit equation metadata for diagnostic rows, and matches AR residual pairs on
+the exact panel-time grid. Integral numeric time labels follow Stata's default
+unit-period delta, including periods absent from every entity. Dense grids fail
+with recoding guidance before exceeding 100,000 periods or five million
+entity-period rows. Non-integral numeric and datetime labels still use
+ordered-rank semantics until the public specification gains an explicit time
+delta; parity beyond the maintained fixtures is not claimed.
+
+## API, typing, coverage, and reporting
+
+The release narrows the wildcard-import surface to 77 dependency-free names
+while retaining lazy explicit-import compatibility for optional plotting APIs.
+It exposes the documented easy-GMM workflow names, removes shadowed legacy
+modules and the accidental `contextlib` root attribute, adds compact display-only
+inference tables, and provides an optional Universal Output Hub adapter on Python
+3.10 and newer without changing Python 3.9 core support.
+
+A progressive mypy gate now covers nine core specification, estimator, result,
+validation, and table modules. A dedicated Python 3.12 all-extras coverage job
+enforces statement, branch, and combined ratchets plus 100% statement and branch
+coverage for dynamic-panel backend routing. The package remains classified as
+Alpha while broader typing, methodological coverage, and API-stability work
+continues.
+
+## Release integrity
+
+The release toolchain now requires `cryptography>=50,<51` and locks 50.0.0,
+which removes the vulnerability affecting the previous release dependency. The
+PyPI publisher action is updated to v1.14.2 at an immutable commit. Publication
+continues to build once; audit dependencies into a CycloneDX SBOM; inspect the
+distributions; and install, dependency-check, and smoke-test the exact wheel and
+sdist in separate isolated environments. The downstream job attests and passes
+those unchanged artifacts through PyPI Trusted Publishing and the protected
+`pypi` environment. Smoke evidence reports versions and checks without exposing
+a local installation path. The tracked Kaggle quickstart is prepared to install
+the exact `systemgmmkit==0.5.14` and `universal-output-hub==0.2.4` PyPI
+distributions with `--no-deps` instead of an unreleased Git commit; the public
+Kaggle kernel must be republished after this version is available on PyPI.
+
+Install this release with:
+
+```bash
+python -m pip install systemgmmkit==0.5.14
+```
+
+---
+
 # systemgmmkit 0.5.13 Release Notes
 
 ## Controlled exact-parity acceleration

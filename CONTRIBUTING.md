@@ -559,31 +559,63 @@ For graphics or reporting changes, “done” additionally requires:
 
 # Release Checklist
 
-Before preparing a release:
+The release pull request must satisfy the same integrity contract enforced by
+`docs/security/release-integrity.md`. Before opening it:
 
 ```text
 [ ] Version updated in pyproject.toml.
 [ ] Version updated in systemgmmkit.__version__.
-[ ] README.md updated.
-[ ] CHANGELOG.md updated.
-[ ] Tests pass.
-[ ] Ruff passes.
-[ ] Build succeeds.
-[ ] Public API import check passes.
-[ ] Example scripts run where relevant.
-[ ] Validation claims are current and accurate.
-[ ] Release branch or tag is prepared.
+[ ] CITATION.cff version, release date, and abstract updated.
+[ ] CHANGELOG.md retains an empty Unreleased section and adds the dated release.
+[ ] RELEASE_NOTES.md describes the evidence boundary, diagnostics, and limitations.
+[ ] README.md reviewed and changed only when a current claim or workflow changed.
+[ ] Tracked public-notebook artifacts install the exact intended PyPI version, not a Git commit.
+[ ] Machine-generated parity certificates and their source registry are current.
+[ ] Tests, Ruff, progressive mypy, and enforced coverage gates pass.
+[ ] Supported-Python, minimum-dependency, dependency-audit, and build CI jobs pass.
+[ ] Wheel and sdist pass strict Twine checks and scripts/inspect_dist.py.
+[ ] Installed wheel and sdist smoke tests pass in isolated environments.
+[ ] No secret, local user path, temporary artifact, or unintended .lock file is tracked.
+[ ] The signed release commit and draft release pull request receive review.
 ```
 
-Recommended commands:
+Run the applicable local gates before pushing the release commit:
 
 ```bash
-ruff check .
-ruff format --check .
-pytest
+python -m ruff check .
+python -m ruff format --check .
+python -m mypy
+python -m coverage run -m pytest
+python -m coverage json -o coverage.json
+python scripts/check_coverage.py coverage.json
+python -m coverage report
+python scripts/verify_dependencies.py --project .
+python -m pip_audit --strict --require-hashes -r requirements/release.txt
+python -m pip_audit --strict --format cyclonedx-json --output sbom.cdx.json .
 python -m build
+python -m twine check --strict dist/*
+python scripts/inspect_dist.py dist --output artifact-inventory.json
 python -c "import systemgmmkit; print(systemgmmkit.__version__)"
+python -I scripts/release_smoke.py --expected-version X.Y.Z
 ```
+
+After the release pull request is reviewed and merged:
+
+```text
+[ ] Create and push an annotated, signed vX.Y.Z tag matching pyproject.toml.
+[ ] Publish the GitHub Release to trigger .github/workflows/publish.yml.
+[ ] Confirm the unprivileged build job produced one inspected wheel/sdist set,
+    its inventory and SBOM, and separate passing smoke results for both artifacts.
+[ ] Approve the protected pypi environment only after the unprivileged build passes.
+[ ] Confirm the publish job attests the downloaded wheel and sdist.
+[ ] Confirm PyPI Trusted Publishing uploads those unchanged artifacts.
+[ ] Install X.Y.Z from public PyPI in a fresh environment and run release_smoke.py.
+[ ] Record the source commit, workflow run, artifact hashes, PyPI URL, and smoke result.
+```
+
+Never upload local replacement artifacts after the release workflow has built the
+reviewed distributions. If any check fails, correct it through a reviewed commit
+and rerun the complete release path.
 
 ---
 
