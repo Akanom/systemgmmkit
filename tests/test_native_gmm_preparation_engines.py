@@ -98,6 +98,34 @@ def test_accelerated_preparation_is_exact_for_gaps_and_short_entities(
     _assert_prepared_equal(_prepare(spec, data, "reference"), _prepare(spec, data, "accelerated"))
 
 
+def test_fod_lagged_regressor_excludes_inserted_rows_from_future_mean() -> None:
+    group = pd.DataFrame(
+        {
+            "y": [10.0, 20.0, np.nan, 40.0, 50.0],
+            "_native_observed_row": [True, True, False, True, True],
+        },
+        index=pd.Index(range(5), name="time"),
+    )
+    spec = _spec(transformation="fod", system=False)
+
+    reference = native_gmm._transformed_regressor_at(group, "L1.y", 1, "fod")
+    accelerated = native_gmm._prepared_transformed_regressor_at(
+        group,
+        spec,
+        "L1.y",
+        1,
+        source_cache={},
+        transformed_source_cache={},
+    )
+
+    # L1.y at inserted time 2 must stay missing, so the only usable future
+    # source is L1.y at time 4 (= y at time 3). Including the fabricated value
+    # y[1] at time 2 would change both the future mean and the FOD scale.
+    expected = np.sqrt(1.0 / 2.0) * (10.0 - 40.0)
+    assert reference == pytest.approx(expected)
+    assert accelerated == pytest.approx(expected)
+
+
 def test_accelerated_preparation_is_exact_for_datetime_time_index() -> None:
     data = _panel()
     data["time"] = pd.Timestamp("2015-01-01") + pd.to_timedelta(data["time"] * 365, unit="D")

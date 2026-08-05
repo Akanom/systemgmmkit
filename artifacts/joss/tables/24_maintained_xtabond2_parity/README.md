@@ -16,7 +16,7 @@ This directory is a frozen single-spec snapshot copied from an earlier commit. I
 historical exclusion of the constant is not the current certification contract.
 It is retained for submission provenance only and is not an independent authority.
 
-The current authority is the four-spec registry and unified certificate under
+The current authority is the six-spec registry and unified certificate under
 `artifacts/parity/xtabond2/`. That certificate requires the complete expected
 parameter set, including the constant where specified, and reports diagnostic
 agreement separately from instrument validity.

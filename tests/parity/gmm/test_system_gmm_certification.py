@@ -101,16 +101,20 @@ def test_system_gmm_unbalanced_collapsed_lag_2_3():
     # sample trimming, or instrument construction cannot pass as a smoke test.
     assert res.nobs == 361
     assert res.n_instruments == 13
-    assert res.params["L1.y"] == pytest.approx(0.8198616515, abs=1e-8)
-    assert res.params["x"] == pytest.approx(-0.3684280172, abs=1e-8)
-    assert res.params["w"] == pytest.approx(-0.2437573310, abs=1e-8)
-    assert res.ar2_p == pytest.approx(0.6216721725, abs=1e-9)
+    assert res.params["L1.y"] == pytest.approx(0.8323129572, abs=1e-8)
+    assert res.params["x"] == pytest.approx(-0.5234111149, abs=1e-8)
+    assert res.params["w"] == pytest.approx(-0.2565999659, abs=1e-8)
+    # Physical gaps must remain missing in lagged GMM sources, and exact-time
+    # AR pairing must not treat adjacent residual rows as consecutive periods.
+    assert res.ar2_p == pytest.approx(0.5820916844, abs=1e-9)
+    assert res.sargan_stat == pytest.approx(res.sargan_j_stat, abs=1e-12)
 
 
 def test_system_gmm_missing_periods_collapsed_lag_2_3():
     df = make_dynamic_panel(missing_periods=True)
     res = _run_system_gmm(df, collapse=True, min_lag=2, max_lag=3)
     _assert_basic_system_gmm_result(res)
+    assert res.sargan_stat == pytest.approx(res.sargan_j_stat, abs=1e-12)
 
 
 def test_system_gmm_lag_window_variant_2_2():

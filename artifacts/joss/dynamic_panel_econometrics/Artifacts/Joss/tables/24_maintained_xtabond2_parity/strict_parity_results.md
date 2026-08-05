@@ -2,7 +2,7 @@
 
 > Frozen legacy snapshot: this table is retained for provenance and is not the
 > current certification authority. Its constant-exclusion wording is superseded
-> by the complete-parameter-set four-spec certificate under
+> by the complete-parameter-set six-spec certificate under
 > `artifacts/parity/xtabond2/`.
 
 Package: `systemgmmkit`

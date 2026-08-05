@@ -2,7 +2,7 @@
 
 > Frozen legacy snapshot: this single-spec table is retained for provenance and
 > is not the current certification authority. Its native-only-constant treatment
-> is superseded by the complete-parameter-set four-spec certificate under
+> is superseded by the complete-parameter-set six-spec certificate under
 > `artifacts/parity/xtabond2/`.
 
 ## Status

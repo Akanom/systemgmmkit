@@ -1,2 +1,2 @@
-spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen,stata_hansen_p,stata_hansen_df,stata_sargan,stata_sargan_p,stata_sargan_df,stata_ar1_z,stata_ar1_p,stata_ar2_z,stata_ar2_p,stata_reported_date,stata_reported_time,stata_version
-system_gmm_no_controls,1248,96,7,11.28298008325684,.0235612067916252,4,14.57062169564128,.0056798714514325,4,-1.489020901517859,.1364818648487263,-.0998827904406975,.9204373792573753,30 Jul 2024,02:09:37,17
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen,stata_hansen_p,stata_hansen_df,stata_sargan,stata_sargan_p,stata_sargan_df,stata_ar1_z,stata_ar1_p,stata_ar2_z,stata_ar2_p,stata_reported_date,stata_reported_time,stata_version,xtabond2_e_version,xtabond2_ado_header
+system_gmm_no_controls,1248,96,7,11.28298008325684,.0235612067916252,4,14.57062169564128,.0056798714514325,4,-1.489020901517859,.1364818648487263,-.0998827904406975,.9204373792573753,31 Jul 2024,08:06:20,17,03.07.00,*! xtabond2 3.7.2 9 February 2025

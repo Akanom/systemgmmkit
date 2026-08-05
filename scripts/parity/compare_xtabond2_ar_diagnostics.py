@@ -32,7 +32,7 @@ else:
 
 BASE = REPOSITORY_ROOT / "artifacts" / "parity" / "xtabond2"
 COMPARATOR_PATH = Path("scripts/parity/compare_xtabond2_ar_diagnostics.py")
-COMPARATOR_ID = "systemgmmkit.xtabond2-parity-comparator-v2"
+COMPARATOR_ID = "systemgmmkit.xtabond2-parity-comparator-v3"
 REGISTRY = load_certification_registry(REGISTRY_PATH)
 REGISTRY_SHA256 = certification_registry_sha256(REGISTRY_PATH)
 PROVENANCE = load_comparator_provenance(REGISTRY)
@@ -74,6 +74,22 @@ def _read_params(path: Path, *, stata: bool) -> pd.DataFrame:
     result["coef"] = pd.to_numeric(result["coef"], errors="coerce")
     result["std_err"] = pd.to_numeric(result["std_err"], errors="coerce")
     return result
+
+
+def _read_sample(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        raise FileNotFoundError(path)
+    frame = pd.read_csv(path)
+    required = ["id", "t"]
+    missing = set(required) - set(frame.columns)
+    if missing:
+        raise ValueError(f"Missing required sample columns in {path}: {sorted(missing)}")
+    sample = frame[required].copy()
+    if sample.isna().any().any():
+        raise ValueError(f"Sample keys must not be missing in {path}.")
+    if sample.duplicated(required).any():
+        raise ValueError(f"Sample keys must be unique in {path}.")
+    return sample.sort_values(required).reset_index(drop=True)
 
 
 def _number(row: pd.Series, name: str) -> float:
@@ -189,9 +205,32 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
     provenance_hashes = PROVENANCE.output_hashes[spec]
     stata_params_sha256 = _sha256(repository_path(paths["stata_params"]))
     stata_diagnostics_sha256 = _sha256(repository_path(paths["stata_diagnostics"]))
+    sample_gate_applies = "native_sample" in paths and "stata_sample" in paths
+    native_sample_path = repository_path(paths["native_sample"]) if sample_gate_applies else None
+    stata_sample_path = repository_path(paths["stata_sample"]) if sample_gate_applies else None
+    if sample_gate_applies:
+        assert native_sample_path is not None and stata_sample_path is not None
+        native_sample = _read_sample(native_sample_path)
+        stata_sample = _read_sample(stata_sample_path)
+        same_sample_keys = native_sample.equals(stata_sample)
+        native_sample_count = len(native_sample)
+        stata_sample_count = len(stata_sample)
+        native_sample_sha256 = _sha256(native_sample_path)
+        stata_sample_sha256 = _sha256(stata_sample_path)
+        sample_hash_matches_provenance = (
+            stata_sample_sha256 == provenance_hashes["stata_sample_sha256"]
+        )
+    else:
+        same_sample_keys = True
+        native_sample_count = 0
+        stata_sample_count = 0
+        native_sample_sha256 = None
+        stata_sample_sha256 = None
+        sample_hash_matches_provenance = True
     output_hashes_match_provenance = (
         stata_params_sha256 == provenance_hashes["stata_params_sha256"]
         and stata_diagnostics_sha256 == provenance_hashes["stata_diagnostics_sha256"]
+        and sample_hash_matches_provenance
     )
 
     row: dict[str, object] = {
@@ -203,6 +242,9 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
         "stata_params_path": paths["stata_params"].as_posix(),
         "native_diagnostics_path": paths["native_diagnostics"].as_posix(),
         "stata_diagnostics_path": paths["stata_diagnostics"].as_posix(),
+        "sample_gate_applies": sample_gate_applies,
+        "native_sample_path": paths["native_sample"].as_posix() if sample_gate_applies else None,
+        "stata_sample_path": paths["stata_sample"].as_posix() if sample_gate_applies else None,
         "certification_registry_path": REGISTRY_PATH.relative_to(REPOSITORY_ROOT).as_posix(),
         "certification_registry_sha256": REGISTRY_SHA256,
         "comparator_provenance_path": REGISTRY.comparator_provenance.as_posix(),
@@ -216,10 +258,19 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
         "do_file_sha256": _sha256(repository_path(paths["do_file"])),
         "builder_sha256": _sha256(repository_path(paths["builder"])),
         "runner_sha256": _sha256(repository_path(paths["runner"])),
+        "support_files_sha256": (
+            ";".join(
+                f"{path.as_posix()}:{_sha256(repository_path(path))}"
+                for path in paths.get("support_files", ())
+            )
+            or None
+        ),
         "native_params_sha256": _sha256(repository_path(paths["native_params"])),
         "stata_params_sha256": stata_params_sha256,
         "native_diagnostics_sha256": _sha256(repository_path(paths["native_diagnostics"])),
         "stata_diagnostics_sha256": stata_diagnostics_sha256,
+        "native_sample_sha256": native_sample_sha256,
+        "stata_sample_sha256": stata_sample_sha256,
         "stata_output_hashes_match_provenance": output_hashes_match_provenance,
         "stata_export_provenance_embedded": embedded_provenance,
         "stata_export_provenance_matches_attestation": embedded_provenance_matches,
@@ -262,6 +313,9 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
         "stata_ar2_z": _number(stata, "stata_ar2_z"),
         "native_ar2_p": _probability(native, "native_ar2_p"),
         "stata_ar2_p": _probability(stata, "stata_ar2_p"),
+        "native_sample_count": native_sample_count,
+        "stata_sample_count": stata_sample_count,
+        "same_sample_keys": same_sample_keys,
         **_parameter_result(paths),
     }
 
@@ -311,6 +365,11 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
             "same_overid_df",
         )
     )
+    sample_pass = not sample_gate_applies or (
+        same_sample_keys
+        and native_sample_count == stata_sample_count == paths["expected_nobs"]
+        and sample_hash_matches_provenance
+    )
     overid_pass = (
         float(row["abs_hansen_diff"]) <= OVERID_STAT_TOL
         and float(row["abs_hansen_p_diff"]) <= OVERID_P_TOL
@@ -332,9 +391,16 @@ def _compare_spec(spec: str, paths: SpecConfig) -> dict[str, object]:
             "stata_output_hashes_match_provenance",
         )
     ) and (not embedded_provenance or embedded_provenance_matches is True)
-    diagnostic_pass = comparator_pass and count_pass and overid_pass and ar_pass
+    diagnostic_pass = comparator_pass and count_pass and sample_pass and overid_pass and ar_pass
     parameter_pass = row["parameter_status"] == "PASS_PARAMETER_PARITY"
     row["count_status"] = "PASS" if count_pass else "FAIL"
+    row["sample_status"] = (
+        "PASS_EXACT_SAMPLE_KEYS"
+        if sample_gate_applies and sample_pass
+        else "FAIL_SAMPLE_KEYS"
+        if sample_gate_applies
+        else "NOT_APPLICABLE"
+    )
     row["comparator_status"] = "PASS" if comparator_pass else "FAIL"
     row["overid_status"] = "PASS" if overid_pass else "FAIL"
     row["ar_status"] = "PASS" if ar_pass else "FAIL"
@@ -373,6 +439,9 @@ def main() -> None:
         "stata_export_provenance_embedded",
         "comparator_status",
         "same_nobs",
+        "sample_gate_applies",
+        "same_sample_keys",
+        "sample_status",
         "same_n_groups",
         "same_instrument_count",
         "same_overid_df",
@@ -399,11 +468,12 @@ def main() -> None:
         "The maintained specification list and numerical gates come from",
         f"`{REGISTRY_PATH.relative_to(REPOSITORY_ROOT).as_posix()}`.",
         "Comparator identity is carried by the path-free, machine-generated provenance",
-        f"attestation `{REGISTRY.comparator_provenance.as_posix()}`. The historical Stata",
-        "exports predate embedded comparator columns, so the attestation binds their current",
-        "hashes to allowlisted fields from the completed local run log. The source log is not",
-        "committed because it contains machine-specific paths; its hash and this limitation are",
-        "preserved in the attestation.",
+        f"attestation `{REGISTRY.comparator_provenance.as_posix()}`. Every tracked Stata",
+        "diagnostic export embeds the comparator metadata. Where the completed local run log",
+        "contains an e(version) line, the attestation cross-checks it against the corresponding",
+        "export; all exact exports are hash-bound. The source log is not committed because it",
+        "contains machine-specific paths;",
+        "its hash and this limitation are preserved in the attestation.",
         "",
         frame[display_columns].to_markdown(index=False),
         "",
@@ -416,6 +486,7 @@ def main() -> None:
         "- Windmeijer standard-error relative differences: specification-specific",
         "  tolerances recorded in `se_rel_tol`",
         "- observations, groups, instruments, and overidentification degrees of freedom: exact",
+        "- exact `(id, t)` estimation-sample keys for specifications that declare sample artifacts",
         f"- Hansen/Sargan statistic and p-value absolute differences: `<= {OVERID_STAT_TOL:g}`",
         f"- signed AR(1)/AR(2) z-statistic absolute differences: `<= {AR_Z_TOL:g}`",
         f"- AR(1)/AR(2) p-value absolute differences: `<= {AR_P_TOL:g}`",
