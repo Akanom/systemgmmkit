@@ -1,9 +1,15 @@
 import json
+import re
 from pathlib import Path
 
-NOTEBOOK = (
-    Path(__file__).resolve().parents[1] / "notebooks" / "kaggle" / "systemgmmkit_quickstart.ipynb"
-)
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on Python 3.9/3.10
+    import tomli as tomllib
+
+ROOT = Path(__file__).resolve().parents[1]
+NOTEBOOK = ROOT / "notebooks" / "kaggle" / "systemgmmkit_quickstart.ipynb"
+KERNEL_METADATA = ROOT / "notebooks" / "kaggle" / "kernel-metadata.json"
 
 
 def _code_cell_source(index: int) -> str:
@@ -13,13 +19,19 @@ def _code_cell_source(index: int) -> str:
     return "".join(cell["source"])
 
 
-def test_install_cell_evicts_stale_systemgmmkit_modules():
+def _project_version() -> str:
+    with (ROOT / "pyproject.toml").open("rb") as handle:
+        return str(tomllib.load(handle)["project"]["version"])
+
+
+def test_install_cell_uses_exact_pypi_release_and_evicts_stale_modules():
     source = _code_cell_source(2)
+    project_version = _project_version()
 
     assert "--no-deps" in source
-    assert "a5d56f57773cda8e3986de2494f5ff5ef23a120f" in source
-    assert '"universal-output-hub>=0.2.2,<1"' in source
-    assert "6638a2f87c68cde44ace2d2661a9361afffb0595" not in source
+    assert f'"systemgmmkit=={project_version}"' in source
+    assert "git+" not in source
+    assert '"universal-output-hub==0.2.4"' in source
     assert "tuple(sys.modules)" in source
     assert 'name == "systemgmmkit"' in source
     assert 'name.startswith("systemgmmkit.")' in source
@@ -27,9 +39,40 @@ def test_install_cell_evicts_stale_systemgmmkit_modules():
     assert "importlib.invalidate_caches()" in source
 
 
+def test_kernel_metadata_matches_documented_public_notebook():
+    metadata = json.loads(KERNEL_METADATA.read_text(encoding="utf-8"))
+    cloud_docs = (ROOT / "docs" / "CLOUD_NOTEBOOKS.md").read_text(encoding="utf-8")
+
+    assert metadata["id"] == "akanom/systemgmmkit"
+    assert metadata["id"] in cloud_docs
+
+
+def test_notebook_has_no_saved_outputs_or_machine_paths():
+    notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+    cell_ids = [cell.get("id") for cell in notebook["cells"]]
+
+    assert notebook["nbformat"] == 4
+    assert notebook["nbformat_minor"] >= 5
+    assert all(
+        isinstance(cell_id, str) and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", cell_id)
+        for cell_id in cell_ids
+    )
+    assert len(cell_ids) == len(set(cell_ids))
+    for cell in notebook["cells"]:
+        if cell["cell_type"] == "code":
+            assert cell["execution_count"] is None
+            assert cell["outputs"] == []
+    source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
+    assert "sgk.__file__" not in source
+    assert 'print("native_gmm path:"' not in source
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "/systemgmmkit_notebook_outputs/" in gitignore
+
+
 def test_verification_cell_detects_multiline_groupby_apply():
     source = _code_cell_source(3)
 
+    assert f'assert sgk.__version__ == "{_project_version()}"' in source
     assert 'lag_start = native_source.index("def _lag_test")' in source
     assert 'assert ".apply(" not in lag_test_source' in source
     assert 'assert "_resid_lag_product" in lag_test_source' in source

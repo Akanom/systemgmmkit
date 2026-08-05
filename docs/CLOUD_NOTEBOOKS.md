@@ -55,7 +55,7 @@ kaggle kernels push -p .
 
 After Kaggle finishes processing the upload, the public notebook should be
 available under the kernel id recorded in `kernel-metadata.json`:
-`akanom/systemgmmkit-quickstart`.
+`akanom/systemgmmkit`.
 
 For Google Colab, open the tracked notebook from GitHub after the branch is
 pushed, or upload the same `.ipynb` file directly into Colab.

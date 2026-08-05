@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from importlib import metadata
 from typing import Any
 
 import numpy as np
@@ -73,6 +74,11 @@ def run_smoke(expected_version: str) -> dict[str, Any]:
     if systemgmmkit.__version__ != expected_version:
         raise RuntimeError(
             f"Expected systemgmmkit {expected_version}, imported {systemgmmkit.__version__}."
+        )
+    distribution_version = metadata.version("systemgmmkit")
+    if distribution_version != expected_version:
+        raise RuntimeError(
+            f"Expected installed distribution {expected_version}, found {distribution_version}."
         )
 
     data = _panel()
@@ -147,7 +153,7 @@ def run_smoke(expected_version: str) -> dict[str, Any]:
         raise RuntimeError(f"Installed-distribution smoke checks failed: {checks}")
     return {
         "version": systemgmmkit.__version__,
-        "module": systemgmmkit.__file__,
+        "distribution_version": distribution_version,
         "checks": checks,
     }
 

@@ -19,7 +19,7 @@ Every release must:
 The installed-distribution smoke command is:
 
 ```powershell
-python scripts/release_smoke.py --expected-version <version>
+python -I scripts/release_smoke.py --expected-version <version>
 ```
 
 The final post-publication verification is an operator step until a separate
