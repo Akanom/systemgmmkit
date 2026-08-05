@@ -10,6 +10,9 @@ from scipy import stats
 from .fixed_effects import _normal_pvalues_from_t, _require_columns
 from .spec import DynamicPanelSpec
 
+_NATIVE_MAX_TIME_GRID_POINTS = 100_000
+_NATIVE_MAX_PANEL_GRID_ROWS = 5_000_000
+
 
 @dataclass(frozen=True)
 class NativeGMMResult:
@@ -466,6 +469,54 @@ def _normalize_preparation_engine(value: str) -> str:
     return normalized
 
 
+def _native_integral_time_values(time_values: list[object]) -> list[int] | None:
+    """Return exact integer labels when a panel-time index is unit-compatible."""
+    index = pd.Index(time_values)
+    if index.empty:
+        return []
+    if pd.api.types.is_bool_dtype(index.dtype):
+        return None
+    if pd.api.types.is_integer_dtype(index.dtype):
+        return [int(value) for value in index]
+    if pd.api.types.is_float_dtype(index.dtype):
+        numeric = index.to_numpy(dtype=float)
+        if bool(np.isfinite(numeric).all()) and bool(np.equal(numeric, np.floor(numeric)).all()):
+            return [int(value) for value in numeric]
+    return None
+
+
+def _native_panel_time_grid(
+    observed_time_values: list[object],
+    *,
+    n_entities: int,
+) -> list[object]:
+    """Build the unit-spaced grid implied by integral numeric time labels.
+
+    Stata's default numeric ``xtset`` delta is one.  Expanding that grid ensures
+    a period absent from every entity remains a real gap during lag construction.
+    Non-integral and datetime labels retain ordered-rank semantics because the
+    current API has no explicit delta contract.
+    """
+    observed = list(pd.Index(observed_time_values).dropna().drop_duplicates().sort_values())
+    integral = _native_integral_time_values(observed)
+    if integral is None or len(integral) < 2:
+        return observed
+
+    first = min(integral)
+    last = max(integral)
+    grid_points = last - first + 1
+    panel_grid_rows = grid_points * max(int(n_entities), 1)
+    if grid_points > _NATIVE_MAX_TIME_GRID_POINTS or panel_grid_rows > _NATIVE_MAX_PANEL_GRID_ROWS:
+        raise ValueError(
+            "Integral panel-time labels imply an unsafe unit-spaced grid "
+            f"({grid_points} periods; {panel_grid_rows} entity-period rows). "
+            "Recode the time variable to a contiguous period index before estimation."
+        )
+    if grid_points == len(integral):
+        return observed
+    return list(range(first, last + 1))
+
+
 def _build_native_matrices(
     spec: DynamicPanelSpec,
     data: pd.DataFrame,
@@ -493,19 +544,24 @@ def _build_native_matrices(
         .sort_values([entity, time])
     )
 
-    # Use the full observed time grid before lag construction.
+    # Use the full unit-spaced time grid before lag construction.
     # This is essential for unbalanced panels: adjacent observed rows are not
     # necessarily valid one-period lags when intermediate time periods are missing.
     # pydynpd treats the declared panel time variable as the lag structure, so the
     # native engine must make missing time periods explicit before building lags.
-    time_values = list(pd.Index(work[time].dropna().sort_values().unique()))
+    observed_time_values = list(pd.Index(work[time].dropna().sort_values().unique()))
+    time_values = _native_panel_time_grid(
+        observed_time_values,
+        n_entities=int(work[entity].nunique()),
+    )
 
     # Native time-dummy handling.
     # pydynpd's timedumm option adds one dummy for each usable post-lag period.
     # With 14 periods and lagged dynamic-panel construction, this produces +12
-    # instruments in the tested baseline. We therefore omit the first two time
-    # positions and create dummy columns for time_values[2:].
-    time_dummy_values = time_values[2:] if getattr(spec, "time_dummies", False) else []
+    # instruments in the tested baseline. We therefore omit the first two observed
+    # time positions. Globally absent periods belong to the lag grid, not the
+    # structural time-dummy design.
+    time_dummy_values = observed_time_values[2:] if getattr(spec, "time_dummies", False) else []
     time_dummy_names = [f"{time}_{value}" for value in time_dummy_values]
     time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names))
 
@@ -1323,28 +1379,38 @@ def _native_exact_time_lag_pairs(
     *,
     lag: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return current/previous row pairs separated by an exact panel-time lag."""
+    """Return current/previous row pairs separated by an exact panel-time lag.
+
+    Integral numeric labels use Stata's default unit delta directly, including
+    periods absent from the global sample. Other labels use their declared sorted
+    order because the public specification does not yet expose a panel-time delta.
+    """
     if int(lag) <= 0:
         raise ValueError("lag must be a positive integer.")
 
-    time_rank = {value: position for position, value in enumerate(time_values)}
-    rows_by_rank: dict[int, int] = {}
+    integral_time_values = _native_integral_time_values(time_values)
+    time_key = (
+        dict(zip(time_values, integral_time_values, strict=True))
+        if integral_time_values is not None
+        else {value: position for position, value in enumerate(time_values)}
+    )
+    rows_by_time_key: dict[int, int] = {}
     for raw_position in np.asarray(row_indices, dtype=int).reshape(-1):
         position = int(raw_position)
         if position < 0 or position >= len(row_meta):
             raise ValueError(f"row index {position} is outside row_meta.")
         row_time = row_meta[position].get("time")
-        if row_time not in time_rank:
+        if row_time not in time_key:
             raise ValueError(f"row_meta time {row_time!r} is absent from the panel-time grid.")
-        rank = int(time_rank[row_time])
-        if rank in rows_by_rank:
+        key = int(time_key[row_time])
+        if key in rows_by_time_key:
             raise ValueError(f"duplicate panel-time row at {row_time!r}.")
-        rows_by_rank[rank] = position
+        rows_by_time_key[key] = position
 
     pairs = [
-        (position, rows_by_rank[rank - int(lag)])
-        for rank, position in sorted(rows_by_rank.items())
-        if rank - int(lag) in rows_by_rank
+        (position, rows_by_time_key[key - int(lag)])
+        for key, position in sorted(rows_by_time_key.items())
+        if key - int(lag) in rows_by_time_key
     ]
     current = np.asarray([pair[0] for pair in pairs], dtype=int)
     previous = np.asarray([pair[1] for pair in pairs], dtype=int)
@@ -2092,7 +2158,7 @@ def run_native_dynamic_panel_gmm(
     exactly equivalent per-fit cache for repeated source and transformed Series;
     estimator algebra, tolerances, and diagnostics are shared unchanged.
 
-    Native System GMM has benchmark-specific ``xtabond2`` certification for four
+    Native System GMM has benchmark-specific ``xtabond2`` certification for six
     maintained, aligned collapsed two-step specifications. The certified surface includes
     structural coefficients, Windmeijer-corrected standard errors, sample and
     instrument counts, Hansen/Sargan diagnostics, and signed AR(1)/AR(2)

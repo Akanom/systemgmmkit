@@ -58,8 +58,10 @@ The project follows a practical semantic-versioning style:
 
 * Made native System-GMM diagnostics consume explicit per-row equation metadata
   instead of inferring differenced rows from balanced block sizes. Arellano-Bond
-  lag pairs now require an exact gap on the panel-time grid, and a missing value in
-  one model variable no longer erases usable lag history from other variables.
+  lag pairs now require an exact gap on the panel-time grid, including integral
+  periods absent from every entity, and a missing value in one model variable no
+  longer erases usable lag history from other variables. Unsafe dense unit grids
+  fail with recoding guidance before allocation.
 * Corrected the public `sargan_stat` alias to report the Sargan statistic paired
   with `sargan_p`; two-step `j_stat` continues to report the Hansen statistic.
 * Reconciled System-GMM certification language with the committed evidence:

@@ -1852,6 +1852,12 @@ the authoritative six-spec certificate. Both pass complete-parameter,
 Windmeijer-SE, exact count, exact estimation-sample-key, Hansen/Sargan, and signed
 AR gates. This evidence remains specific to those two controlled designs.
 
+For integral numeric panel-time labels, the native engine follows Stata's default
+unit-period delta, including a period absent from every entity. It fails with
+recode guidance before a unit-spaced grid would exceed 100,000 periods or five
+million entity-period rows. Non-integral and datetime labels retain ordered-rank
+semantics until the public specification exposes an explicit panel-time delta.
+
 The extension fixture and native-output builders are:
 
 ```text
@@ -1962,7 +1968,7 @@ degradation_index ~ L1.degradation_index + sensor_mean_z + pc2 + pc3 + op_settin
 This scaffold is not part of the current formal certificate: its comparator still
 depends on an external prepared-data location and does not yet have committed,
 portable numerical guards for coefficients, standard errors, and diagnostics. It
-must therefore not be cited as certified cross-software parity. The four controlled
+must therefore not be cited as certified cross-software parity. The six controlled
 `xtabond2` fixtures above remain the strict System GMM certification benchmark.
 
 ---

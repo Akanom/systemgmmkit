@@ -9,6 +9,7 @@ from systemgmmkit.native_gmm import (
     _build_native_matrices,
     _native_exact_time_lag_pairs,
     _native_level_equation_mask_from_row_meta,
+    _native_panel_time_grid,
 )
 
 
@@ -60,6 +61,30 @@ def test_exact_time_lag_pairs_skip_entity_gaps() -> None:
     # t=2 merely because t=3 is absent.
     np.testing.assert_array_equal(current, np.array([2]))
     np.testing.assert_array_equal(previous, np.array([1]))
+
+
+def test_exact_time_lag_pairs_respect_globally_absent_integer_period() -> None:
+    row_meta = [{"time": 1}, {"time": 3}]
+
+    current, previous = _native_exact_time_lag_pairs(
+        np.arange(2),
+        row_meta,
+        [1, 3],
+        lag=1,
+    )
+
+    assert current.size == 0
+    assert previous.size == 0
+
+
+def test_integral_time_grid_fails_before_unsafe_expansion() -> None:
+    with pytest.raises(ValueError, match="Recode the time variable"):
+        _native_panel_time_grid([1, 1_000_001], n_entities=10)
+
+
+def test_contiguous_time_grid_fails_before_unsafe_panel_reindex() -> None:
+    with pytest.raises(ValueError, match="10000000 entity-period rows"):
+        _native_panel_time_grid(list(range(1_000)), n_entities=10_000)
 
 
 def test_other_variable_missingness_does_not_erase_available_lag_source() -> None:
@@ -165,3 +190,61 @@ def test_inserted_panel_gap_does_not_fabricate_lagged_gmm_source(
     # Conversely, t=3 exists for entity 1.  Missing x at that row must not erase
     # the independently available L1.y source, which equals y at t=2.
     assert instruments[observed_row, lagged_y_column] == pytest.approx(103.0)
+
+
+@pytest.mark.parametrize("preparation_engine", ["reference", "accelerated"])
+def test_globally_absent_period_does_not_fabricate_lagged_gmm_source(
+    preparation_engine: str,
+) -> None:
+    data = pd.DataFrame(
+        [
+            {
+                "id": entity,
+                "t": t,
+                "y": 100.0 * entity + t + 1.0,
+                "x": 10.0 * entity + t + 0.5,
+                "w": t + 1.0,
+            }
+            for entity in range(2)
+            for t in range(8)
+            if t != 3
+        ]
+    )
+    spec = DynamicPanelSpec(
+        dependent="y",
+        regressors=["L1.y", "x", "w"],
+        gmm=[
+            GMMStyle(variable="L1.y", min_lag=2, max_lag=3),
+            GMMStyle(variable="x", min_lag=2, max_lag=3),
+        ],
+        iv=[IVStyle(variable="w", eq="level")],
+        time_dummies=True,
+        system=True,
+        collapse=True,
+        transformation="fd",
+        steps="twostep",
+        name="global_gap_contract",
+    )
+
+    _, _, instruments, names, _, _, instrument_names, row_meta = _build_native_matrices(
+        spec,
+        data,
+        entity="id",
+        time="t",
+        preparation_engine=preparation_engine,
+    )
+
+    row = next(
+        position
+        for position, metadata in enumerate(row_meta)
+        if metadata["entity"] == 0 and metadata["time"] == 6 and metadata["equation"] == "diff"
+    )
+    lagged_y_column = instrument_names.index("D:L1.y:L2")
+
+    # At t=6, lag two of the L1.y source targets t=4, whose own first lag is
+    # the globally absent t=3 period. Rank-based global time handling previously
+    # fabricated that source from y at t=2.
+    assert instruments[row, lagged_y_column] == pytest.approx(0.0)
+    assert "D:L1.y:L3" not in instrument_names
+    assert "t_3" not in names
+    assert "T:t_3" not in instrument_names

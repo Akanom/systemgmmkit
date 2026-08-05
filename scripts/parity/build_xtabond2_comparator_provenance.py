@@ -115,6 +115,8 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
     expected_order = list(registry.specifications)
     if order != expected_order or not set(versions).issubset(expected_order):
         raise ValueError("Certification log does not cover the registry specifications exactly.")
+    if not versions:
+        raise ValueError("Certification log contains no xtabond2 e(version) evidence.")
 
     embedded_versions: dict[str, str] = {}
     for spec_id, config in registry.specifications.items():
@@ -180,9 +182,10 @@ def build_attestation(log_path: Path, ado_path: Path) -> dict[str, object]:
         "run_log_sha256": canonical_text_sha256(log_path),
         "source_log_committed": False,
         "source_binding_limitation": (
-            "The local source log records the bounded completed run; comparator identity is "
-            "cross-checked against embedded metadata in each tracked diagnostic export, and "
-            "the tracked output hashes were observed when this sanitized attestation was generated."
+            "The local source log records the bounded completed run. Its available e(version) "
+            "lines are cross-checked against the corresponding diagnostic exports; every tracked "
+            "export independently embeds the expected comparator metadata and is hash-bound here. "
+            "The tracked output hashes were observed when this sanitized attestation was generated."
         ),
         "stata_version": stata_version,
         "stata_flavor": _single(_values(run_lines, "stata_flavor"), "Stata flavor"),

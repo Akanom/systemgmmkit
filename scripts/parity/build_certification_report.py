@@ -140,9 +140,10 @@ def build_report(*, generated_at: Optional[str] = None) -> str:
     )
     lines.append(
         "- Comparator identity is supplied by a path-free attestation derived from the bounded "
-        "completed log and cross-checked against metadata embedded in every tracked Stata "
-        "diagnostic export. Its local source log is intentionally uncommitted; the attestation "
-        "binds the exact outputs and installed ado observed at generation."
+        "completed log. Available log e(version) lines are cross-checked against their tracked "
+        "Stata diagnostic exports; every export embeds the expected metadata and is hash-bound. "
+        "The local source log is intentionally uncommitted; the attestation binds the exact "
+        "outputs and installed ado observed at generation."
     )
     lines.append(
         "- Stata xtabond2 is the formal certification oracle; pydynpd is an optional execution backend and auxiliary comparator."

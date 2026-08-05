@@ -5,10 +5,11 @@ maintained, specification-aligned fixtures. Claims are benchmark-specific.
 The maintained specification list and numerical gates come from
 `artifacts/parity/xtabond2/system_gmm_certification_specs.json`.
 Comparator identity is carried by the path-free, machine-generated provenance
-attestation `artifacts/parity/xtabond2/xtabond2_comparator_provenance.json`. Each tracked Stata
-diagnostic export embeds the comparator metadata; the attestation cross-checks it
-against allowlisted fields from the completed local run log and binds the exact export
-hashes. The source log is not committed because it contains machine-specific paths;
+attestation `artifacts/parity/xtabond2/xtabond2_comparator_provenance.json`. Every tracked Stata
+diagnostic export embeds the comparator metadata. Where the completed local run log
+contains an e(version) line, the attestation cross-checks it against the corresponding
+export; all exact exports are hash-bound. The source log is not committed because it
+contains machine-specific paths;
 its hash and this limitation are preserved in the attestation.
 
 | spec                              | parameter_set_complete   | parameters_finite   | standard_errors_positive   |   max_abs_coef_diff |   max_rel_se_diff | parameter_status      | same_spec_id   | same_stata_version   | same_xtabond2_e_version   | same_xtabond2_ado_header   | stata_output_hashes_match_provenance   | stata_export_provenance_embedded   | comparator_status   | same_nobs   | sample_gate_applies   | same_sample_keys   | sample_status          | same_n_groups   | same_instrument_count   | same_overid_df   |   stata_hansen_p | stata_hansen_reject_005   |   stata_sargan_p | stata_sargan_reject_005   |   abs_hansen_diff |   abs_hansen_p_diff |   abs_sargan_diff |   abs_sargan_p_diff |   abs_ar1_z_diff |   abs_ar1_p_diff |   abs_ar2_z_diff |   abs_ar2_p_diff | diagnostic_status      | status               |

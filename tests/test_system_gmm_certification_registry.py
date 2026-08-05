@@ -178,6 +178,22 @@ def test_attestation_uses_embedded_metadata_when_log_omits_some_ereturn_lists(
     assert attestation["certified_specifications"] == list(registry.specifications)
 
 
+def test_attestation_rejects_log_without_any_ereturn_version_evidence(tmp_path: Path) -> None:
+    registry = load_certification_registry(REGISTRY_PATH)
+    log_path = tmp_path / "certification.log"
+    ado_path = tmp_path / "xtabond2.ado"
+    ado_path.write_text(registry.expected_xtabond2_ado_header + "\n", encoding="utf-8")
+    lines = [
+        line
+        for line in _synthetic_certification_log().splitlines()
+        if not line.startswith("e(version)")
+    ]
+    log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"no xtabond2 e\(version\) evidence"):
+        build_attestation(log_path, ado_path)
+
+
 def test_registry_requires_native_and_stata_sample_paths_together(tmp_path: Path) -> None:
     raw = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     raw["specifications"][-1].pop("stata_sample")

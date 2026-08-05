@@ -1,6 +1,6 @@
 # systemgmmkit Panel Econometrics Certification Report
 
-Generated: `2026-08-01 06:40:31 UTC`
+Generated: `2026-08-05 21:16:28 UTC`
 Certification registry: `artifacts/parity/xtabond2/system_gmm_certification_specs.json`
 Registry scope: the registry and unified certificate are authoritative only for the maintained System-GMM/xtabond2 row below. Other rows identify separate test contracts; their execution status is reported by CI, not hardcoded here.
 
@@ -21,7 +21,7 @@ Registry scope: the registry and unified certificate are authoritative only for 
 - Difference GMM has expanded native certification coverage across balanced/unbalanced panels, missing periods, lag windows, and collapsed/uncollapsed instruments.
 - System GMM has benchmark-specific xtabond2 parity for complete parameter sets, Windmeijer standard errors, exact structural counts, Hansen/Sargan diagnostics, and signed AR diagnostics on 6 aligned specifications.
 - The numerical gate reads raw native and Stata artifacts and records LF-normalized canonical SHA-256 digests for the registry, comparator, generators, fixtures, do-files, parameter exports, and diagnostic exports.
-- Comparator identity is supplied by a path-free attestation derived from the bounded completed log and cross-checked against metadata embedded in every tracked Stata diagnostic export. Its local source log is intentionally uncommitted; the attestation binds the exact outputs and installed ado observed at generation.
+- Comparator identity is supplied by a path-free attestation derived from the bounded completed log. Available log e(version) lines are cross-checked against their tracked Stata diagnostic exports; every export embeds the expected metadata and is hash-bound. The local source log is intentionally uncommitted; the attestation binds the exact outputs and installed ado observed at generation.
 - Stata xtabond2 is the formal certification oracle; pydynpd is an optional execution backend and auxiliary comparator.
 - `PASS_XTABOND2_PARITY` means numerical cross-software agreement on these fixtures; it does not establish instrument validity or endorse a specification.
 

@@ -71,12 +71,17 @@ def test_xtabond2_and_pydynpd_have_distinct_reference_roles() -> None:
 def test_runtime_note_states_benchmark_specific_diagnostic_parity() -> None:
     dynamic_panel = _normalized("src/systemgmmkit/dynamic_panel.py")
     native_gmm = _normalized("src/systemgmmkit/native_gmm.py")
+    parity_policy = _normalized("src/systemgmmkit/gmm_parity_policy.py")
 
     for text in (dynamic_panel, native_gmm):
         assert "signed ar diagnostic parity" in text
         assert "six maintained" in text
         assert "exact sample-key parity" in text
 
+    assert "six aligned fixtures" in parity_policy
+    assert "four aligned fixtures" not in parity_policy
+    assert "four maintained" not in native_gmm
+    assert "four controlled xtabond2 fixtures" not in _normalized("README.md")
     assert "does not imply universal stata identity" in dynamic_panel
     assert "windmeijer-corrected two-step standard errors are not yet certified" not in native_gmm
     assert "sargan parity against xtabond2 is not certified" not in native_gmm
