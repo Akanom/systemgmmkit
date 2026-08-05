@@ -43,7 +43,7 @@ def test_kernel_metadata_matches_documented_public_notebook():
     metadata = json.loads(KERNEL_METADATA.read_text(encoding="utf-8"))
     cloud_docs = (ROOT / "docs" / "CLOUD_NOTEBOOKS.md").read_text(encoding="utf-8")
 
-    assert metadata["id"] == "akanom/systemgmmkit"
+    assert metadata["id"] == "akanom/systemgmmkit-quickstart"
     assert metadata["id"] in cloud_docs
 
 

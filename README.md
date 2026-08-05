@@ -29,7 +29,7 @@ The objective is not only to estimate models. The objective is to make modelling
 
 ## Public runnable example
 
-Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit)
+Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit-quickstart)
 to explore deterministic panel-data setup, pooled OLS, fixed and random effects,
 panel-aware forecast validation, OutputHub reporting, and a compact Difference GMM
 diagnostic workflow. The notebook is a reproducible cloud demonstration, not a
