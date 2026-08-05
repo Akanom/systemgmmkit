@@ -113,6 +113,17 @@ markers = [
   "parity: marks tests that require external parity tooling or Stata-generated artifacts",
 ]
 
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = ["systemgmmkit"]
+
+[tool.coverage.report]
+fail_under = 66.0
+precision = 2
+show_missing = true
+sort = "-cover"
+
 [tool.mypy]
 files = [
   "src/systemgmmkit/spec.py",

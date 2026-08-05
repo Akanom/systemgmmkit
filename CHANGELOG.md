@@ -88,6 +88,9 @@ The project follows a practical semantic-versioning style:
 * Made CI rerun every maintained native System-GMM specification in a temporary
   workspace and compare the fresh outputs directly with the committed Stata exports;
   non-finite values, incomplete parameter sets, or stale certificate hashes now fail.
+* Added a dedicated Python 3.12 all-extras coverage job with non-regressive
+  project statement, branch, and combined floors plus exact branch and failure-path
+  coverage for dynamic-panel backend routing.
 * Clarified that `pydynpd` is an optional execution backend and auxiliary
   comparator; unaligned results cannot support parity or speed-ranking claims.
 * Clarified that `PASS_XTABOND2_PARITY` is a numerical-agreement result, not an

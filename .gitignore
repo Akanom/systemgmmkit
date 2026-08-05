@@ -10,6 +10,10 @@ build/
 .venv/
 .venv-*/
 .env
+.coverage
+.coverage.*
+coverage.json
+htmlcov/
 
 # Local patch/recovery artifacts
 _archive/
