@@ -35,6 +35,27 @@ baseline. The `dynamic_panel.py` target is exact because its backend-selection,
 adapter-signature, metadata, warning, environment-override, import-failure, and
 public-wrapper branches are deterministic and directly tested.
 
+## Post-PR40 integrated measurement
+
+The post-PR40 source and test tree was measured after merging `origin/main`
+commit `269eb307` into the coverage branch at signed merge commit `736d410`.
+The 2026-08-06 verification used Python 3.12.3 on Windows with all extras and
+`coverage.py 7.15.2`; all 330 tests passed before the ratchets were evaluated:
+
+| Metric | Covered / total | Verified result | Enforced minimum |
+| --- | ---: | ---: | ---: |
+| Project statements | 5,179 / 6,723 | 77.03% | 72.00% |
+| Project branches | 1,404 / 2,438 | 57.59% | 53.00% |
+| Combined statements and branches | 6,583 / 9,161 | 71.86% | 66.00% |
+| `dynamic_panel.py` statements | 101 / 101 | 100.00% | 100.00% |
+| `dynamic_panel.py` branches | 32 / 32 | 100.00% | 100.00% |
+
+These values supersede the earlier focused result as the current integrated
+measurement. The initial pre-gate baseline above remains the historical point
+from which the coverage policy was introduced. The enforced floors are not
+raised by this integration because their documented platform margin has not yet
+been validated on the Linux/Python 3.12 CI runner.
+
 ## Enforcement
 
 The `[tool.coverage]` configuration in `pyproject.toml` enables branch coverage,
