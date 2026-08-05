@@ -1390,7 +1390,7 @@ def _native_exact_time_lag_pairs(
 
     integral_time_values = _native_integral_time_values(time_values)
     time_key = (
-        dict(zip(time_values, integral_time_values, strict=True))
+        {value: integral_time_values[position] for position, value in enumerate(time_values)}
         if integral_time_values is not None
         else {value: position for position, value in enumerate(time_values)}
     )
