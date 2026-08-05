@@ -51,6 +51,8 @@ formal System GMM evidence is the machine-readable registry and unified certific
 under `artifacts/parity/xtabond2/`. They report benchmark-specific
 `PASS_XTABOND2_PARITY` for complete parameter sets, Windmeijer-corrected two-step
 standard errors, exact counts, Hansen/Sargan values, and signed AR diagnostics.
+The unbalanced-panel and variable-missing fixtures additionally require exact
+native/Stata estimation-sample keys.
 This status denotes numerical agreement, not instrument validity or specification
 endorsement. Artifact 24 is retained as a frozen linked snapshot and is not an
 independent authority.
@@ -58,7 +60,7 @@ independent authority.
 | Evidence | Scope | Comparison role |
 |---|---|---|
 | Artifact 22 | Controlled Difference/System GMM | Auxiliary Stata comparison |
-| Registry + unified certificate | Maintained four-spec System GMM certificate | Formal `xtabond2` numerical-agreement evidence |
+| Registry + unified certificate | Maintained six-spec System GMM certificate | Formal `xtabond2` numerical-agreement evidence |
 | Artifact 24 | Frozen single-spec snapshot | Historical linked provenance only |
 | Artifacts 26--27 | Static, panel, IV, and post-estimation checks | `statsmodels`, `linearmodels`, R, and Stata comparisons |
 | Artifact 28 | Performance benchmarks | Practical runtime evidence |

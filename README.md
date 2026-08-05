@@ -68,6 +68,27 @@ For compact notebook display of linear combinations and Wald tests, use
 redundant test-statistic fields, and displays very small p-values as bounds such
 as `<0.0001` instead of rounding them to zero.
 
+## Import surface
+
+The package root exposes the dependency-free estimator, workflow, diagnostics,
+reporting, and post-estimation API. This includes the easy-GMM interfaces:
+
+```python
+from systemgmmkit import DynamicGMMWorkflowResult, difference_gmm, system_gmm
+```
+
+Plot themes, plotting functions, SGM-Viz dashboards, and result-plot helpers
+belong to the optional `systemgmmkit.postestimation` namespace:
+
+```python
+from systemgmmkit.postestimation import coefficient_plot, health_dashboard
+```
+
+Existing explicit imports of plotting names from `systemgmmkit` remain
+supported through lazy compatibility aliases. Wildcard imports intentionally
+include only the dependency-free root API and do not import optional plotting
+names.
+
 ## Controlled performance mode
 
 Native dynamic-panel GMM and native panel IV retain their validated preparation
@@ -294,6 +315,17 @@ Local development installation:
 ```bash
 pip install -e ".[dev,all]"
 ```
+
+Core estimator type-checking uses a separate, typed dependency set and an
+explicit progressive scope:
+
+```bash
+pip install -e ".[typing]"
+python -m mypy
+```
+
+See [Progressive Type Checking](docs/TYPE_CHECKING.md) for the enforced files,
+current debt baseline, and expansion plan.
 
 For graphics support, ensure `matplotlib` is available:
 
@@ -1756,8 +1788,9 @@ For Hansen, Sargan, and AR rows, `PASS_XTABOND2_PARITY` means numerical
 agreement with `xtabond2`; it does not establish instrument validity or endorse
 the benchmark specification. Stata rejects both Hansen and Sargan tests at 5%
 for the no-controls (`0.02356` / `0.00568`), three-way-controls (`0.02144` /
-`0.0000369`), and decomposition (`0.00640` / `0.0000128`) fixtures. The
-baseline fixture does not reject (`0.15998` / `0.08792`). The unified
+`0.0000369`), decomposition (`0.00640` / `0.0000128`), and variable-missing
+(`0.01151` / `0.0007838`) fixtures. The baseline (`0.15998` / `0.08792`) and
+unbalanced-panel (`0.23240` / `0.29722`) fixtures do not reject. The unified
 certificate preserves the raw p-values and reject-at-0.05 flags.
 
 Users should still inspect their own model diagnostics, instrument counts, sample construction, lag-window choices, and identification assumptions.
@@ -1767,8 +1800,9 @@ Users should still inspect their own model diagnostics, instrument counts, sampl
 # System GMM xtabond2 Certification
 
 The native System GMM implementation has benchmark-specific parity against Stata
-`xtabond2` on four maintained, collapsed two-step specifications: baseline
-controls, no controls, three-way controls, and decomposition controls.
+`xtabond2` on six maintained, collapsed two-step specifications: baseline
+controls, no controls, three-way controls, decomposition controls, an unbalanced
+panel, and a variable-specific missing-data design.
 `system_gmm_three_way_no_controls` is outside this certified set and remains
 pending because no dedicated Stata comparison artifact has been committed.
 
@@ -1777,6 +1811,8 @@ Certified components include:
 * the complete expected parameter set and coefficient estimates;
 * Windmeijer-corrected two-step standard errors;
 * observations, groups, instruments, and overidentification degrees of freedom;
+* exact native/Stata estimation-sample keys for the unbalanced-panel and
+  variable-missing designs;
 * Hansen and Sargan statistics and p-values; and
 * signed Arellano-Bond AR(1)/AR(2) statistics and p-values.
 
@@ -1787,13 +1823,13 @@ The sole specification/oracle/tolerance registry is
 numerical decision artifact is
 `artifacts/parity/xtabond2/diagnostic_parity_certificate.csv`. The gate verifies
 the certificate against LF-normalized canonical SHA-256 digests of the registry,
-comparator, generators, fixtures, do-files, parameter exports, and diagnostic
-exports. Counts and degrees of
+comparator, generators, support files, fixtures, do-files, parameter exports,
+diagnostic exports, and the sample exports where declared. Counts and degrees of
 freedom must match exactly; coefficient absolute
 differences must be at most `1e-6`; Windmeijer-SE tolerances are specification
 specific; Hansen/Sargan absolute differences must be at most `1e-6`; signed AR
 z-statistic differences must be at most `0.10`; and AR p-value differences must be
-at most `0.03`. The current four-spec certificate passes every gate. The largest
+at most `0.03`. The current six-spec certificate passes every gate. The largest
 observed signed-AR differences are approximately `0.02264` for z and `0.00638` for
 p. See the [System GMM parity matrix](docs/parity/system_gmm_parity_matrix.md) and
 the unified machine-readable certificate at
@@ -1803,13 +1839,42 @@ Comparator identity for the current historical Stata exports is carried by a
 path-free, machine-generated provenance attestation. Its local source log is not
 committed because it contains machine-specific paths. The attestation explicitly
 records that the tracked-output and installed-ado hashes were observed when the
-attestation was generated; the completed log itself recorded Stata 17,
-`xtabond2` 3.7.2 / `e(version)=03.07.00`, all four run markers, and completion.
-Future Stata exports also embed comparator metadata directly.
+attestation was generated. The completed log recorded all six run markers and
+completion; the hash-bound Stata diagnostic exports embed Stata 17 and
+`xtabond2` 3.7.2 / `e(version)=03.07.00` comparator metadata directly.
 
 The exact builder, Stata-driver, attestation, certificate, report, and pytest
 commands are documented in the
 [System GMM parity matrix](docs/parity/system_gmm_parity_matrix.md#evidence-and-reproduction).
+
+## Certified unbalanced and missing-data extension
+
+The native engine now preserves variable-specific missing histories, selects
+differenced residuals from explicit equation metadata, and matches AR residual
+pairs on the exact panel-time grid. The `system_gmm_unbalanced_panel` and
+`system_gmm_variable_missing` fixtures exercise those paths and are registered in
+the authoritative six-spec certificate. Both pass complete-parameter,
+Windmeijer-SE, exact count, exact estimation-sample-key, Hansen/Sargan, and signed
+AR gates. This evidence remains specific to those two controlled designs.
+
+For integral numeric panel-time labels, the native engine follows Stata's default
+unit-period delta, including a period absent from every entity. It fails with
+recode guidance before a unit-spaced grid would exceed 100,000 periods or five
+million entity-period rows. Non-integral and datetime labels retain ordered-rank
+semantics until the public specification exposes an explicit panel-time delta.
+
+The extension fixture and native-output builders are:
+
+```text
+python scripts/parity/build_xtabond2_unbalanced_missing_extension.py
+python scripts/parity/run_native_unbalanced_missing_extension.py
+```
+
+For certification, use the complete six-spec Stata driver, provenance attestation,
+and central comparator sequence documented in the
+[System GMM parity matrix](docs/parity/system_gmm_parity_matrix.md#evidence-and-reproduction).
+The extension manifest is a reproducibility index; the central registry and unified
+certificate remain the only specification and numerical decision authorities.
 
 Stata `xtabond2` is the formal certification oracle. `pydynpd` is an optional
 execution backend and auxiliary comparator, not part of the current formal native
@@ -1908,7 +1973,7 @@ degradation_index ~ L1.degradation_index + sensor_mean_z + pc2 + pc3 + op_settin
 This scaffold is not part of the current formal certificate: its comparator still
 depends on an external prepared-data location and does not yet have committed,
 portable numerical guards for coefficients, standard errors, and diagnostics. It
-must therefore not be cited as certified cross-software parity. The four controlled
+must therefore not be cited as certified cross-software parity. The six controlled
 `xtabond2` fixtures above remain the strict System GMM certification benchmark.
 
 ---

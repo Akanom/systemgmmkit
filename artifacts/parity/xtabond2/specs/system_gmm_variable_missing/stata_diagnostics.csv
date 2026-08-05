@@ -1,0 +1,2 @@
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen,stata_hansen_p,stata_hansen_df,stata_sargan,stata_sargan_p,stata_sargan_df,stata_ar1_z,stata_ar1_p,stata_ar2_z,stata_ar2_p,stata_reported_date,stata_reported_time,stata_version,xtabond2_e_version,xtabond2_ado_header
+system_gmm_variable_missing,1216,96,8,12.9532153960148,.0115066686945467,4,19.00610095894724,.00078377799869,4,-2.137818289445267,.0325314940145298,1.59332868103125,.1110864757652007,31 Jul 2024,08:06:26,17,03.07.00,*! xtabond2 3.7.2 9 February 2025

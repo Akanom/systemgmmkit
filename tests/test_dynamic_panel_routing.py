@@ -343,7 +343,7 @@ def test_explicit_native_route_warns_only_for_system_gmm(
     assert result.systemgmmkit_backend_policy == "native"
     assert len(caught) == int(system)
     if system:
-        assert "four maintained xtabond2 specifications" in str(caught[0].message)
+        assert "six maintained xtabond2 specifications" in str(caught[0].message)
         assert "signed AR diagnostic parity" in result.notes[0]
     else:
         assert not hasattr(result, "notes")

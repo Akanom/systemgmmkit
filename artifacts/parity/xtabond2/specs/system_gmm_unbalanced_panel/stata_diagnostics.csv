@@ -1,0 +1,2 @@
+spec,stata_nobs,stata_n_groups,stata_n_instruments,stata_hansen,stata_hansen_p,stata_hansen_df,stata_sargan,stata_sargan_p,stata_sargan_df,stata_ar1_z,stata_ar1_p,stata_ar2_z,stata_ar2_p,stata_reported_date,stata_reported_time,stata_version,xtabond2_e_version,xtabond2_ado_header
+system_gmm_unbalanced_panel,1174,96,8,5.584570411844798,.2323950829743503,4,4.904638722727102,.2972228521693406,4,-1.611546099900618,.1070607478279976,.1600256567840889,.8728608634675955,31 Jul 2024,08:06:25,17,03.07.00,*! xtabond2 3.7.2 9 February 2025

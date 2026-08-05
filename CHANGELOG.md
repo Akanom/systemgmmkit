@@ -14,13 +14,35 @@ The project follows a practical semantic-versioning style:
 
 ### Added
 
+* Added an enforceable progressive mypy gate for nine core specification,
+  static-estimator, result, validation, and table modules, with typed pandas and
+  SciPy interfaces, the typed optional `linearmodels` backend required by the
+  fixed-effects target, a dedicated CI job, and an explicit expansion roadmap.
 * Added an optional Universal Output Hub adapter for pooled OLS, fixed effects,
   random effects, panel IV/2SLS, and native or pydynpd dynamic-panel GMM
   results, including estimator metadata and GMM diagnostic tables. The adapter
   is available on Python 3.10 and newer; core Python 3.9 support is unchanged.
+* Added reproducible `xtabond2` certification workflows for one unbalanced-panel
+  fixture and one variable-specific missing-data fixture. Both are registered in
+  the authoritative six-spec certificate after passing complete-parameter,
+  Windmeijer-SE, exact count, exact estimation-sample-key, Hansen/Sargan, and
+  signed-AR gates.
 
 ### Changed
 
+* Tightened the root wildcard-import contract from 121 names to 77
+  dependency-free estimator, workflow, diagnostics, reporting, and
+  post-estimation names. Optional plot themes/functions, SGM-Viz dashboards,
+  and result-plot integration helpers now remain on their canonical
+  `systemgmmkit.postestimation` namespace; existing explicit imports of those
+  names from `systemgmmkit` continue to resolve lazily for compatibility.
+* Added the documented easy-GMM `DynamicGMMWorkflowResult`, `difference_gmm`,
+  and `system_gmm` interfaces to the root wildcard contract, removed the
+  accidental `contextlib` root attribute, and eliminated redundant guarded
+  root imports without changing estimator execution.
+* Removed obsolete same-named module files that were permanently shadowed by
+  the `diagnostics`, `postestimation`, and `reporting` package directories.
+  Their normal import paths continue to resolve to the maintained packages.
 * Added compact, display-only inference-table formatting for post-estimation
   results and applied it to the public Kaggle quickstart. Raw inferential values
   and schemas remain unchanged.
@@ -34,8 +56,16 @@ The project follows a practical semantic-versioning style:
 
 ### Fixed
 
+* Made native System-GMM diagnostics consume explicit per-row equation metadata
+  instead of inferring differenced rows from balanced block sizes. Arellano-Bond
+  lag pairs now require an exact gap on the panel-time grid, including integral
+  periods absent from every entity, and a missing value in one model variable no
+  longer erases usable lag history from other variables. Unsafe dense unit grids
+  fail with recoding guidance before allocation.
+* Corrected the public `sargan_stat` alias to report the Sargan statistic paired
+  with `sargan_p`; two-step `j_stat` continues to report the Hansen statistic.
 * Reconciled System-GMM certification language with the committed evidence:
-  `xtabond2` remains the formal oracle, and four aligned specifications now have
+  `xtabond2` remains the formal oracle, and six aligned specifications now have
   fresh-current-engine and raw-artifact numerical guards for complete parameters,
   Windmeijer standard errors, exact counts, Hansen/Sargan, and signed AR diagnostics.
 * Corrected the expanded parity runners to mirror Stata's selector contract:
@@ -45,9 +75,9 @@ The project follows a practical semantic-versioning style:
   storing the numeric Stata version with a numeric type, pinning Stata 17 syntax,
   and making `eq(both)` explicit.
 * Added a portable Stata rerun driver, hashes for fixtures/do-files/exact result
-  exports, signed diagnostic comparisons, and a unified four-spec
+  exports, signed diagnostic comparisons, and a unified six-spec
   `PASS_XTABOND2_PARITY` certificate.
-* Centralized the four maintained System-GMM specifications, comparator identity,
+* Centralized the six maintained System-GMM specifications, comparator identity,
   oracle, and numerical gates in one machine-readable registry. The unified
   certificate is now regenerated from that registry and a sanitized, path-free
   historical-run provenance attestation.

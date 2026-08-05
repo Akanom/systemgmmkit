@@ -243,8 +243,9 @@ def run_dynamic_panel_gmm(
     if is_system:
         warnings.warn(
             "Native System GMM has benchmark-specific coefficient, Windmeijer-SE, "
-            "Hansen/Sargan, and signed AR diagnostic parity on four maintained "
-            "xtabond2 specifications. This does not imply universal Stata identity. "
+            "Hansen/Sargan, and signed AR diagnostic parity on six maintained "
+            "xtabond2 specifications, with exact sample-key parity on the unbalanced "
+            "and variable-missing fixtures. This does not imply universal Stata identity. "
             "Use backend='auto' or backend='validated' when an external backend is "
             "explicitly required for independent replication.",
             RuntimeWarning,
@@ -253,8 +254,9 @@ def run_dynamic_panel_gmm(
         _append_result_note(
             result,
             "Native System GMM coefficient, Windmeijer-SE, Hansen/Sargan, and signed "
-            "AR diagnostic parity is certified on four maintained xtabond2 "
-            "specifications under declared numerical gates.",
+            "AR diagnostic parity is certified on six maintained xtabond2 "
+            "specifications under declared numerical gates; the unbalanced and "
+            "variable-missing fixtures also have exact sample-key parity.",
         )
 
     return result
