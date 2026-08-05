@@ -121,6 +121,19 @@ def _assert_diagnostic_gate(
         _sha256(_repo(paths["stata_diagnostics"]))
         == PROVENANCE.output_hashes[spec]["stata_diagnostics_sha256"]
     )
+    if "native_sample" in paths and "stata_sample" in paths:
+        native_sample = pd.read_csv(_repo(paths["native_sample"]))[["id", "t"]]
+        stata_sample = pd.read_csv(_repo(paths["stata_sample"]))[["id", "t"]]
+        native_sample = native_sample.sort_values(["id", "t"]).reset_index(drop=True)
+        stata_sample = stata_sample.sort_values(["id", "t"]).reset_index(drop=True)
+        assert not native_sample.duplicated(["id", "t"]).any(), spec
+        assert not stata_sample.duplicated(["id", "t"]).any(), spec
+        pd.testing.assert_frame_equal(native_sample, stata_sample, check_dtype=False)
+        assert len(native_sample) == int(paths["expected_nobs"]), spec
+        assert (
+            _sha256(_repo(paths["stata_sample"]))
+            == PROVENANCE.output_hashes[spec]["stata_sample_sha256"]
+        )
     assert (
         _exact_int(native["native_nobs"], spec)
         == _exact_int(stata["stata_nobs"], spec)
@@ -217,6 +230,15 @@ def test_machine_readable_diagnostic_certificate_matches_raw_inputs() -> None:
         assert bool(row["same_xtabond2_ado_header"])
         assert bool(row["same_spec_id"])
         assert bool(row["stata_output_hashes_match_provenance"])
+        if "native_sample" in paths:
+            assert bool(row["sample_gate_applies"])
+            assert bool(row["same_sample_keys"])
+            assert row["sample_status"] == "PASS_EXACT_SAMPLE_KEYS"
+            assert row["native_sample_sha256"] == _sha256(_repo(paths["native_sample"]))
+            assert row["stata_sample_sha256"] == _sha256(_repo(paths["stata_sample"]))
+        else:
+            assert not bool(row["sample_gate_applies"])
+            assert row["sample_status"] == "NOT_APPLICABLE"
         stata_diagnostics = pd.read_csv(_repo(paths["stata_diagnostics"]))
         embedded_fields = {"xtabond2_e_version", "xtabond2_ado_header"}
         if embedded_fields.issubset(stata_diagnostics.columns):
@@ -230,6 +252,13 @@ def test_machine_readable_diagnostic_certificate_matches_raw_inputs() -> None:
         assert row["comparator_status"] == "PASS"
         assert row["data_sha256"] == _sha256(_repo(paths["data"]))
         assert row["do_file_sha256"] == _sha256(_repo(paths["do_file"]))
+        expected_support_hashes = ";".join(
+            f"{path.as_posix()}:{_sha256(_repo(path))}" for path in paths.get("support_files", ())
+        )
+        if expected_support_hashes:
+            assert row["support_files_sha256"] == expected_support_hashes
+        else:
+            assert pd.isna(row["support_files_sha256"])
         assert row["native_params_sha256"] == _sha256(_repo(paths["native_params"]))
         assert row["stata_params_sha256"] == _sha256(_repo(paths["stata_params"]))
         assert row["native_diagnostics_sha256"] == _sha256(_repo(paths["native_diagnostics"]))
@@ -251,6 +280,15 @@ def test_stata_and_native_selector_contracts_are_explicit() -> None:
     for paths in SPECS.values():
         do_text = _repo(paths["do_file"]).read_text(encoding="utf-8")
         runner_text = _repo(paths["runner"]).read_text(encoding="utf-8")
+        selector_text = "\n".join(
+            [
+                runner_text,
+                *[
+                    _repo(path).read_text(encoding="utf-8")
+                    for path in paths.get("support_files", ())
+                ],
+            ]
+        )
 
         assert do_text.startswith(f"version {REGISTRY.stata_syntax_version}\n")
         assert "collapse eq(both)" in do_text
@@ -265,13 +303,13 @@ def test_stata_and_native_selector_contracts_are_explicit() -> None:
         assert "stata_reported_date" in do_text and "stata_reported_time" in do_text
         transformation = paths["transformation"]
         assert (
-            f'transformation="{transformation}"' in runner_text
-            or f'SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "{transformation}"' in runner_text
+            f'transformation="{transformation}"' in selector_text
+            or f'SYSTEMGMMKIT_NATIVE_TRANSFORMATION", "{transformation}"' in selector_text
         )
-        assert 'GMMStyle(variable="L1.y"' in runner_text
+        assert 'GMMStyle(variable="L1.y"' in selector_text
 
         if paths["requires_level_iv"]:
-            assert 'eq="level"' in runner_text
+            assert 'eq="level"' in selector_text
 
     driver = (ROOT / "scripts" / "parity" / "rerun_xtabond2_certification.do").read_text(
         encoding="utf-8"

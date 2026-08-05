@@ -1,0 +1,2 @@
+spec,native_nobs,native_n_groups,native_n_instruments,native_hansen_j_stat,native_hansen_p,native_sargan_j_stat,native_sargan_p,native_overid_df,native_ar1_z,native_ar1_p,native_ar2_z,native_ar2_p
+system_gmm_variable_missing,1216,96,8,12.953215396015297,0.011506668694544177,19.006100958948462,0.0007837779986895958,4,-2.145580645449864,0.03190645096663822,1.6064705604831147,0.10817055830352913

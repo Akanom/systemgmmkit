@@ -53,6 +53,12 @@ do "artifacts/parity/xtabond2/specs/system_gmm_three_way_controls/system_gmm_thr
 display as text "SYSTEMGMMKIT_RUNNING=system_gmm_decomposition_controls"
 do "artifacts/parity/xtabond2/specs/system_gmm_decomposition_controls/system_gmm_decomposition_controls.do"
 
+display as text "SYSTEMGMMKIT_RUNNING=system_gmm_unbalanced_panel"
+do "artifacts/parity/xtabond2/specs/system_gmm_unbalanced_panel/system_gmm_unbalanced_panel.do"
+
+display as text "SYSTEMGMMKIT_RUNNING=system_gmm_variable_missing"
+do "artifacts/parity/xtabond2/specs/system_gmm_variable_missing/system_gmm_variable_missing.do"
+
 display as text "SYSTEMGMMKIT_XTABOND2_RERUN_COMPLETE"
 display as result "stata_current_date=" c(current_date)
 display as result "stata_current_time=" c(current_time)

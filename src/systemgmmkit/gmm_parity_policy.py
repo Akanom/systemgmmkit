@@ -2,7 +2,7 @@
 
 This module separates production backend validation from external parity certification.
 Native System-GMM estimation quantities and diagnostics have benchmark-specific
-`xtabond2` certification on four aligned fixtures. `pydynpd` is an optional execution
+`xtabond2` certification on six aligned fixtures. `pydynpd` is an optional execution
 backend and auxiliary comparator, not the formal certification oracle.
 Certification remains attached to those declared benchmarks, not to every possible
 native-GMM specification; results outside that scope must pass their own aligned

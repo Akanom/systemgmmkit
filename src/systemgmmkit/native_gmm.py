@@ -10,17 +10,21 @@ from scipy import stats
 from .fixed_effects import _normal_pvalues_from_t, _require_columns
 from .spec import DynamicPanelSpec
 
+_NATIVE_MAX_TIME_GRID_POINTS = 100_000
+_NATIVE_MAX_PANEL_GRID_ROWS = 5_000_000
+
 
 @dataclass(frozen=True)
 class NativeGMMResult:
     """Native dynamic-panel GMM result.
 
     The native Difference GMM path has strict benchmark parity. Native System
-    GMM has benchmark-specific ``xtabond2`` parity on four maintained, aligned
+    GMM has benchmark-specific ``xtabond2`` parity on six maintained, aligned
     collapsed two-step specifications. The certificate covers complete
     parameters, Windmeijer-corrected standard errors, exact structural counts,
-    Hansen/Sargan statistics, and signed AR diagnostics under declared gates;
-    it does not extend automatically to other data designs or options.
+    Hansen/Sargan statistics, and signed AR diagnostics under declared gates. The
+    unbalanced-panel and variable-missing fixtures also have exact sample-key
+    parity; the evidence does not extend automatically to other designs or options.
     """
 
     spec: DynamicPanelSpec
@@ -208,7 +212,19 @@ def _style_source_series(group: pd.DataFrame, variable: str) -> pd.Series:
 
     if parsed:
         lag, raw_variable = parsed
-        return _lagged_series(group[raw_variable].astype(float), lag)
+        source = _lagged_series(group[raw_variable].astype(float), lag)
+
+        # Match Stata time-series semantics on physically unbalanced panels.
+        # xtabond2 evaluates expressions such as L.y on the observed rows and
+        # only then pads each entity to the common time grid.  Lagging after
+        # reindexing without this mask would fabricate L.y at an inserted gap
+        # from the preceding observed y, allowing that nonexistent value to
+        # enter later collapsed GMM instruments.
+        observed_rows = group.get("_native_observed_row")
+        if observed_rows is not None:
+            source = source.where(observed_rows.astype(bool))
+
+        return source
 
     return group[variable].astype(float)
 
@@ -222,8 +238,7 @@ def _level_regressor_at(group: pd.DataFrame, regressor: str, pos: int) -> float 
     parsed = _parse_lagged_regressor(regressor)
 
     if parsed:
-        lag, variable = parsed
-        return _safe_get(group[variable].astype(float), pos - lag)
+        return _safe_get(_style_source_series(group, regressor), pos)
 
     return _safe_get(group[regressor].astype(float), pos)
 
@@ -269,7 +284,7 @@ def _transformed_regressor_at(
         )
 
         if mode in {"transform_lagged", "current", "default", ""}:
-            lagged = _lagged_series(base_series, lag)
+            lagged = _style_source_series(group, regressor)
             return _transform_at(lagged, pos, transformation)
 
         if mode in {"lag_transformed", "lag_of_transformed", "alternative"}:
@@ -284,7 +299,7 @@ def _transformed_regressor_at(
             f"{mode!r}. Use transform_lagged or lag_transformed."
         )
 
-    lagged = _lagged_series(base_series, lag)
+    lagged = _style_source_series(group, regressor)
     return _transform_at(lagged, pos, transformation)
 
 
@@ -454,6 +469,54 @@ def _normalize_preparation_engine(value: str) -> str:
     return normalized
 
 
+def _native_integral_time_values(time_values: list[object]) -> list[int] | None:
+    """Return exact integer labels when a panel-time index is unit-compatible."""
+    index = pd.Index(time_values)
+    if index.empty:
+        return []
+    if pd.api.types.is_bool_dtype(index.dtype):
+        return None
+    if pd.api.types.is_integer_dtype(index.dtype):
+        return [int(value) for value in index]
+    if pd.api.types.is_float_dtype(index.dtype):
+        numeric = index.to_numpy(dtype=float)
+        if bool(np.isfinite(numeric).all()) and bool(np.equal(numeric, np.floor(numeric)).all()):
+            return [int(value) for value in numeric]
+    return None
+
+
+def _native_panel_time_grid(
+    observed_time_values: list[object],
+    *,
+    n_entities: int,
+) -> list[object]:
+    """Build the unit-spaced grid implied by integral numeric time labels.
+
+    Stata's default numeric ``xtset`` delta is one.  Expanding that grid ensures
+    a period absent from every entity remains a real gap during lag construction.
+    Non-integral and datetime labels retain ordered-rank semantics because the
+    current API has no explicit delta contract.
+    """
+    observed = list(pd.Index(observed_time_values).dropna().drop_duplicates().sort_values())
+    integral = _native_integral_time_values(observed)
+    if integral is None or len(integral) < 2:
+        return observed
+
+    first = min(integral)
+    last = max(integral)
+    grid_points = last - first + 1
+    panel_grid_rows = grid_points * max(int(n_entities), 1)
+    if grid_points > _NATIVE_MAX_TIME_GRID_POINTS or panel_grid_rows > _NATIVE_MAX_PANEL_GRID_ROWS:
+        raise ValueError(
+            "Integral panel-time labels imply an unsafe unit-spaced grid "
+            f"({grid_points} periods; {panel_grid_rows} entity-period rows). "
+            "Recode the time variable to a contiguous period index before estimation."
+        )
+    if grid_points == len(integral):
+        return observed
+    return list(range(first, last + 1))
+
+
 def _build_native_matrices(
     spec: DynamicPanelSpec,
     data: pd.DataFrame,
@@ -468,21 +531,37 @@ def _build_native_matrices(
     use_cached_preparation = preparation_engine == "accelerated"
     raw_vars = _required_variables(spec)
     _require_columns(data, [entity, time, *raw_vars])
-    work = data[[entity, time, *raw_vars]].dropna().copy().sort_values([entity, time])
+    # Preserve variable-specific missingness until each structural row and
+    # instrument is evaluated.  Dropping a row because *any* model variable is
+    # missing incorrectly erases otherwise usable lag values from the other
+    # variables (for example, a missing ``x_t`` must not make ``y_t`` unavailable
+    # as a future instrument).  Entity and time are the only fields that cannot
+    # be interpreted when missing.
+    work = (
+        data[[entity, time, *raw_vars]]
+        .dropna(subset=[entity, time])
+        .copy()
+        .sort_values([entity, time])
+    )
 
-    # Use the full observed time grid before lag construction.
+    # Use the full unit-spaced time grid before lag construction.
     # This is essential for unbalanced panels: adjacent observed rows are not
     # necessarily valid one-period lags when intermediate time periods are missing.
     # pydynpd treats the declared panel time variable as the lag structure, so the
     # native engine must make missing time periods explicit before building lags.
-    time_values = list(pd.Index(work[time].dropna().sort_values().unique()))
+    observed_time_values = list(pd.Index(work[time].dropna().sort_values().unique()))
+    time_values = _native_panel_time_grid(
+        observed_time_values,
+        n_entities=int(work[entity].nunique()),
+    )
 
     # Native time-dummy handling.
     # pydynpd's timedumm option adds one dummy for each usable post-lag period.
     # With 14 periods and lagged dynamic-panel construction, this produces +12
-    # instruments in the tested baseline. We therefore omit the first two time
-    # positions and create dummy columns for time_values[2:].
-    time_dummy_values = time_values[2:] if getattr(spec, "time_dummies", False) else []
+    # instruments in the tested baseline. We therefore omit the first two observed
+    # time positions. Globally absent periods belong to the lag grid, not the
+    # structural time-dummy design.
+    time_dummy_values = observed_time_values[2:] if getattr(spec, "time_dummies", False) else []
     time_dummy_names = [f"{time}_{value}" for value in time_dummy_values]
     time_dummy_lookup = dict(zip(time_dummy_values, time_dummy_names))
 
@@ -502,7 +581,9 @@ def _build_native_matrices(
     for entity_value, group in work.groupby(entity, sort=False):
         group = group.sort_values(time).copy()
         group["_native_original_index"] = group.index
+        group["_native_observed_row"] = True
         group = group.set_index(time).reindex(time_values)
+        group["_native_observed_row"] = group["_native_observed_row"].eq(True)
 
         source_cache: dict[str, pd.Series] = {}
         transformed_source_cache: dict[tuple[str, str], pd.Series] = {}
@@ -1256,6 +1337,86 @@ def _native_group_indices_from_row_meta(
     return [np.asarray(indices, dtype=int) for indices in groups.values()]
 
 
+def _native_level_equation_mask_from_row_meta(
+    row_meta: list[dict[str, object]],
+    *,
+    expected_rows: int,
+) -> np.ndarray:
+    """Return the exact System-GMM level-equation mask.
+
+    The native matrix builder records ``equation`` explicitly for every stacked
+    row.  Diagnostics must consume that metadata directly: inferring equation
+    membership from balanced-panel row counts is invalid for unbalanced panels
+    and variable-specific missing-data patterns.
+    """
+    if len(row_meta) != int(expected_rows):
+        raise ValueError(
+            "row_meta length must match the stacked residual count: "
+            f"{len(row_meta)} != {expected_rows}"
+        )
+
+    equations: list[str] = []
+    for position, meta in enumerate(row_meta):
+        raw_equation = meta.get("equation")
+        equation = str(raw_equation).strip().lower() if raw_equation is not None else ""
+        if equation not in {"diff", "level"}:
+            raise ValueError(
+                "System-GMM row metadata must label every row as 'diff' or "
+                f"'level'; row {position} has {raw_equation!r}."
+            )
+        equations.append(equation)
+
+    level_mask = np.asarray([equation == "level" for equation in equations], dtype=bool)
+    if not bool(np.any(level_mask)) or not bool(np.any(~level_mask)):
+        raise ValueError("System-GMM row metadata must contain both diff and level rows.")
+    return level_mask
+
+
+def _native_exact_time_lag_pairs(
+    row_indices: np.ndarray,
+    row_meta: list[dict[str, object]],
+    time_values: list[object],
+    *,
+    lag: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return current/previous row pairs separated by an exact panel-time lag.
+
+    Integral numeric labels use Stata's default unit delta directly, including
+    periods absent from the global sample. Other labels use their declared sorted
+    order because the public specification does not yet expose a panel-time delta.
+    """
+    if int(lag) <= 0:
+        raise ValueError("lag must be a positive integer.")
+
+    integral_time_values = _native_integral_time_values(time_values)
+    time_key = (
+        {value: integral_time_values[position] for position, value in enumerate(time_values)}
+        if integral_time_values is not None
+        else {value: position for position, value in enumerate(time_values)}
+    )
+    rows_by_time_key: dict[int, int] = {}
+    for raw_position in np.asarray(row_indices, dtype=int).reshape(-1):
+        position = int(raw_position)
+        if position < 0 or position >= len(row_meta):
+            raise ValueError(f"row index {position} is outside row_meta.")
+        row_time = row_meta[position].get("time")
+        if row_time not in time_key:
+            raise ValueError(f"row_meta time {row_time!r} is absent from the panel-time grid.")
+        key = int(time_key[row_time])
+        if key in rows_by_time_key:
+            raise ValueError(f"duplicate panel-time row at {row_time!r}.")
+        rows_by_time_key[key] = position
+
+    pairs = [
+        (position, rows_by_time_key[key - int(lag)])
+        for key, position in sorted(rows_by_time_key.items())
+        if key - int(lag) in rows_by_time_key
+    ]
+    current = np.asarray([pair[0] for pair in pairs], dtype=int)
+    previous = np.asarray([pair[1] for pair in pairs], dtype=int)
+    return current, previous
+
+
 def _native_h1_from_row_meta(
     row_meta_i: list[dict[str, object]],
 ) -> np.ndarray:
@@ -1685,6 +1846,8 @@ def _native_xtabond2_system_ar_diagnostics(
     cov_m2: np.ndarray | None = None,
     cov_vxw: np.ndarray | None = None,
     group_indices: list[np.ndarray],
+    row_meta: list[dict[str, object]],
+    time_values: list[object],
     max_lag: int = 2,
 ) -> tuple[float | None, float | None, float | None, float | None]:
     """xtabond2-style Arellano-Bond AR diagnostics for native System GMM.
@@ -1695,9 +1858,10 @@ def _native_xtabond2_system_ar_diagnostics(
         d      = wHw + Xw * (m2VZXA * ZHw' + V * Xw')
         ar_l   = ew / sqrt(d)
 
-    The native System-GMM matrix layout is entity-blocked. Within each entity
-    block, differenced-equation rows precede level-equation rows. The AR test
-    is computed on first-difference equation residuals only.
+    The AR test is computed on rows explicitly labelled as differenced-equation
+    rows.  Lag pairs are matched on the declared panel-time grid, not adjacent
+    residual positions, so entity gaps and variable-specific missingness cannot
+    create false AR pairs.
     """
 
     try:
@@ -1716,6 +1880,13 @@ def _native_xtabond2_system_ar_diagnostics(
         n_groups = int(len(group_indices))
 
         if n_rows == 0 or k == 0 or q == 0 or n_groups <= 0:
+            return None, None, None, None
+
+        level_mask = _native_level_equation_mask_from_row_meta(
+            row_meta,
+            expected_rows=n_rows,
+        )
+        if not time_values:
             return None, None, None, None
 
         import os as _native_ar_a_os
@@ -1759,13 +1930,9 @@ def _native_xtabond2_system_ar_diagnostics(
                 if idx.size == 0:
                     continue
 
-                # Native System-GMM entity block:
-                #   [differenced-equation rows, level-equation rows]
-                n_diff_i = int(idx.size // 2)
-                if n_diff_i <= lag:
+                diff_idx = idx[~level_mask[idx]]
+                if diff_idx.size <= lag:
                     continue
-
-                diff_idx = idx[:n_diff_i]
 
                 import os as _native_ar_lag_os
 
@@ -1776,10 +1943,15 @@ def _native_xtabond2_system_ar_diagnostics(
                 )
 
                 if _lag_mode in {"diff_block", "current", "default"}:
-                    # Current implementation:
-                    # AR lag is taken within the differenced-equation block.
-                    cur = diff_idx[lag:]
-                    prev = diff_idx[:-lag]
+                    # Match exact positions on the panel-time grid.  A simple
+                    # positional shift is wrong when an entity lacks an
+                    # intermediate residual row.
+                    cur, prev = _native_exact_time_lag_pairs(
+                        diff_idx,
+                        row_meta,
+                        time_values,
+                        lag=lag,
+                    )
 
                 elif _lag_mode in {"shift_minus_one", "stata_boundary"}:
                     # Boundary-shift candidate. This tests whether xtabond2's
@@ -1986,7 +2158,7 @@ def run_native_dynamic_panel_gmm(
     exactly equivalent per-fit cache for repeated source and transformed Series;
     estimator algebra, tolerances, and diagnostics are shared unchanged.
 
-    Native System GMM has benchmark-specific ``xtabond2`` certification for four
+    Native System GMM has benchmark-specific ``xtabond2`` certification for six
     maintained, aligned collapsed two-step specifications. The certified surface includes
     structural coefficients, Windmeijer-corrected standard errors, sample and
     instrument counts, Hansen/Sargan diagnostics, and signed AR(1)/AR(2)
@@ -2515,6 +2687,8 @@ def run_native_dynamic_panel_gmm(
             cov_m2=_ar_cov_m2,
             cov_vxw=_ar_cov_vxw,
             group_indices=group_indices_for_cov,
+            row_meta=row_meta,
+            time_values=list(pd.Index(data[time].dropna().sort_values().unique())),
             max_lag=2,
         )
     else:
@@ -2599,7 +2773,7 @@ def run_native_dynamic_panel_gmm(
 
     # Sargan-style diagnostic.
     #
-    # The native Sargan candidate passes the four maintained xtabond2 fixtures
+    # The native Sargan candidate passes the six maintained xtabond2 fixtures
     # under the unified certificate. That bounded evidence does not establish
     # universal parity for other samples or specifications.
 
@@ -2624,174 +2798,14 @@ def run_native_dynamic_panel_gmm(
             _u1_col = np.asarray(residuals1, dtype=float).reshape(-1, 1)
             _ztu1 = Z.T @ _u1_col
 
-            _level_mask = None
-
-            # Prefer row metadata if present. The native matrix builder stores
-            # equation membership for diagnostics/parity exports.
-            for _candidate_name in (
-                "is_level_equation",
-                "is_level_equation_mask",
-                "level_equation_mask",
-                "row_is_level_equation",
-                "_is_level_equation",
-                "_is_level_equation_mask",
-            ):
-                if _candidate_name in locals():
-                    _level_mask = np.asarray(locals()[_candidate_name], dtype=bool).reshape(-1)
-                    break
-
-            if _level_mask is None:
-                for _candidate_name in (
-                    "row_index",
-                    "row_index_df",
-                    "_row_index",
-                    "_row_index_df",
-                ):
-                    _obj = locals().get(_candidate_name)
-                    if (
-                        _obj is not None
-                        and hasattr(_obj, "__contains__")
-                        and "_is_level_equation" in _obj
-                    ):
-                        _level_mask = np.asarray(_obj["_is_level_equation"], dtype=bool).reshape(-1)
-                        break
-
-            if _level_mask is None:
-                for _candidate_name in (
-                    "row_meta",
-                    "row_metadata",
-                    "row_meta_for_cov",
-                    "matrix_row_meta",
-                    "_row_meta",
-                    "_row_metadata",
-                ):
-                    _meta = locals().get(_candidate_name)
-                    if _meta is None:
-                        continue
-
-                    _tmp = []
-                    _ok = True
-                    for _r in _meta:
-                        if isinstance(_r, dict):
-                            _tmp.append(
-                                bool(
-                                    _r.get("is_level_equation", _r.get("_is_level_equation", False))
-                                )
-                            )
-                        else:
-                            _ok = False
-                            break
-
-                    if _ok and len(_tmp) == len(_u1_col):
-                        _level_mask = np.asarray(_tmp, dtype=bool)
-                        break
-
-            if _level_mask is not None:
-                _level_mask = np.asarray(_level_mask, dtype=bool).reshape(-1)
-
-                # A valid System-GMM equation mask must contain both
-                # differenced-equation rows and level-equation rows. Some
-                # diagnostic metadata paths can produce an all-False mask
-                # because missing "is_level_equation" keys default to False.
-                # Accepting that mask makes _diff_mask = all rows, which
-                # incorrectly contaminates xtabond2 Sargan sig2 with level
-                # residuals.
-                if bool(spec.system) and (
-                    len(_level_mask) != len(_u1_col)
-                    or not bool(np.any(_level_mask))
-                    or not bool(np.any(~_level_mask))
-                ):
-                    _level_mask = None
-
-            if _level_mask is None or len(_level_mask) != len(_u1_col):
-                # xtabond2-compatible fallback for native System GMM.
-                #
-                # The stacked native System-GMM matrix is grouped by entity and,
-                # within each entity, stores differenced-equation rows first and
-                # level-equation rows second. For a balanced group with T usable
-                # level observations, the block has (T - 1) differenced rows and
-                # T level rows, so:
-                #
-                #   n_diff_i = floor(n_group_rows / 2)
-                #
-                # This fallback is required because scalar normalisation for
-                # Sargan must use only first-difference residuals. Using all
-                # stacked rows incorrectly includes level-equation residuals and
-                # overstates the Sargan statistic.
-                _diff_mask = np.zeros(len(_u1_col), dtype=bool)
-
-                _group_blocks = locals().get("group_indices_for_cov", None)
-                if _group_blocks is None:
-                    _group_blocks = locals().get("group_indices", None)
-
-                if bool(spec.system) and _group_blocks is not None:
-                    for _gidx in _group_blocks:
-                        _idx = np.asarray(_gidx, dtype=int).reshape(-1)
-                        if _idx.size == 0:
-                            continue
-                        _n_diff_i = int(_idx.size // 2)
-                        if _n_diff_i > 0:
-                            _diff_mask[_idx[:_n_diff_i]] = True
-
-                if not bool(np.any(_diff_mask)):
-                    # Balanced-panel fallback. This is reached when the local
-                    # scope does not expose group index blocks. Native System GMM
-                    # stacks rows by entity; within each entity block,
-                    # differenced-equation rows precede level-equation rows.
-                    #
-                    # For a balanced System-GMM block:
-                    #   rows_per_group = n_diff_i + n_level_i
-                    #   n_diff_i       = floor(rows_per_group / 2)
-                    #
-                    # Example certified xtabond2 benchmark:
-                    #   2400 rows / 96 groups = 25 rows/group
-                    #   floor(25 / 2) = 12 diff rows/group
-                    #   96 * 12 = 1152 diff rows
-                    _n_groups_fallback = None
-
-                    for _candidate_name in (
-                        "_n_groups_for_diag",
-                        "n_groups_for_cov",
-                        "_n_groups_for_cov",
-                        "n_groups",
-                        "_n_groups",
-                    ):
-                        _candidate_value = locals().get(_candidate_name)
-                        if _candidate_value is not None:
-                            try:
-                                _n_groups_fallback = int(_candidate_value)
-                                break
-                            except Exception:
-                                pass
-
-                    if _n_groups_fallback is None:
-                        try:
-                            _n_groups_fallback = int(data[entity].nunique())
-                        except Exception:
-                            _n_groups_fallback = None
-
-                    if (
-                        bool(spec.system)
-                        and _n_groups_fallback is not None
-                        and _n_groups_fallback > 0
-                        and len(_u1_col) % _n_groups_fallback == 0
-                    ):
-                        _rows_per_group = int(len(_u1_col) // _n_groups_fallback)
-                        _n_diff_i = int(_rows_per_group // 2)
-
-                        if _n_diff_i > 0:
-                            for _g in range(_n_groups_fallback):
-                                _start = int(_g * _rows_per_group)
-                                _stop = int(_start + _n_diff_i)
-                                _diff_mask[_start:_stop] = True
-
-                    if not bool(np.any(_diff_mask)):
-                        # Final defensive fallback for nonstandard paths. This is
-                        # deliberately last because it is not xtabond2-certified
-                        # for System-GMM Sargan.
-                        _diff_mask = np.ones(len(_u1_col), dtype=bool)
-            else:
-                _diff_mask = ~_level_mask
+            # Consume the matrix builder's explicit equation metadata.  Any
+            # row-count fallback assumes a balanced panel and silently selects
+            # the wrong residuals for unbalanced or variable-missing samples.
+            _level_mask = _native_level_equation_mask_from_row_meta(
+                row_meta,
+                expected_rows=len(_u1_col),
+            )
+            _diff_mask = ~_level_mask
 
             _u1_diff = _u1_col.reshape(-1)[_diff_mask]
             _n_diff = int(_u1_diff.size)
@@ -2949,7 +2963,7 @@ def run_native_dynamic_panel_gmm(
         backend="native-gmm",
         notes=[
             "Native dynamic-panel GMM engine.",
-            "Native System GMM coefficient, Windmeijer-SE, count, Hansen/Sargan, and signed AR diagnostic parity is verified against xtabond2 on four maintained aligned specifications under declared numerical gates.",
+            "Native System GMM coefficient, Windmeijer-SE, count, Hansen/Sargan, and signed AR diagnostic parity is verified against xtabond2 on six maintained aligned specifications under declared numerical gates; the unbalanced and variable-missing fixtures also have exact sample-key parity.",
             (
                 "Windmeijer-corrected two-step standard errors are enabled via windmeijer=True "
                 "using the maintained native correction; matched structural-SE parity is certified "
@@ -2962,7 +2976,7 @@ def run_native_dynamic_panel_gmm(
         n_groups=int(n_groups_for_cov) if int(n_groups_for_cov) > 0 else None,
         hansen_p=hansen_p,
         sargan_p=sargan_p,
-        sargan_stat=_j_stat,
+        sargan_stat=_sargan_stat,
         ar1_p=ar1_p,
         ar2_p=ar2_p,
         ar1_z=ar1_z,

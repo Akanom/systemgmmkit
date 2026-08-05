@@ -56,8 +56,9 @@ xtabond2_strict_parity/
 # Generated validation/debug artifacts that should not be recommitted.
 artifacts/**/22_archived_broken_outputs/
 artifacts/**/22_debug_workflow/
+/artifacts/parity/xtabond2/candidates/
 artifacts/**/*.log
-/systemgmmkit.log
+/*.log
 artifacts/**/*.dta
 artifacts/**/native_debug*.csv
 artifacts/**/*_patched.csv

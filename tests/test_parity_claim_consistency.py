@@ -41,6 +41,13 @@ def test_system_gmm_documents_share_the_diagnostic_certification_boundary() -> N
     assert "pass_xtabond2_parity" in roadmap
     assert "signed ar diagnostics" in report
     assert "outside this certified set" in readme
+    for text in (readme, matrix, roadmap):
+        assert "six maintained" in text
+        assert "system_gmm_unbalanced_panel" in text
+        assert "system_gmm_variable_missing" in text
+        assert "exact sample" in text or "exact estimation-sample" in text
+
+    assert "system_gmm_three_way_no_controls" in readme
     assert "system_gmm_three_way_no_controls" in matrix
     assert "experimental_parity_pending" in matrix
     assert "experimental_parity_pending" in roadmap
@@ -64,11 +71,17 @@ def test_xtabond2_and_pydynpd_have_distinct_reference_roles() -> None:
 def test_runtime_note_states_benchmark_specific_diagnostic_parity() -> None:
     dynamic_panel = _normalized("src/systemgmmkit/dynamic_panel.py")
     native_gmm = _normalized("src/systemgmmkit/native_gmm.py")
+    parity_policy = _normalized("src/systemgmmkit/gmm_parity_policy.py")
 
     for text in (dynamic_panel, native_gmm):
         assert "signed ar diagnostic parity" in text
-        assert "four maintained" in text
+        assert "six maintained" in text
+        assert "exact sample-key parity" in text
 
+    assert "six aligned fixtures" in parity_policy
+    assert "four aligned fixtures" not in parity_policy
+    assert "four maintained" not in native_gmm
+    assert "four controlled xtabond2 fixtures" not in _normalized("README.md")
     assert "does not imply universal stata identity" in dynamic_panel
     assert "windmeijer-corrected two-step standard errors are not yet certified" not in native_gmm
     assert "sargan parity against xtabond2 is not certified" not in native_gmm
