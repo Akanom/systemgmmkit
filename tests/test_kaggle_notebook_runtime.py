@@ -48,6 +48,21 @@ def test_reporting_cells_use_outputhub_for_static_and_gmm_results():
     assert "assert len(hub.tables) == 1" in gmm_source
 
 
+def test_notebook_demonstrates_diagnostic_first_gmm_selection():
+    selector_source = _code_cell_source(17)
+
+    assert "sgk.auto_dynamic_gmm" in selector_source
+    assert '"model": "difference"' in selector_source
+    assert '"model": "system"' in selector_source
+    assert '"passes_diagnostics"' in selector_source
+    assert '"rejection_reason"' in selector_source
+    assert "gmm_selection.write_report" in selector_source
+    assert "sgk.add_to_outputhub" in selector_source
+    assert "gmm_selection.best_result is not None" in selector_source
+    assert "with warnings.catch_warnings()" in selector_source
+    assert "Native System GMM has coefficient, Windmeijer-SE.*" in selector_source
+
+
 def test_postestimation_tables_use_compact_inference_formatting():
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
