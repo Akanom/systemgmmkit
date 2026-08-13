@@ -64,6 +64,7 @@ artifacts/**/*summary_final*.md
 artifacts/**/*summary_final*.csv
 
 # Local cloud-notebook credentials and generated notebooks
+/systemgmmkit_notebook_outputs/
 /Kaggle/
 /kaggle.json
 /.kaggle/
