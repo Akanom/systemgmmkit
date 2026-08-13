@@ -1,3 +1,50 @@
+# systemgmmkit 1.0.0 Release Notes
+
+## Stable API and instrument-health reporting
+
+Version `1.0.0` establishes the documented public API as stable. Future
+incompatible changes to maintained estimator, result, diagnostics,
+post-estimation, and workflow interfaces require a new major version;
+deprecations will remain available for at least one minor release where
+practical. Experimental behavior remains explicitly identified in its API or
+documentation.
+
+Native and `pydynpd` dynamic-GMM result summaries now report a structured
+instrument-health assessment. The assessment records instrument and group
+counts, their ratio, and one of four states: `acceptable` at or below 0.8,
+`approaching` above 0.8 through 1.0, `critical` when instruments exceed groups,
+or `unavailable` when either count is missing. Critical output recommends
+shorter lag windows, collapsed instruments, and sensitivity checks. These
+thresholds are conservative screening rules; they do not mechanically prove or
+disprove instrument validity and do not replace Hansen, Sargan, AR, or
+substantive identification analysis.
+
+The release preserves the v0.5.14 native System GMM numerical-certification
+scope: six maintained aligned specifications against Stata 17 and `xtabond2`
+3.7.2, including exact sample-key checks for the unbalanced-panel and
+variable-missing fixtures. Passing those gates is benchmark-specific numerical
+agreement, not universal Stata equivalence or specification endorsement.
+
+The stable release gate includes the complete test suite, enforced statement
+and branch coverage floors, 100% dynamic-panel routing coverage, progressive
+core mypy checks, Ruff, distribution inspection, dependency audits, SBOM
+generation, exact wheel/sdist smoke tests, signed tagging, and protected PyPI
+Trusted Publishing.
+
+Static typing remains an enforced progressive gate over the documented core
+modules rather than a PEP 561 promise for every optional visualization and ML
+module. Additional lag-window, instrument-classification, and comparator
+fixtures remain welcome extensions to the benchmark-specific certification;
+their absence does not broaden the current claim boundary.
+
+Install this release with:
+
+```bash
+python -m pip install systemgmmkit==1.0.0
+```
+
+---
+
 # systemgmmkit 0.5.14 Release Notes
 
 ## Certified System GMM evidence and safer panel handling

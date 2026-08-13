@@ -43,6 +43,115 @@ class DiagnosticReport:
         return "\n".join(lines)
 
 
+@dataclass(frozen=True)
+class InstrumentHealth:
+    """Instrument-proliferation assessment for a fitted GMM result."""
+
+    n_instruments: int | None
+    n_groups: int | None
+    ratio: float | None
+    status: str
+    warning: str | None
+    recommendation: str
+
+    @property
+    def proliferation_detected(self) -> bool:
+        return self.status == "critical"
+
+    def to_markdown(self) -> str:
+        instruments = "unavailable" if self.n_instruments is None else str(self.n_instruments)
+        groups = "unavailable" if self.n_groups is None else str(self.n_groups)
+        ratio = "unavailable" if self.ratio is None else f"{self.ratio:.3f}"
+        lines = [
+            "## Instrument health",
+            "",
+            f"- Instruments: `{instruments}`",
+            f"- Groups: `{groups}`",
+            f"- Instrument/group ratio: `{ratio}`",
+            f"- Status: **{self.status.upper()}**",
+        ]
+        if self.warning:
+            lines.extend(["", f"> **Warning:** {self.warning}"])
+        lines.extend(["", f"**Recommendation:** {self.recommendation}"])
+        return "\n".join(lines)
+
+
+def check_instrument_health(
+    result: object,
+    *,
+    warning_ratio: float = 0.8,
+) -> InstrumentHealth:
+    """Assess instrument count relative to the cross-sectional group count.
+
+    This is a diagnostic rule of thumb, not a mechanical validity test. An
+    instrument count above the number of groups is classified as critical;
+    ratios strictly above ``warning_ratio`` are classified as approaching.
+    """
+
+    if not 0.0 < warning_ratio <= 1.0:
+        raise ValueError("warning_ratio must be in the interval (0, 1].")
+
+    n_instruments = getattr(result, "n_instruments", None)
+    n_groups = getattr(result, "n_groups", None)
+    n_instruments = int(n_instruments) if n_instruments is not None else None
+    n_groups = int(n_groups) if n_groups is not None else None
+
+    if n_instruments is not None and n_instruments < 0:
+        raise ValueError("n_instruments must be non-negative.")
+    if n_groups is not None and n_groups <= 0:
+        raise ValueError("n_groups must be positive when supplied.")
+
+    if n_instruments is None or n_groups is None:
+        return InstrumentHealth(
+            n_instruments=n_instruments,
+            n_groups=n_groups,
+            ratio=None,
+            status="unavailable",
+            warning="Instrument health could not be assessed because both counts are required.",
+            recommendation="Report the instrument count and cross-sectional group count.",
+        )
+
+    ratio = n_instruments / n_groups
+    if n_instruments > n_groups:
+        return InstrumentHealth(
+            n_instruments=n_instruments,
+            n_groups=n_groups,
+            ratio=ratio,
+            status="critical",
+            warning=(
+                "Instrument proliferation detected (instruments exceed groups). "
+                "This can overfit endogenous variables, weaken Hansen-test power, "
+                "and make inference less reliable."
+            ),
+            recommendation=(
+                "Shorten GMM lag windows (for example, use (2, 3) instead of a deep "
+                "open-ended window), enable collapse=True, and report sensitivity checks."
+            ),
+        )
+    if ratio > warning_ratio:
+        return InstrumentHealth(
+            n_instruments=n_instruments,
+            n_groups=n_groups,
+            ratio=ratio,
+            status="approaching",
+            warning="Instrument count is approaching the number of groups.",
+            recommendation=(
+                "Monitor Hansen/Sargan results and compare estimates using shorter lag "
+                "windows or collapsed instruments."
+            ),
+        )
+    return InstrumentHealth(
+        n_instruments=n_instruments,
+        n_groups=n_groups,
+        ratio=ratio,
+        status="acceptable",
+        warning=None,
+        recommendation=(
+            "Keep reporting the count and verify robustness across defensible instrument sets."
+        ),
+    )
+
+
 def assess_diagnostics(
     *,
     ar1_p: float | None = None,
@@ -135,10 +244,12 @@ __all__ = [
     "DiagnosticReport",
     "DiagnosticResult",
     "GmmDiagnostics",
+    "InstrumentHealth",
     "assess_diagnostics",
     "breusch_pagan_lm",
     "hausman_fe_re",
     "modified_wald_groupwise_heteroskedasticity",
     "pesaran_cd",
     "wooldridge_serial_correlation",
+    "check_instrument_health",
 ]
