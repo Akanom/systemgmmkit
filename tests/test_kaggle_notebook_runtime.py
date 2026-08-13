@@ -91,6 +91,14 @@ def test_reporting_cells_use_outputhub_for_static_and_gmm_results():
     assert "assert len(hub.tables) == 1" in gmm_source
 
 
+def test_gmm_cell_reports_structured_instrument_health():
+    source = _code_cell_source(15)
+
+    assert "diff_gmm.check_instrument_health()" in source
+    assert "instrument_health.to_markdown()" in source
+    assert 'instrument_health.status == "acceptable"' in source
+
+
 def test_postestimation_tables_use_compact_inference_formatting():
     notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
     source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])

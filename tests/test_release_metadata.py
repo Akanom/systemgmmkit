@@ -42,6 +42,20 @@ def test_outputhub_dependency_preserves_python_39_core_support() -> None:
     assert requirement in optional["all"]
 
 
+def test_v1_metadata_declares_stable_api_policy() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as handle:
+        project = tomllib.load(handle)["project"]
+
+    classifiers = set(project["classifiers"])
+    policy = (ROOT / "docs" / "API_STABILITY.md").read_text(encoding="utf-8")
+
+    assert project["version"] == "1.0.0"
+    assert "Development Status :: 5 - Production/Stable" in classifiers
+    assert "Development Status :: 3 - Alpha" not in classifiers
+    assert "semantic versioning" in policy
+    assert "Econometric claim boundary" in policy
+
+
 def test_release_requirements_cover_windows_build_dependency() -> None:
     release_input = (ROOT / "requirements" / "release.in").read_text(encoding="utf-8")
     release_requirements = (ROOT / "requirements" / "release.txt").read_text(encoding="utf-8")

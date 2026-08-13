@@ -14,6 +14,25 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## 1.0.0 - 2026-08-14
+
+### Added
+
+* Added a structured instrument-health assessment to native and `pydynpd` GMM
+  results. Markdown summaries now report instrument and group counts, their
+  ratio, and conservative `acceptable`, `approaching`, `critical`, or
+  `unavailable` status with actionable lag-window and collapsing guidance.
+
+### Changed
+
+* Declared the maintained estimator, result, diagnostics, post-estimation, and
+  workflow interfaces stable under the documented compatibility policy.
+* Promoted the package classifier from Alpha to Production/Stable. This is an
+  API and release-maturity commitment, not a claim of universal cross-software
+  identity or automatic econometric validity.
+
+---
+
 ## 0.5.14 - 2026-08-06
 
 ### Added

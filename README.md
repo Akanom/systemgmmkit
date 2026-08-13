@@ -27,6 +27,11 @@ The package is designed for empirical researchers working in economics, finance,
 
 The objective is not only to estimate models. The objective is to make modelling choices clear enough for replication, review, publication, and applied decision-making.
 
+Version 1.0 establishes the documented public interface as stable under the
+[API stability policy](docs/API_STABILITY.md). Stable status describes API and
+release maturity; econometric validity and cross-software agreement remain
+specification- and evidence-specific.
+
 ## Public runnable example
 
 Run the public [systemgmmkit Kaggle quickstart](https://www.kaggle.com/code/akanom/systemgmmkit-quickstart)
@@ -2085,6 +2090,22 @@ Recommended practice:
 * check whether Hansen p-values are suspiciously high;
 * run robustness checks with alternative lag windows;
 * inspect the SGM-Viz instrument architecture dashboard.
+
+Every native and `pydynpd` GMM result now includes the same structured health
+assessment in its Markdown summary. It is also available directly:
+
+```python
+health = result.check_instrument_health()
+print(health.status, health.n_instruments, health.n_groups, health.ratio)
+print(health.to_markdown())
+```
+
+`critical` means instruments exceed groups; `approaching` means the ratio is
+strictly above 0.8; `acceptable` means it is at or below 0.8. These categories
+are conservative specification-screening rules, not mechanical proof that a
+model is valid or invalid. For a critical result, shorten GMM lag windows and/or
+use `collapse=True`, then report sensitivity checks alongside Hansen, Sargan,
+AR(1), and AR(2) diagnostics.
 
 ## Do not overinterpret one specification
 

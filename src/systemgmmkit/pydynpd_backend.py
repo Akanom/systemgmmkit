@@ -47,6 +47,12 @@ class PydynpdGMMResult:
     def succeeded(self) -> bool:
         return self.error is None
 
+    def check_instrument_health(self):
+        """Return the instrument/group proliferation assessment."""
+        from .diagnostics import check_instrument_health
+
+        return check_instrument_health(self)
+
     def to_markdown(self) -> str:
         frame = pd.DataFrame(
             {
@@ -55,7 +61,7 @@ class PydynpdGMMResult:
                 "p_value": self.pvalues.reindex(self.params.index),
             }
         )
-        return frame.to_markdown()
+        return "\n\n".join([frame.to_markdown(), self.check_instrument_health().to_markdown()])
 
 
 def _format_regressor(var: str) -> str:
@@ -63,7 +69,6 @@ def _format_regressor(var: str) -> str:
     if var.startswith("L") and "." in var:
         return var
     return var
-
 
 
 def _valid_p_value(value: object) -> float | None:
@@ -467,15 +472,11 @@ def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
     )
 
     hansen_p = _valid_p_value(
-        _to_float_or_none(
-            _first_existing_attr(raw, ["hansen_p", "hansen", "hansen_pvalue"])
-        )
+        _to_float_or_none(_first_existing_attr(raw, ["hansen_p", "hansen", "hansen_pvalue"]))
     )
 
     sargan_p = _valid_p_value(
-        _to_float_or_none(
-            _first_existing_attr(raw, ["sargan_p", "sargan", "sargan_pvalue"])
-        )
+        _to_float_or_none(_first_existing_attr(raw, ["sargan_p", "sargan", "sargan_pvalue"]))
     )
 
     ar1_p = _valid_p_value(
@@ -572,6 +573,7 @@ def _extract_metadata(raw: Any, output: str) -> dict[str, int | float | None]:
         "ar1_p": _valid_p_value(ar1_p),
         "ar2_p": _valid_p_value(ar2_p),
     }
+
 
 def _debug_summarize_pydynpd_value(value: Any, *, depth: int = 0, max_depth: int = 4) -> Any:
     """Return a JSON-safe structural summary of a pydynpd object/value."""

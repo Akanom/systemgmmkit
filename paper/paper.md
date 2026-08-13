@@ -42,6 +42,16 @@ Dynamic-panel GMM is a mature method for panels with lagged dependent variables,
 
 This matters most for dynamic-panel GMM, where small changes in instrument construction, sample trimming, finite-sample corrections, or equation scope can change results. The package therefore treats validation, diagnostics, and post-estimation as part of the workflow, not as material users have to reconstruct after estimation. Result objects expose coefficients, covariance matrices, fitted values, residuals, diagnostic tests, and metadata in a consistent form across estimator families.
 
+From version 1.0, native and `pydynpd` GMM result summaries also expose a
+structured instrument-health assessment. It reports the instrument count, group
+count, their ratio, and conservative `acceptable`, `approaching`, `critical`, or
+`unavailable` status. A critical status means that instruments outnumber groups
+and prompts users to shorten lag windows, collapse instruments, and run
+sensitivity checks. This is a screening rule rather than a mechanical validity
+test: it neither proves coefficient bias nor automatically invalidates Hansen or
+Sargan inference, which must be interpreted with the model's identification and
+other diagnostics [@roodman2009xtabond2].
+
 The package also balances native Python implementation with aligned reference checks. Native estimators and utilities provide reproducible Python workflows, while validation artifacts compare selected `systemgmmkit` specifications against established Stata, R, and Python references where the estimand is controlled. The point is not to pretend that software implementations are identical, but to make the package's claim boundary visible enough to check.
 
 # Package Validation and Aligned Reference Checks

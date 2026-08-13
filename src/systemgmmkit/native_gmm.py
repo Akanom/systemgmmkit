@@ -67,6 +67,12 @@ class NativeGMMResult:
             }
         )
 
+    def check_instrument_health(self):
+        """Return the instrument/group proliferation assessment."""
+        from .diagnostics import check_instrument_health
+
+        return check_instrument_health(self)
+
     def to_markdown(self, digits: int = 4) -> str:
         table = self.summary_frame().round(digits)
         lines = [f"# Native dynamic-panel GMM result: {self.spec.name}", ""]
@@ -80,6 +86,7 @@ class NativeGMMResult:
                 lines.append(f"  - {note}")
         lines.append("")
         lines.append(table.to_markdown())
+        lines.extend(["", self.check_instrument_health().to_markdown()])
         return "\n".join(lines)
 
 

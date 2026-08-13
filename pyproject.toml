@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systemgmmkit"
-version = "0.5.14"
+version = "1.0.0"
 description = "Panel-data econometrics workflows for OLS, FE, RE, IV/2SLS, Difference GMM, System GMM, diagnostics, post-estimation, visualization, and ML-style validation in Python."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
   { name = "Oluwajuwon Mayomi Akanbi" }
 ]
@@ -32,9 +32,8 @@ keywords = [
   "panel-cross-validation"
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
