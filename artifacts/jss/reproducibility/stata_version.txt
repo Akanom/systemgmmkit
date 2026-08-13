@@ -1,0 +1,3 @@
+stata: command_not_found
+stata-mp: command_not_found
+stata-se: command_not_found

@@ -1,0 +1,6 @@
+| Candidate       | Status     |   RMSE |    R2 | Hansen p     |   AR(2) p |   Instr. |
+|:----------------|:-----------|-------:|------:|:-------------|----------:|---------:|
+| System, 2:2     | Selected   |  0.602 | 0.923 | 0.669        |     0.287 |        6 |
+| System, 2:3     | Admissible |  0.606 | 0.922 | 0.929        |     0.286 |        8 |
+| Difference, 2:2 | Rejected   |  1.877 | 0.251 | Not reported |     0.139 |        3 |
+| Difference, 2:3 | Admissible |  1.382 | 0.594 | 0.897        |     0.151 |        5 |

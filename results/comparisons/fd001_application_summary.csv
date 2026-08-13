@@ -1,0 +1,2 @@
+dataset,n_rows,n_units,n_periods,synthetic,source,status
+data/processed/fd001_panel.csv,20631,100,362,False,NASA C-MAPSS FD001 download,PASS

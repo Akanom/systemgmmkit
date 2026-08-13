@@ -1,0 +1,3 @@
+Model,Split,N eval,RMSE,MAE,SMAPE,R2
+Pooled dyn. OLS,Cycles 1--70 / 71--100,133,0.332,0.323,0.447,-15.783
+Direct sensor RF,Cycles 1--70 / 71--100,133,0.071,0.053,0.062,0.232

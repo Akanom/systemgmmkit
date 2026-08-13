@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "generated_utc": "2026-08-13T22:50:19+00:00",
+  "seed": 20260724,
+  "systemgmmkit_version": "1.0.0",
+  "dataset": "data/synthetic/22_dynamic_gmm_controlled_panel.csv",
+  "candidate_count": 4,
+  "valid_candidate_count": 3,
+  "elapsed_seconds": 4.196768900001189,
+  "best_spec": {
+    "model": "system",
+    "steps": "twostep",
+    "gmm_lags": [
+      2,
+      2
+    ],
+    "transformation": "fd",
+    "collapse": true,
+    "windmeijer": true,
+    "time_effects": false,
+    "backend": "native"
+  },
+  "best_candidate_id": 1,
+  "selection_metric": "rmse",
+  "claim_boundary": "Diagnostics filter candidates before predictive ranking; selection does not establish causal identification or instrument validity."
+}

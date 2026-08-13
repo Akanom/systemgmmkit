@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "generated_utc": "2026-08-13T22:50:24+00:00",
+  "seed": 20260724,
+  "train_periods": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "test_periods": [
+    9,
+    10
+  ],
+  "train_rows": 840,
+  "test_rows": 240,
+  "packages": [
+    "scikit-learn",
+    "statsmodels",
+    "systemgmmkit"
+  ],
+  "claim_boundary": "The external rows compare prediction on the same temporal split. They are not substitutes for Stata xtabond2 estimator parity."
+}

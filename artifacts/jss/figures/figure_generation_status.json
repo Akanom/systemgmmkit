@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "generated_utc": "2026-08-13T22:50:40+00:00",
+  "seed": 20260724,
+  "source": "results/comparisons/auto_gmm_search_results.csv",
+  "outputs": [
+    "artifacts/jss/figures/01_auto_gmm_search_holdout.pdf",
+    "artifacts/jss/figures/01_auto_gmm_search_holdout.png",
+    "paper_jss/figures/01_auto_gmm_search_holdout.pdf",
+    "paper_jss/figures/01_auto_gmm_search_holdout.png"
+  ],
+  "matplotlib_version": "3.10.9"
+}

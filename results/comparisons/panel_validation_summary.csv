@@ -1,0 +1,8 @@
+metric,value
+n_rows,20631
+n_units,100
+n_time_periods,362
+min_periods_per_unit,128
+max_periods_per_unit,362
+mean_periods_per_unit,206.31
+status,PASS

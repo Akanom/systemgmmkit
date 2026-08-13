@@ -1,0 +1,8 @@
+| Specification          |   Hansen p |   Sargan p |   AR(1) p |   AR(2) p | Over-id (5%)   | Status   |
+|:-----------------------|-----------:|-----------:|----------:|----------:|:---------------|:---------|
+| Baseline controls      |      0.16  |      0.088 |     0.08  |     0.868 | Do not reject  | PASS     |
+| No controls            |      0.024 |      0.006 |     0.136 |     0.92  | Reject         | PASS     |
+| Three-way controls     |      0.021 |      0     |     0     |     0.99  | Reject         | PASS     |
+| Decomposition controls |      0.006 |      0     |     0.064 |     0.152 | Reject         | PASS     |
+| Unbalanced panel       |      0.232 |      0.297 |     0.107 |     0.873 | Do not reject  | PASS     |
+| Variable missingness   |      0.012 |      0.001 |     0.033 |     0.111 | Reject         | PASS     |

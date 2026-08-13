@@ -1,0 +1,53 @@
+project:
+  root: ./
+  reproducibility_seed: 20260724
+  systemgmmkit_version: 1.0.0
+  universal_output_hub_version: 0.2.4
+  description: Single-command replication pipeline for the JSS manuscript.
+
+pipeline:
+  common_steps:
+    - replication/scripts/python/00_session_info.py
+    - replication/scripts/processing/01_prepare_fd001.py
+    - replication/scripts/python/09_ncmapss_application.py
+    - replication/scripts/python/10_controlled_dynamic_gmm.py
+    - replication/scripts/python/11_auto_gmm_search.py
+    - replication/scripts/python/12_ml_comparator.py
+    - replication/scripts/python/01_static_validation.py
+    - replication/scripts/python/02_system_gmm_validation.py
+    - replication/scripts/python/03_difference_gmm_validation.py
+    - replication/scripts/python/04_windmeijer_validation.py
+    - replication/scripts/python/05_postestimation_validation.py
+    - replication/scripts/python/06_panel_validation.py
+    - replication/scripts/python/07_forecast_backtesting.py
+    - replication/scripts/python/08_fd001_application.py
+    - replication/scripts/tables/01_build_tables.py
+    - replication/scripts/figures/01_build_figures.py
+    - replication/scripts/manuscript/01_compile_jss.py
+    - replication/scripts/validation/99_verify_outputs.py
+  smoke:
+    data_policy: deterministic FD001 fallback permitted
+    proprietary_software: false
+  open:
+    data_policy: official NASA FD001 download required when raw input is absent
+    proprietary_software: false
+    parity_source: signed v0.5.14 release certificate
+  full:
+    data_policy: official NASA FD001 download required when raw input is absent
+    proprietary_software: optional Stata hook
+
+directories:
+  data:
+    raw: data/raw
+    processed: data/processed
+    fixed_external: data/external
+    synthetic: data/synthetic
+  results:
+    root: results
+    normalized: results/normalized
+    comparisons: results/comparisons
+  artifacts:
+    jss: artifacts/jss
+  manuscripts:
+    jss: paper_jss
+    joss: paper/paper.md

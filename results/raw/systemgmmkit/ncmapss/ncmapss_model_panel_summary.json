@@ -1,0 +1,11 @@
+{
+  "dataset": "N-CMAPSS DS01 dev unit-cycle panel",
+  "rows_after_lag": 547,
+  "n_units": 6,
+  "min_cycle": 2,
+  "max_cycle": 100,
+  "duplicate_unit_cycle_rows": 0,
+  "dependent_variable": "risk",
+  "entity_index": "unit",
+  "time_index": "cycle"
+}

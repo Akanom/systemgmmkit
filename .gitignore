@@ -1,5 +1,7 @@
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*.pyo
 *.egg-info/
 .dist/
 dist/
@@ -8,14 +10,9 @@ build/
 .ruff_cache/
 .mypy_cache/
 .venv/
-.venv-*/
 .env
-.coverage
-.coverage.*
-coverage.json
-htmlcov/
 
-# Local patch/recovery artifacts
+# Local patch, recovery, and diagnostic artifacts
 _archive/
 *.bak
 *.py.bak
@@ -25,26 +22,6 @@ _inspect_*.py
 _check_*.py
 _compare_*.py
 _debug_*.py
-
-# Local harness/debug outputs
-outputs/
-strict_matrix_debug/
-
-# Local patch/recovery artifacts
-_archive/
-*.bak
-*.py.bak
-_patch_*.py
-_fix_*.py
-_inspect_*.py
-_check_*.py
-_compare_*.py
-_debug_*.py
-
-# Local debug outputs
-outputs/
-strict_matrix_debug/
-# Local diagnostic backups
 README.md.before_*
 README_BACKUP_*.md
 *.before_*
@@ -52,17 +29,34 @@ README_BACKUP_*.md
 src/systemgmmkit/*.before_*
 src/systemgmmkit/*.py.before_*
 xtabond2_strict_parity/
-*.pyc
-# Python cache files
-**/__pycache__/
-*.pyo
+outputs/
+strict_matrix_debug/
 
-# Generated validation/debug artifacts that should not be recommitted.
+# Downloaded/generated replication data
+/data/raw/fd001/CMAPSSData.zip
+/data/raw/fd001/train_FD001.txt
+/data/processed/
+/data/synthetic/
+
+# JSS/LaTeX build intermediates can contain machine-specific absolute paths
+/paper_jss/*.aux
+/paper_jss/*.bbl
+/paper_jss/*.blg
+/paper_jss/*.fdb_latexmk
+/paper_jss/*.fls
+/paper_jss/*.log
+/paper_jss/*.out
+/paper_jss/main_compile.log
+/paper_jss/paper_jss/
+/tmp/
+/temp_pdf/
+/texput.log
+/tmp_*.py
+
+# Generated validation/debug artifacts that should not be recommitted
 artifacts/**/22_archived_broken_outputs/
 artifacts/**/22_debug_workflow/
-/artifacts/parity/xtabond2/candidates/
 artifacts/**/*.log
-/*.log
 artifacts/**/*.dta
 artifacts/**/native_debug*.csv
 artifacts/**/*_patched.csv
@@ -75,4 +69,3 @@ artifacts/**/*summary_final*.csv
 /.kaggle/
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
-/systemgmmkit_notebook_outputs/

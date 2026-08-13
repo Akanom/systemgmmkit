@@ -1,0 +1,10 @@
+module,version,source
+python,3.14.6,runtime
+systemgmmkit,1.0.0,runtime
+pandas,3.0.5,runtime
+numpy,2.5.2,runtime
+scipy,1.18.0,runtime
+statsmodels,0.14.6,runtime
+scikit-learn,1.9.0,runtime
+matplotlib,3.10.9,runtime
+universal-output-hub,0.2.4,runtime

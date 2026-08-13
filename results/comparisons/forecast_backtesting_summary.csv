@@ -1,0 +1,5 @@
+section,dataset,backend,status,mean_seconds,n_rows
+Difference GMM,small,native,PASS,0.775118100020336,600
+Difference GMM,tiny,native,PASS,0.4577243000094313,300
+System GMM,small,native,PASS,1.518540099990787,600
+System GMM,tiny,native,PASS,0.6986564999970142,300
