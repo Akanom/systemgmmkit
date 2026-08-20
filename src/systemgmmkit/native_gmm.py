@@ -21,10 +21,11 @@ class NativeGMMResult:
     The native Difference GMM path has strict benchmark parity. Native System
     GMM has benchmark-specific ``xtabond2`` parity on six maintained, aligned
     collapsed two-step specifications. The certificate covers complete
-    parameters, Windmeijer-corrected standard errors, exact structural counts,
-    Hansen/Sargan statistics, and signed AR diagnostics under declared gates. The
-    unbalanced-panel and variable-missing fixtures also have exact sample-key
-    parity; the evidence does not extend automatically to other designs or options.
+    parameters, Windmeijer-corrected standard errors and their reported covariance
+    matrix, exact structural counts, Hansen/Sargan statistics, and signed AR
+    diagnostics under declared gates. The unbalanced-panel and variable-missing
+    fixtures also have exact sample-key parity; the evidence does not extend
+    automatically to other designs or options.
     """
 
     spec: DynamicPanelSpec
@@ -56,6 +57,9 @@ class NativeGMMResult:
     sargan_j_stat: float | None = None
     overid_df: int | None = None
     hansen_j_error: str | None = None
+    covariance: pd.DataFrame | None = None
+    covariance_correction: str = "none"
+    covariance_reference: str | None = None
 
     def summary_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -2958,6 +2962,17 @@ def run_native_dynamic_panel_gmm(
         zstats=pd.Series(zstats, index=names, name="z"),
         pvalues=pd.Series(pvalues, index=names, name="p_value"),
         residuals=pd.Series(residual_vec, index=row_index, name="residual"),
+        covariance=pd.DataFrame(
+            np.asarray(cov, dtype=float).copy(),
+            index=pd.Index(names),
+            columns=pd.Index(names),
+        ),
+        covariance_correction=(
+            "windmeijer_2005" if windmeijer_requested and use_twostep else "none"
+        ),
+        covariance_reference=(
+            "10.1016/j.jeconom.2004.02.005" if windmeijer_requested and use_twostep else None
+        ),
         covariance_type=(
             "robust-clustered-two-step-windmeijer"
             if windmeijer_requested and use_twostep

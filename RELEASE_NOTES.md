@@ -1,3 +1,30 @@
+# systemgmmkit 1.0.1 Release Notes
+
+## Native GMM covariance provenance
+
+Version `1.0.1` exposes the complete coefficient-aligned covariance matrix used
+to produce native dynamic-GMM standard errors. Native results also report a
+machine-readable correction identifier and reference. A two-step fit requested
+with `windmeijer=True` reports `covariance_correction="windmeijer_2005"`, DOI
+`10.1016/j.jeconom.2004.02.005`, and covariance type
+`robust-clustered-two-step-windmeijer`. Uncorrected and one-step paths report
+`covariance_correction="none"` and no correction reference.
+
+The surface is additive and does not change estimator algebra, coefficients,
+standard errors, diagnostics, or the six-specification `xtabond2` certification
+boundary. The covariance matrix is required to be finite, symmetric,
+coefficient-aligned, and diagonally consistent with the reported standard
+errors. Post-estimation `vcov()` now returns this full matrix instead of a
+diagonal standard-error fallback for native GMM results.
+
+Install this release with:
+
+```bash
+python -m pip install systemgmmkit==1.0.1
+```
+
+---
+
 # systemgmmkit 1.0.0 Release Notes
 
 ## Stable API and instrument-health reporting

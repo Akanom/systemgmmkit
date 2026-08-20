@@ -131,6 +131,20 @@ def run_smoke(expected_version: str) -> dict[str, Any]:
         preparation_engine="accelerated",
     )
 
+    covariance = gmm_reference.covariance
+    covariance_contract = bool(
+        covariance is not None
+        and covariance.index.equals(gmm_reference.params.index)
+        and covariance.columns.equals(gmm_reference.params.index)
+        and np.isfinite(covariance.to_numpy(dtype=float)).all()
+        and np.allclose(
+            np.diag(covariance.to_numpy(dtype=float)),
+            np.square(gmm_reference.std_errors.to_numpy(dtype=float)),
+            rtol=1e-12,
+            atol=1e-12,
+        )
+    )
+
     checks = {
         "ols_finite": bool(np.isfinite(ols.params.to_numpy()).all()),
         "fixed_effects_exact": _equal(
@@ -148,6 +162,7 @@ def run_smoke(expected_version: str) -> dict[str, Any]:
             gmm_accelerated,
             ("params", "std_errors", "residuals"),
         ),
+        "native_gmm_covariance_contract": covariance_contract,
     }
     if not all(checks.values()):
         raise RuntimeError(f"Installed-distribution smoke checks failed: {checks}")

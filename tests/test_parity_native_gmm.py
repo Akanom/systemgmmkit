@@ -10,6 +10,7 @@ from systemgmmkit import (
     stata_xtreg_fe_command,
     write_stata_parity_do_file,
 )
+from systemgmmkit.postestimation import vcov
 
 
 def make_dynamic_panel() -> pd.DataFrame:
@@ -93,6 +94,10 @@ def test_native_windmeijer_preserves_point_estimates_and_j_stat():
 
     assert uncorrected.covariance_type == "robust-clustered-two-step-uncorrected"
     assert corrected.covariance_type == "robust-clustered-two-step-windmeijer"
+    assert uncorrected.covariance_correction == "none"
+    assert uncorrected.covariance_reference is None
+    assert corrected.covariance_correction == "windmeijer_2005"
+    assert corrected.covariance_reference == "10.1016/j.jeconom.2004.02.005"
 
     pd.testing.assert_series_equal(
         uncorrected.params,
@@ -110,3 +115,22 @@ def test_native_windmeijer_preserves_point_estimates_and_j_stat():
 
     assert np.all(np.isfinite(corrected_se))
     assert np.any(np.abs(corrected_se - uncorrected_se) > 1e-12)
+
+    assert corrected.covariance is not None
+    covariance = corrected.covariance
+    assert covariance.index.equals(corrected.params.index)
+    assert covariance.columns.equals(corrected.params.index)
+    assert np.isfinite(covariance.to_numpy(dtype=float)).all()
+    np.testing.assert_allclose(
+        covariance.to_numpy(dtype=float),
+        covariance.to_numpy(dtype=float).T,
+        rtol=1e-12,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        np.sqrt(np.diag(covariance.to_numpy(dtype=float))),
+        corrected_se,
+        rtol=1e-12,
+        atol=1e-12,
+    )
+    pd.testing.assert_frame_equal(vcov(corrected), covariance)

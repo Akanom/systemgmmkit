@@ -194,6 +194,8 @@ Dynamic-panel GMM results should expose:
 * Arellano-Bond AR(2) diagnostics;
 * covariance type;
 * Windmeijer correction status;
+* the full coefficient-aligned covariance matrix;
+* covariance-correction provenance and reference;
 * backend metadata;
 * instrument architecture.
 
@@ -373,6 +375,7 @@ print(systemgmmkit.__version__)
 * One-step estimation
 * Two-step estimation
 * Windmeijer-corrected standard errors
+* Full native-GMM covariance matrices with explicit correction provenance
 * Collapsed instruments
 * Restricted global GMM lag windows
 * Role-specific GMM lag windows
