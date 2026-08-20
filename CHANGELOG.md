@@ -14,6 +14,24 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## 1.0.1 - 2026-08-20
+
+### Added
+
+* Added the full coefficient-aligned covariance matrix to native dynamic-GMM
+  results together with explicit `covariance_correction` and
+  `covariance_reference` metadata. A Windmeijer-enabled two-step fit reports
+  `windmeijer_2005` and DOI `10.1016/j.jeconom.2004.02.005`; other paths report
+  no correction without implying corrected inference.
+
+### Changed
+
+* Made post-estimation `vcov()` consume the native estimator's full covariance
+  matrix instead of falling back to a diagonal matrix reconstructed from
+  standard errors.
+
+---
+
 ## 1.0.0 - 2026-08-14
 
 ### Added
