@@ -60,6 +60,9 @@ class NativeGMMResult:
     covariance: pd.DataFrame | None = None
     covariance_correction: str = "none"
     covariance_reference: str | None = None
+    normal_matrix_rank: int | None = None
+    normal_matrix_required_rank: int | None = None
+    normal_matrix_condition_number: float | None = None
 
     def summary_frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -84,6 +87,15 @@ class NativeGMMResult:
         lines.append(f"- Observations: `{self.nobs}`")
         lines.append(f"- Instruments: `{self.n_instruments}`")
         lines.append(f"- Covariance: `{self.covariance_type}`")
+        if self.normal_matrix_rank is not None and self.normal_matrix_required_rank is not None:
+            lines.append(
+                "- GMM normal-matrix numerical rank: "
+                f"`{self.normal_matrix_rank}/{self.normal_matrix_required_rank}`"
+            )
+        if self.normal_matrix_condition_number is not None:
+            lines.append(
+                f"- GMM normal-matrix condition number: `{self.normal_matrix_condition_number:.6g}`"
+            )
         if self.notes:
             lines.append("- Notes:")
             for note in self.notes:
@@ -2953,6 +2965,13 @@ def run_native_dynamic_panel_gmm(
                 index=False,
             )
 
+    normal_matrix_rank = int(np.linalg.matrix_rank(xzwzx))
+    normal_matrix_required_rank = int(k)
+    raw_condition_number = float(np.linalg.cond(xzwzx))
+    normal_matrix_condition_number = (
+        raw_condition_number if np.isfinite(raw_condition_number) else None
+    )
+
     return NativeGMMResult(
         spec=spec,
         nobs=int(nobs_reported),
@@ -3012,4 +3031,7 @@ def run_native_dynamic_panel_gmm(
         sargan_j_stat=_sargan_stat,
         overid_df=_overid_df,
         hansen_j_error=_hansen_j_error,
+        normal_matrix_rank=normal_matrix_rank,
+        normal_matrix_required_rank=normal_matrix_required_rank,
+        normal_matrix_condition_number=normal_matrix_condition_number,
     )

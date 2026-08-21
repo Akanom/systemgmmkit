@@ -14,6 +14,18 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## 1.0.2 - 2026-08-21
+
+### Added
+
+* Added read-only numerical-health metadata to native dynamic-GMM results:
+  `normal_matrix_rank`, `normal_matrix_required_rank`, and
+  `normal_matrix_condition_number`. The fields describe the final
+  coefficient normal matrix used by the estimator and do not change fitting,
+  diagnostics, covariance, or model selection.
+
+---
+
 ## 1.0.1 - 2026-08-20
 
 ### Added

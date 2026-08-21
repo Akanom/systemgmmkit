@@ -1,3 +1,27 @@
+# systemgmmkit 1.0.2 Release Notes
+
+## Native GMM numerical-health surface
+
+Version `1.0.2` adds three read-only fields to `NativeGMMResult`:
+`normal_matrix_rank`, `normal_matrix_required_rank`, and
+`normal_matrix_condition_number`. They report the NumPy numerical rank and
+2-norm condition number of the final coefficient normal matrix
+`X' Z W Z' X`. A non-finite condition number is represented as unavailable.
+
+These fields let downstream diagnostic gates distinguish full numerical rank
+from shape checks and enforce a prespecified conditioning threshold. They are
+descriptive numerical diagnostics, not evidence that instruments or structural
+assumptions are valid. Estimator algebra, coefficients, covariance, standard
+errors, and existing diagnostics are unchanged.
+
+Install this release with:
+
+```bash
+python -m pip install systemgmmkit==1.0.2
+```
+
+---
+
 # systemgmmkit 1.0.1 Release Notes
 
 ## Native GMM covariance provenance
