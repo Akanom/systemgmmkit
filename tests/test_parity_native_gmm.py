@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from systemgmmkit import (
     build_difference_gmm_spec,
@@ -64,6 +65,53 @@ def test_native_dynamic_panel_gmm_runs():
     assert "L1.y" in result.params.index
     assert "x" in result.params.index
     assert result.backend == "native-gmm"
+    assert result.normal_matrix_required_rank == len(result.params)
+    assert 0 < result.normal_matrix_rank <= result.normal_matrix_required_rank
+    if result.normal_matrix_condition_number is not None:
+        assert np.isfinite(result.normal_matrix_condition_number)
+        assert result.normal_matrix_condition_number >= 1.0
+
+
+def test_native_numerical_health_surface_matches_recomputed_normal_matrix(monkeypatch):
+    captured = {}
+    original_rank = np.linalg.matrix_rank
+    original_condition = np.linalg.cond
+
+    def recording_rank(matrix, *args, **kwargs):
+        value = np.asarray(matrix, dtype=float)
+        captured["rank_matrix"] = value.copy()
+        return original_rank(matrix, *args, **kwargs)
+
+    def recording_condition(matrix, *args, **kwargs):
+        value = np.asarray(matrix, dtype=float)
+        captured["condition_matrix"] = value.copy()
+        return original_condition(matrix, *args, **kwargs)
+
+    monkeypatch.setattr(np.linalg, "matrix_rank", recording_rank)
+    monkeypatch.setattr(np.linalg, "cond", recording_condition)
+    result = run_native_dynamic_panel_gmm(
+        build_difference_gmm_spec(
+            dependent="y",
+            regressors=["x"],
+            endogenous=["x"],
+            exogenous=[],
+            dependent_lag_limits=(2, 3),
+        ),
+        make_dynamic_panel(),
+        entity="id",
+        time="t",
+    )
+    rank_matrix = captured["rank_matrix"]
+    condition_matrix = captured["condition_matrix"]
+
+    np.testing.assert_allclose(rank_matrix, condition_matrix)
+    assert result.normal_matrix_rank == int(original_rank(rank_matrix))
+    assert result.normal_matrix_required_rank == rank_matrix.shape[0]
+    expected_condition = float(original_condition(condition_matrix))
+    if np.isfinite(expected_condition):
+        assert result.normal_matrix_condition_number == pytest.approx(expected_condition)
+    else:
+        assert result.normal_matrix_condition_number is None
 
 
 def test_native_windmeijer_preserves_point_estimates_and_j_stat():

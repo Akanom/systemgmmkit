@@ -196,6 +196,8 @@ Dynamic-panel GMM results should expose:
 * Windmeijer correction status;
 * the full coefficient-aligned covariance matrix;
 * covariance-correction provenance and reference;
+* final GMM normal-matrix numerical rank and required rank;
+* final GMM normal-matrix condition number when finite;
 * backend metadata;
 * instrument architecture.
 
