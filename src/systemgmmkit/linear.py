@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from .tables import _frame_to_markdown
+
 
 def _as_list(values: Sequence[str] | str | None) -> list[str]:
     if values is None:
@@ -99,12 +101,12 @@ class LinearModelResult:
             }
         )
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, digits: int = 4) -> str:
         frame = self.summary_frame()
         try:
-            return frame.to_markdown()
+            return _frame_to_markdown(frame, digits=digits)
         except Exception:
-            return frame.to_string()
+            return frame.to_string(float_format=lambda value: f"{value:.{digits}f}")
 
     def to_csv(self, path: str | None = None) -> str | None:
         frame = self.summary_frame()

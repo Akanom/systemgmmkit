@@ -11,18 +11,19 @@ repository-code: "https://github.com/Akanom/systemgmmkit"
 url: "https://github.com/Akanom/systemgmmkit"
 license: MIT
 
-version: "1.0.2"
-date-released: "2026-08-21"
+version: "1.0.3"
+date-released: "2026-08-26"
 
 abstract: >
   systemgmmkit is a Python package for applied panel-data econometrics,
   including OLS, pooled OLS, fixed effects, random effects, panel IV / 2SLS,
   Difference GMM, System GMM, dynamic-panel diagnostics, post-estimation,
   visualization, reporting workflows, and ML-style workflow utilities around
-  fitted econometric result objects. Version 1.0.2 adds read-only normal-matrix
-  rank and condition-number metadata while preserving the aligned native-GMM
-  covariance surface and benchmark-specific, machine-generated System GMM
-  certification for six aligned specifications against Stata 17 xtabond2 3.7.2.
+  fitted econometric result objects. Version 1.0.3 hardens installed and
+  archive-based package imports, including the Kaggle quickstart, while
+  preserving the aligned native-GMM covariance and numerical-health surfaces
+  and benchmark-specific, machine-generated System GMM certification for six
+  aligned specifications against Stata 17 xtabond2 3.7.2.
 
 keywords:
   - panel data

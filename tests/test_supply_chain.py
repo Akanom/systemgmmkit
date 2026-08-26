@@ -47,6 +47,8 @@ def test_publish_workflow_audits_and_smokes_the_exact_artifacts() -> None:
         "pip_audit --strict --format cyclonedx-json --output sbom.cdx.json .",
         "Smoke-test the exact built wheel",
         "--only-binary=:all:",
+        "sys.path.insert(0, '${wheels[0]}')",
+        "from systemgmmkit.estimators import first_difference",
         "Smoke-test the exact built sdist",
         "-I scripts/release_smoke.py --expected-version",
     )

@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 from .spec import DynamicPanelSpec, GMMStyle, IVStyle
+from .tables import _frame_to_markdown
 
 
 @dataclass
@@ -53,7 +54,7 @@ class PydynpdGMMResult:
 
         return check_instrument_health(self)
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, digits: int = 4) -> str:
         frame = pd.DataFrame(
             {
                 "coef": self.params,
@@ -61,7 +62,12 @@ class PydynpdGMMResult:
                 "p_value": self.pvalues.reindex(self.params.index),
             }
         )
-        return "\n\n".join([frame.to_markdown(), self.check_instrument_health().to_markdown()])
+        return "\n\n".join(
+            [
+                _frame_to_markdown(frame, digits=digits),
+                self.check_instrument_health().to_markdown(),
+            ]
+        )
 
 
 def _format_regressor(var: str) -> str:

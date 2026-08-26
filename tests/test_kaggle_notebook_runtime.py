@@ -28,7 +28,8 @@ def test_install_cell_uses_exact_pypi_release_and_evicts_stale_modules():
     source = _code_cell_source(2)
     project_version = _project_version()
 
-    assert "--no-deps" in source
+    assert "--upgrade-strategy only-if-needed" in source
+    assert "--no-deps" not in source
     assert f'"systemgmmkit=={project_version}"' in source
     assert "git+" not in source
     assert '"universal-output-hub==0.2.4"' in source
@@ -105,3 +106,11 @@ def test_postestimation_tables_use_compact_inference_formatting():
 
     assert "sgk.format_inference_frame(post.linear_combinations" in source
     assert "sgk.format_inference_frame(post.wald_tests" in source
+
+
+def test_notebook_tables_render_p_values_with_four_fixed_decimals():
+    notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+    source = "\n".join("".join(cell.get("source", [])) for cell in notebook["cells"])
+
+    assert "style.format(precision=4)" in source
+    assert 'to_markdown(index=False, floatfmt=".4f")' in source

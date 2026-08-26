@@ -34,6 +34,7 @@ def test_random_effects_runs_and_returns_structural_params():
     assert "x2" in result.params.index
     assert result.backend == "native-random-effects"
     assert result.theta_by_entity.shape[0] == df["id"].nunique()
+    assert "0.0000" in result.to_markdown()
 
 
 def test_panel_2sls_runs_with_entity_and_time_effects():
@@ -65,4 +66,6 @@ def test_export_regression_table_markdown(tmp_path: Path):
     export_regression_table([result], out, fmt="markdown")
 
     assert out.exists()
-    assert "x1" in out.read_text(encoding="utf-8")
+    table = out.read_text(encoding="utf-8")
+    assert "x1" in table
+    assert "0.0000" in table

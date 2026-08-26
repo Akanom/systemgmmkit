@@ -12,10 +12,17 @@ def _format_p_value(value: Any, *, digits: int) -> str:
     if pd.isna(value):
         return ""
     p_value = float(value)
-    threshold = 10.0**-digits
-    if 0.0 <= p_value < threshold:
-        return f"<{threshold:.{digits}f}"
     return f"{p_value:.{digits}f}"
+
+
+def _frame_to_markdown(
+    frame: pd.DataFrame,
+    *,
+    digits: int,
+    index: bool = True,
+) -> str:
+    """Render a numeric frame with fixed-width publication precision."""
+    return frame.to_markdown(index=index, floatfmt=f".{digits}f")
 
 
 def format_inference_frame(frame: pd.DataFrame, *, digits: int = 4) -> pd.DataFrame:
@@ -23,8 +30,8 @@ def format_inference_frame(frame: pd.DataFrame, *, digits: int = 4) -> pd.DataFr
 
     The raw frame remains unchanged. Redundant generic, z, and t columns are
     collapsed to the statistic implied by ``distribution``; implementation
-    fields such as the null value and alpha are omitted. Very small p-values
-    are shown with a bound instead of being rounded to zero.
+    fields such as the null value and alpha are omitted. P-values use fixed
+    decimal precision so zero is displayed as ``0.0000`` at the default.
     """
 
     if digits < 1:
@@ -119,13 +126,15 @@ def export_regression_table(
         raise ValueError("fmt must be one of: markdown, csv, latex")
 
     frame = combine_result_frames(results, model_names=model_names)
-    numeric_cols = frame.select_dtypes(include="number").columns
-    frame[numeric_cols] = frame[numeric_cols].round(digits)
+    float_format = f"%.{digits}f"
 
     if chosen == "csv":
-        frame.to_csv(out, index=False)
+        frame.to_csv(out, index=False, float_format=float_format)
     elif chosen == "latex":
-        out.write_text(frame.to_latex(index=False), encoding="utf-8")
+        out.write_text(
+            frame.to_latex(index=False, float_format=float_format),
+            encoding="utf-8",
+        )
     else:
-        out.write_text(frame.to_markdown(index=False), encoding="utf-8")
+        out.write_text(_frame_to_markdown(frame, digits=digits, index=False), encoding="utf-8")
     return out
