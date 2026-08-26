@@ -70,8 +70,8 @@ change estimates or convert predictive evidence into identification evidence.
 
 For compact notebook display of linear combinations and Wald tests, use
 `format_inference_frame(frame)`. It preserves the raw result frame, removes
-redundant test-statistic fields, and displays very small p-values as bounds such
-as `<0.0001` instead of rounding them to zero.
+redundant test-statistic fields, and displays p-values at four fixed decimal
+places by default, including `0.0000` for a displayed zero.
 
 ## Import surface
 

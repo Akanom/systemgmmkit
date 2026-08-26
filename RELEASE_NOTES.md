@@ -1,3 +1,40 @@
+# systemgmmkit 1.0.3 Release Notes
+
+## Kaggle and distribution-import reliability
+
+Version `1.0.3` makes `systemgmmkit.estimators` an explicit regular Python
+subpackage. The previous wheel installed correctly through ordinary `pip`
+extraction, but direct wheel/archive imports could fail with
+`ModuleNotFoundError: No module named 'systemgmmkit.estimators'` because the
+subpackage depended on implicit namespace discovery. The explicit package
+boundary removes that ambiguity without changing estimator behavior or the
+stable public API.
+
+The Kaggle/Colab quickstart now installs the exact package and Universal Output
+Hub versions while allowing `pip` to add missing core dependencies. Satisfied
+scientific dependencies are retained through `--upgrade-strategy
+only-if-needed`. The release gate checks source-tree imports, the built wheel as
+an archive, an isolated installed wheel, an isolated installed sdist, and the
+notebook installation contract before publication.
+
+Public result Markdown and regression-table exports now use fixed numeric
+precision. With the default four digits, a displayed zero p-value is rendered
+as `0.0000` rather than `0`, and the Kaggle quickstart applies the same rule to
+its on-screen and exported tables. Raw result objects retain numeric p-values;
+this is a presentation-only change.
+
+No estimator algebra, coefficients, covariance matrices, standard errors,
+diagnostics, or maintained cross-software certification claims change in this
+release.
+
+Install this release with:
+
+```bash
+python -m pip install --upgrade systemgmmkit==1.0.3
+```
+
+---
+
 # systemgmmkit 1.0.2 Release Notes
 
 ## Native GMM numerical-health surface

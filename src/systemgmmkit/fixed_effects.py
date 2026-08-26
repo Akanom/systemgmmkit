@@ -6,6 +6,8 @@ from typing import Any, Literal, cast
 import numpy as np
 import pandas as pd
 
+from .tables import _frame_to_markdown
+
 CovarianceType = Literal["unadjusted", "robust", "clustered"]
 StaticPreparationEngine = Literal["reference", "accelerated"]
 
@@ -86,7 +88,7 @@ class FixedEffectsResult:
             for note in self.notes:
                 lines.append(f"  - {note}")
         lines.append("")
-        lines.append(table.to_markdown())
+        lines.append(_frame_to_markdown(table, digits=digits))
         return "\n".join(lines)
 
 
@@ -327,9 +329,7 @@ def _build_within_design(
 
     structural_columns = [column for column in X.columns if column in values.columns]
     x_means = (
-        values[structural_columns].mean(axis=0)
-        if structural_columns
-        else pd.Series(dtype=float)
+        values[structural_columns].mean(axis=0) if structural_columns else pd.Series(dtype=float)
     )
     y_mean = float(values[spec.dependent].mean())
     return y, X, ids, x_means, y_mean, notes, int(absorbed_rank)

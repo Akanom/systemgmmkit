@@ -9,6 +9,7 @@ from scipy import stats
 
 from .fixed_effects import _normal_pvalues_from_t, _require_columns
 from .spec import DynamicPanelSpec
+from .tables import _frame_to_markdown
 
 _NATIVE_MAX_TIME_GRID_POINTS = 100_000
 _NATIVE_MAX_PANEL_GRID_ROWS = 5_000_000
@@ -101,7 +102,7 @@ class NativeGMMResult:
             for note in self.notes:
                 lines.append(f"  - {note}")
         lines.append("")
-        lines.append(table.to_markdown())
+        lines.append(_frame_to_markdown(table, digits=digits))
         lines.extend(["", self.check_instrument_health().to_markdown()])
         return "\n".join(lines)
 

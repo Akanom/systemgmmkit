@@ -11,6 +11,7 @@ from .fixed_effects import (
     _normal_pvalues_from_t,
     _require_columns,
 )
+from .tables import _frame_to_markdown
 
 
 @dataclass(frozen=True)
@@ -83,7 +84,7 @@ class RandomEffectsResult:
             for note in self.notes:
                 lines.append(f"  - {note}")
         lines.append("")
-        lines.append(table.to_markdown())
+        lines.append(_frame_to_markdown(table, digits=digits))
         return "\n".join(lines)
 
 

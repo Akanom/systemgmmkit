@@ -14,6 +14,28 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## 1.0.3 - 2026-08-26
+
+### Fixed
+
+* Made `systemgmmkit.estimators` an explicit regular subpackage so imports work
+  consistently from installed distributions, notebook runtimes, and wheel
+  archives instead of depending on implicit namespace-package discovery.
+* Changed the Kaggle/Colab installation cell to resolve required core
+  dependencies with `only-if-needed` behavior while retaining exact pins for
+  `systemgmmkit` and Universal Output Hub.
+* Standardized public Markdown, CSV, and LaTeX regression-table p-values at
+  four fixed decimal places by default, including `0.0000` for displayed zero.
+
+### Validation
+
+* Added a package-layout regression test for every internal Python subpackage.
+* Added archive-import and Kaggle installation checks to the release workflow.
+* Added regression coverage for fixed-decimal p-values in direct result tables,
+  exported tables, and the Kaggle quickstart.
+
+---
+
 ## 1.0.2 - 2026-08-21
 
 ### Added
