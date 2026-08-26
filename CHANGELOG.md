@@ -14,6 +14,24 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## 1.0.4 - 2026-08-26
+
+### Fixed
+
+* Moved the direct wheel-archive import check into the isolated wheel smoke
+  environment after dependency installation. The `1.0.3` release workflow
+  stopped before upload because the clean build environment did not yet contain
+  NumPy; no `1.0.3` artifact was published to PyPI.
+
+### Validation
+
+* Added an ordering assertion that the archive import runs only after the exact
+  wheel and its dependencies are installed.
+* Added a provenance assertion that the archive smoke imports package code from
+  the `.whl` path rather than the extracted installation.
+
+---
+
 ## 1.0.3 - 2026-08-26
 
 ### Fixed

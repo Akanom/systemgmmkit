@@ -55,6 +55,10 @@ def test_publish_workflow_audits_and_smokes_the_exact_artifacts() -> None:
     for marker in required_before_upload:
         assert marker in workflow
         assert workflow.index(marker) < upload_position
+    dependency_install = workflow.index('"$smoke_python" -m pip install')
+    archive_import = workflow.index('"$smoke_python" -I -c')
+    assert dependency_install < archive_import
+    assert "'.whl/' in systemgmmkit.__file__" in workflow
     assert workflow.count("-I scripts/release_smoke.py --expected-version") == 2
     assert workflow.count('"$smoke_python" -m pip check') == 2
     assert "sbom.cdx.json" in workflow[upload_position:]
