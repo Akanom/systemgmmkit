@@ -1,3 +1,29 @@
+# systemgmmkit 1.0.4 Release Notes
+
+## PyPI publication correction
+
+Version `1.0.4` contains the Kaggle import hardening and fixed-decimal table
+formatting introduced in the `1.0.3` source release. The `1.0.3` trusted
+publication workflow stopped before its PyPI upload because the direct
+wheel-archive import check ran in the clean build environment before NumPy and
+the other runtime dependencies were installed. PyPI therefore remained at
+`1.0.2`.
+
+The archive check now runs in the isolated wheel smoke environment after the
+exact wheel and its dependencies are installed. It also verifies that Python
+loaded `systemgmmkit` from the wheel archive path, not from the extracted
+installation. The installed-wheel and installed-sdist smoke tests remain
+unchanged.
+
+No estimator code, numerical result, or certification claim differs from the
+tested `1.0.3` source. Install the corrected PyPI release with:
+
+```bash
+python -m pip install --upgrade systemgmmkit==1.0.4
+```
+
+---
+
 # systemgmmkit 1.0.3 Release Notes
 
 ## Kaggle and distribution-import reliability

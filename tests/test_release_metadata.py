@@ -49,7 +49,7 @@ def test_v1_metadata_declares_stable_api_policy() -> None:
     classifiers = set(project["classifiers"])
     policy = (ROOT / "docs" / "API_STABILITY.md").read_text(encoding="utf-8")
 
-    assert project["version"] == "1.0.3"
+    assert project["version"] == "1.0.4"
     assert "Development Status :: 5 - Production/Stable" in classifiers
     assert "Development Status :: 3 - Alpha" not in classifiers
     assert "semantic versioning" in policy

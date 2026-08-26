@@ -154,7 +154,7 @@ __all__ = [
     "write_stata_parity_do_file",
 ]
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 _OPTIONAL_PLOT_EXPORTS = frozenset(
     export for exports in _postestimation._PLOT_MODULE_EXPORTS.values() for export in exports
