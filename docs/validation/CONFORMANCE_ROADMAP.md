@@ -20,6 +20,7 @@ The conformance suite keeps these dynamic-GMM benchmark names:
 | Pooled OLS, FE, RE, Panel IV / 2SLS | `PASS_ALIGNED` | Implemented and aligned on maintained static-panel benchmark paths. |
 | Robust and clustered standard errors | `PASS_ALIGNED` | Aligned for the tested static-panel benchmark paths. |
 | `difference_gmm_baseline_controls` | `PASS_PARITY` / `PASS_STRICT` | Native Difference GMM passes its maintained strict contract. |
+| `difference_gmm_fd_twostep_robust_small` | `PASS_XTABOND2_PARITY` | On three fixed balanced, unbalanced, and variable-missing fixtures, complete parameters, Windmeijer covariance, A2, Z'e2, exact counts and sample keys, Hansen/Sargan, and signed AR diagnostics pass the registered `xtabond2` gates. |
 | `system_gmm_baseline_controls` | `PASS_XTABOND2_PARITY` | Complete parameters, Windmeijer SEs, counts, Hansen/Sargan, and signed AR diagnostics pass the aligned `xtabond2` gates. |
 | `system_gmm_no_controls` | `PASS_XTABOND2_PARITY` | Complete parameters, Windmeijer SEs, counts, Hansen/Sargan, and signed AR diagnostics pass the aligned `xtabond2` gates. |
 | `system_gmm_three_way_controls` | `PASS_XTABOND2_PARITY` | Complete parameters, Windmeijer SEs, counts, Hansen/Sargan, and signed AR diagnostics pass the aligned `xtabond2` gates. |

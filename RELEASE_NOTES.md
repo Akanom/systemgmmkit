@@ -1,3 +1,35 @@
+# systemgmmkit 1.0.5 Release Notes
+
+## First-difference Difference GMM parity correction
+
+Version `1.0.5` corrects the native collapsed, first-difference, two-step
+Difference-GMM path. Version `1.0.4` incorrectly used the homoskedastic 2SLS
+first-step weight `(Z'Z)^-1` instead of the Arellano--Bond transformed-error
+weight `(sum_i Z_i' H_i Z_i)^-1`. That changed first-step residuals and therefore
+propagated into two-step coefficients, covariance, and diagnostics.
+
+The release also corrects the two-step Hansen criterion, the first-step Sargan
+normalization, the signed AR diagnostic denominator, and the Windmeijer
+covariance construction for this bounded path. The FD covariance now follows
+the matrix construction in `xtabond2` 3.7.2 directly. The existing System-GMM
+and FOD Difference-GMM paths remain separate.
+
+Parity was rechecked against unchanged Stata 17 IC `xtabond2` 3.7.2 exports for
+balanced, unbalanced, and variable-missing panels. All three fixtures pass exact
+parameter, semantic-moment, count, and entity-time sample-key identities and
+the registered numerical gates for coefficients, Windmeijer covariance, A2,
+Z'e2, Hansen, Sargan, and signed AR(1)/AR(2) diagnostics. This is bounded
+numerical agreement, not universal Stata identity or evidence of instrument
+validity.
+
+Install the corrected release with:
+
+```bash
+python -m pip install --upgrade systemgmmkit==1.0.5
+```
+
+---
+
 # systemgmmkit 1.0.4 Release Notes
 
 ## PyPI publication correction

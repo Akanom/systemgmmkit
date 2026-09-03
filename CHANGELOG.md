@@ -14,6 +14,31 @@ The project follows a practical semantic-versioning style:
 
 ---
 
+## 1.0.5 - 2026-09-03
+
+### Fixed
+
+* Corrected native first-difference Difference GMM to use the Arellano--Bond
+  first-step weight `(sum_i Z_i' H_i Z_i)^-1` rather than `(Z'Z)^-1`.
+* Corrected two-step Difference-GMM Hansen and Sargan construction to use the
+  registered first- and second-step residual moments and weights.
+* Implemented the `xtabond2` 3.7.2 Windmeijer covariance construction for the
+  maintained two-step robust first-difference path.
+* Aligned signed AR(1)/AR(2) diagnostics with the maintained `xtabond2`
+  robust/two-step denominator construction.
+
+### Validation
+
+* Added three fixed Stata 17 `xtabond2` 3.7.2 fixtures covering balanced,
+  unbalanced, and variable-missing panels.
+* Added hash-bound source checks; exact parameter, moment, count, and sample-key
+  identity gates; and strict numerical gates for coefficients, covariance, A2,
+  Z'e2, Hansen, Sargan, and signed AR diagnostics.
+* Preserved the existing System-GMM and FOD Difference-GMM parity paths and
+  regression suites.
+
+---
+
 ## 1.0.4 - 2026-08-26
 
 ### Fixed
