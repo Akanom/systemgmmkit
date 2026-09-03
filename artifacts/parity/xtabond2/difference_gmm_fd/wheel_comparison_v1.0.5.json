@@ -1,0 +1,359 @@
+[
+  {
+    "count_identity_exact": true,
+    "fixture_id": "paired-fd-balanced-xtabond2",
+    "maximum_absolute_differences": {
+      "ar1_p": 2.980016950706547e-11,
+      "ar1_z": 8.719079342967007e-07,
+      "ar2_p": 2.028473988779922e-08,
+      "ar2_z": 5.840847872029542e-08,
+      "coefficient": 1.2124593551376961e-08,
+      "covariance": 2.277397677385995e-08,
+      "criterion_weighting_matrix": 1.4231807676789998e-09,
+      "hansen_j": 5.087161489836234e-07,
+      "hansen_p": 1.1668604543713101e-07,
+      "sargan_j": 5.714733937178806e-07,
+      "sargan_p": 1.334637956262874e-07,
+      "summed_residual_moment": 4.862064809429967e-06
+    },
+    "moment_identity_exact": true,
+    "native_covariance": [
+      [
+        0.0007085652614855074,
+        0.004352958345736757,
+        -0.00038288006282526067
+      ],
+      [
+        0.004352958345736757,
+        0.06575413321641972,
+        -0.004799878449046899
+      ],
+      [
+        -0.00038288006282526067,
+        -0.004799878449046899,
+        0.0005792507378457974
+      ]
+    ],
+    "native_hansen_j": 1.558512373290045,
+    "native_parameters": [
+      0.46828846751339537,
+      0.8922931154328624,
+      -0.3469225448597467
+    ],
+    "parameter_identity_exact": true,
+    "parity_passed": true,
+    "provider_location": "site-packages/systemgmmkit/__init__.py",
+    "provider_mode": "installed",
+    "provider_native_moment_order": [
+      "D:x:L2",
+      "D:iv:w",
+      "D:L1.y:L2",
+      "D:x:L3",
+      "D:L1.y:L3"
+    ],
+    "provider_to_stata_permutation": [
+      1,
+      2,
+      0,
+      4,
+      3
+    ],
+    "provider_version": "1.0.5",
+    "sample_identity_exact": true,
+    "sample_key_sha256": "0adfa12946f4732dca97e59cb30230a96d1bcfbe4b1bec830b12e7b437554af8",
+    "stata_covariance": [
+      [
+        0.0007085653802614,
+        0.0043529598083058,
+        -0.0003828801835447
+      ],
+      [
+        0.0043529598083058,
+        0.0657541559903965,
+        -0.0047998802844772
+      ],
+      [
+        -0.0003828801835447,
+        -0.0047998802844772,
+        0.0005792508816547
+      ]
+    ],
+    "stata_hansen_j": 1.558511864573896,
+    "stata_moment_order": [
+      "D:iv:w",
+      "D:L1.y:L2",
+      "D:x:L2",
+      "D:L1.y:L3",
+      "D:x:L3"
+    ],
+    "stata_parameters": [
+      0.468288462230019,
+      0.8922931275574559,
+      -0.3469225445093604
+    ],
+    "tolerances": {
+      "ar_p": 2e-07,
+      "ar_z": 2e-06,
+      "coefficient": 2e-07,
+      "covariance": 5e-08,
+      "criterion_weighting_matrix": 2e-09,
+      "hansen_j": 1e-06,
+      "hansen_p": 2e-07,
+      "sargan_j": 2e-06,
+      "sargan_p": 3e-07,
+      "summed_residual_moment": 2e-05
+    },
+    "within_tolerance": {
+      "ar1_p": true,
+      "ar1_z": true,
+      "ar2_p": true,
+      "ar2_z": true,
+      "coefficient": true,
+      "covariance": true,
+      "criterion_weighting_matrix": true,
+      "hansen_j": true,
+      "hansen_p": true,
+      "sargan_j": true,
+      "sargan_p": true,
+      "summed_residual_moment": true
+    }
+  },
+  {
+    "count_identity_exact": true,
+    "fixture_id": "paired-fd-unbalanced-xtabond2",
+    "maximum_absolute_differences": {
+      "ar1_p": 9.096329333865838e-09,
+      "ar1_z": 3.0645902304726746e-07,
+      "ar2_p": 1.3131752146788855e-07,
+      "ar2_z": 2.2012353073641577e-07,
+      "coefficient": 7.622396180906321e-08,
+      "covariance": 1.5382547138842462e-08,
+      "criterion_weighting_matrix": 1.0580355359196547e-09,
+      "hansen_j": 7.888088635610302e-07,
+      "hansen_p": 1.232913117155121e-07,
+      "sargan_j": 9.457977794280481e-07,
+      "sargan_p": 1.7464391255384015e-07,
+      "summed_residual_moment": 6.820669440799065e-06
+    },
+    "moment_identity_exact": true,
+    "native_covariance": [
+      [
+        0.0013430773565423033,
+        0.006387564122628386,
+        -0.0006002709518912952
+      ],
+      [
+        0.006387564122628386,
+        0.07816536943651826,
+        -0.0054250884468353315
+      ],
+      [
+        -0.0006002709518912952,
+        -0.0054250884468353315,
+        0.0006913058796583523
+      ]
+    ],
+    "native_hansen_j": 2.3256542268041636,
+    "native_parameters": [
+      0.48366014773829563,
+      1.0729231297258432,
+      -0.3586925168196658
+    ],
+    "parameter_identity_exact": true,
+    "parity_passed": true,
+    "provider_location": "site-packages/systemgmmkit/__init__.py",
+    "provider_mode": "installed",
+    "provider_native_moment_order": [
+      "D:x:L2",
+      "D:iv:w",
+      "D:L1.y:L2",
+      "D:x:L3",
+      "D:L1.y:L3"
+    ],
+    "provider_to_stata_permutation": [
+      1,
+      2,
+      0,
+      4,
+      3
+    ],
+    "provider_version": "1.0.5",
+    "sample_identity_exact": true,
+    "sample_key_sha256": "69b01bbb161085a77178d151a4dd15adcb5d363cff0dc12b628cbec1373920eb",
+    "stata_covariance": [
+      [
+        0.0013430775762316,
+        0.0063875654894043,
+        -0.0006002710628918
+      ],
+      [
+        0.0063875654894043,
+        0.0781653848190654,
+        -0.0054250894793172
+      ],
+      [
+        -0.0006002710628918,
+        -0.0054250894793172,
+        0.0006913059895959
+      ]
+    ],
+    "stata_hansen_j": 2.3256534379953,
+    "stata_moment_order": [
+      "D:iv:w",
+      "D:L1.y:L2",
+      "D:x:L2",
+      "D:L1.y:L3",
+      "D:x:L3"
+    ],
+    "stata_parameters": [
+      0.4836601475123965,
+      1.072923205949805,
+      -0.3586925220053452
+    ],
+    "tolerances": {
+      "ar_p": 2e-07,
+      "ar_z": 2e-06,
+      "coefficient": 2e-07,
+      "covariance": 5e-08,
+      "criterion_weighting_matrix": 2e-09,
+      "hansen_j": 1e-06,
+      "hansen_p": 2e-07,
+      "sargan_j": 2e-06,
+      "sargan_p": 3e-07,
+      "summed_residual_moment": 2e-05
+    },
+    "within_tolerance": {
+      "ar1_p": true,
+      "ar1_z": true,
+      "ar2_p": true,
+      "ar2_z": true,
+      "coefficient": true,
+      "covariance": true,
+      "criterion_weighting_matrix": true,
+      "hansen_j": true,
+      "hansen_p": true,
+      "sargan_j": true,
+      "sargan_p": true,
+      "summed_residual_moment": true
+    }
+  },
+  {
+    "count_identity_exact": true,
+    "fixture_id": "paired-fd-variable-missing-xtabond2",
+    "maximum_absolute_differences": {
+      "ar1_p": 1.2553511420650864e-18,
+      "ar1_z": 2.2213610240129356e-07,
+      "ar2_p": 1.0893869556438673e-08,
+      "ar2_z": 7.403738999656184e-08,
+      "coefficient": 3.5196153769234684e-08,
+      "covariance": 5.115205634065312e-09,
+      "criterion_weighting_matrix": 8.254159421933194e-10,
+      "hansen_j": 6.937624479341764e-07,
+      "hansen_p": 7.397626558547366e-08,
+      "sargan_j": 6.625375603697137e-07,
+      "sargan_p": 8.202227530507145e-08,
+      "summed_residual_moment": 5.28869625071593e-06
+    },
+    "moment_identity_exact": true,
+    "native_covariance": [
+      [
+        0.0005159301904317477,
+        -0.0007041359397861927,
+        -4.078238297649754e-05
+      ],
+      [
+        -0.0007041359397861927,
+        0.030685328187685865,
+        -0.0017725453406205137
+      ],
+      [
+        -4.078238297649754e-05,
+        -0.0017725453406205137,
+        0.0003663867770601985
+      ]
+    ],
+    "native_hansen_j": 3.090476586761247,
+    "native_parameters": [
+      0.47564149123969995,
+      0.7790619860559103,
+      -0.3317891345335874
+    ],
+    "parameter_identity_exact": true,
+    "parity_passed": true,
+    "provider_location": "site-packages/systemgmmkit/__init__.py",
+    "provider_mode": "installed",
+    "provider_native_moment_order": [
+      "D:x:L2",
+      "D:iv:w",
+      "D:L1.y:L2",
+      "D:x:L3",
+      "D:L1.y:L3"
+    ],
+    "provider_to_stata_permutation": [
+      1,
+      2,
+      0,
+      4,
+      3
+    ],
+    "provider_version": "1.0.5",
+    "sample_identity_exact": true,
+    "sample_key_sha256": "d8086e4ecc717e944057bb63ad2da6f0134e4f36a92f505e15f577a8fc03e2c4",
+    "stata_covariance": [
+      [
+        0.0005159302271626,
+        -0.0007041360345134,
+        -4.07823752693e-05
+      ],
+      [
+        -0.0007041360345134,
+        0.0306853333028915,
+        -0.0017725456663439
+      ],
+      [
+        -4.07823752693e-05,
+        -0.0017725456663439,
+        0.0003663867927944
+      ]
+    ],
+    "stata_hansen_j": 3.090475892998799,
+    "stata_moment_order": [
+      "D:iv:w",
+      "D:L1.y:L2",
+      "D:x:L2",
+      "D:L1.y:L3",
+      "D:x:L3"
+    ],
+    "stata_parameters": [
+      0.4756414853429544,
+      0.7790619508597565,
+      -0.3317891296183816
+    ],
+    "tolerances": {
+      "ar_p": 2e-07,
+      "ar_z": 2e-06,
+      "coefficient": 2e-07,
+      "covariance": 5e-08,
+      "criterion_weighting_matrix": 2e-09,
+      "hansen_j": 1e-06,
+      "hansen_p": 2e-07,
+      "sargan_j": 2e-06,
+      "sargan_p": 3e-07,
+      "summed_residual_moment": 2e-05
+    },
+    "within_tolerance": {
+      "ar1_p": true,
+      "ar1_z": true,
+      "ar2_p": true,
+      "ar2_z": true,
+      "coefficient": true,
+      "covariance": true,
+      "criterion_weighting_matrix": true,
+      "hansen_j": true,
+      "hansen_p": true,
+      "sargan_j": true,
+      "sargan_p": true,
+      "summed_residual_moment": true
+    }
+  }
+]

@@ -597,6 +597,15 @@ ivregress 2sls y x1 z1 (x2 = z2)
 
 `systemgmmkit` supports both Difference GMM and System GMM.
 
+Version 1.0.5 corrects the maintained collapsed, first-difference, two-step
+Difference-GMM path and verifies coefficients, Windmeijer covariance, A2,
+summed moments, Hansen/Sargan, signed AR diagnostics, counts, moment identities,
+and entity-time sample keys against Stata 17 `xtabond2` 3.7.2 on three fixed
+balanced, unbalanced, and variable-missing fixtures. See the
+[bounded parity record](docs/parity/difference_gmm_fd_xtabond2_parity_v1.0.5.md).
+This is specification-specific numerical agreement, not universal Stata
+identity or evidence that a candidate's instruments are valid.
+
 The recommended workflow is:
 
 1. Define the structural model.

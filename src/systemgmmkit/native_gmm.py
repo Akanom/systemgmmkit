@@ -1499,11 +1499,11 @@ def _native_pydynpd_first_step_weight_inv(
     nobs_effective: int,
     row_meta: list[dict[str, object]] | None = None,
 ) -> tuple[np.ndarray, int, list[np.ndarray] | int, int]:
-    """Build System-GMM first-step W_inv.
+    """Build the dynamic-panel GMM first-step inverse weight.
 
     If row_meta is supplied, this uses entity-specific row metadata instead of
     assuming a balanced panel layout. This is the production path for general
-    System GMM construction.
+    System and Difference GMM construction.
 
     The fallback balanced path is retained for backward compatibility.
     """
@@ -1873,8 +1873,9 @@ def _native_xtabond2_system_ar_diagnostics(
     row_meta: list[dict[str, object]],
     time_values: list[object],
     max_lag: int = 2,
+    system: bool = True,
 ) -> tuple[float | None, float | None, float | None, float | None]:
-    """xtabond2-style Arellano-Bond AR diagnostics for native System GMM.
+    """xtabond2-style Arellano-Bond AR diagnostics for native dynamic GMM.
 
     This implements the robust/two-step branch in xtabond2.ado:
 
@@ -1906,16 +1907,34 @@ def _native_xtabond2_system_ar_diagnostics(
         if n_rows == 0 or k == 0 or q == 0 or n_groups <= 0:
             return None, None, None, None
 
-        level_mask = _native_level_equation_mask_from_row_meta(
-            row_meta,
-            expected_rows=n_rows,
-        )
+        if system:
+            level_mask = _native_level_equation_mask_from_row_meta(
+                row_meta,
+                expected_rows=n_rows,
+            )
+        else:
+            if len(row_meta) != n_rows:
+                raise ValueError(
+                    "row_meta length must match the stacked residual count: "
+                    f"{len(row_meta)} != {n_rows}"
+                )
+            equations = [str(meta.get("equation", "")).strip().lower() for meta in row_meta]
+            if any(equation != "diff" for equation in equations):
+                raise ValueError("Difference-GMM AR diagnostics require diff-only row metadata.")
+            level_mask = np.zeros(n_rows, dtype=bool)
         if not time_values:
             return None, None, None, None
 
         import os as _native_ar_a_os
 
-        _a_mode = _native_ar_a_os.getenv("SYSTEMGMMKIT_XTABOND2_AR_A_MODE", "group").strip().lower()
+        _a_mode = (
+            _native_ar_a_os.getenv(
+                "SYSTEMGMMKIT_XTABOND2_AR_A_MODE",
+                "group" if system else "raw",
+            )
+            .strip()
+            .lower()
+        )
 
         # xtabond2's AR denominator uses A`steps'. Hansen parity proved the
         # reported Hansen J uses W / n_groups. Keep A scaling selectable while
@@ -2166,6 +2185,107 @@ def _native_fod_difference_windmeijer_covariance(
     return 0.5 * (cov + cov.T)
 
 
+def _native_fd_difference_windmeijer_covariance(
+    *,
+    X: np.ndarray,
+    Z: np.ndarray,
+    W1: np.ndarray,
+    W2: np.ndarray,
+    bread2: np.ndarray,
+    residuals1: np.ndarray,
+    residuals2: np.ndarray,
+    group_indices: list[np.ndarray],
+) -> np.ndarray:
+    """Return the xtabond2/Windmeijer covariance for FD Difference GMM.
+
+    This follows the matrix construction in xtabond2 3.7.2.  With
+    ``g_i = Z_i' e1_i``, ``a = A2 Z'e2`` and ``ZX_i = Z_i'X_i``, form
+
+        R = sum_i [(g_i'a) ZX_i + (g_i a') ZX_i],
+        D_w = V2 X'Z A2 R,
+
+    and return
+
+        V2 + D_w V1r D_w' + D_w V2 + V2 D_w'.
+
+    The caller applies the requested finite-sample scalar.  Keeping this path
+    separate prevents an FD parity correction from changing the certified
+    System-GMM covariance or the maintained FOD compatibility surface.
+    """
+
+    X = np.asarray(X, dtype=float)
+    Z = np.asarray(Z, dtype=float)
+    W1 = np.asarray(W1, dtype=float)
+    W2 = np.asarray(W2, dtype=float)
+    V2 = np.asarray(bread2, dtype=float)
+    u1 = np.asarray(residuals1, dtype=float).reshape(-1, 1)
+    u2 = np.asarray(residuals2, dtype=float).reshape(-1, 1)
+
+    if X.ndim != 2 or Z.ndim != 2 or X.shape[0] != Z.shape[0]:
+        raise ValueError("X and Z must be two-dimensional with identical row counts.")
+    n_rows, n_parameters = X.shape
+    n_moments = Z.shape[1]
+    expected_shapes = {
+        "W1": (n_moments, n_moments),
+        "W2": (n_moments, n_moments),
+        "bread2": (n_parameters, n_parameters),
+    }
+    actual_shapes = {"W1": W1.shape, "W2": W2.shape, "bread2": V2.shape}
+    if actual_shapes != expected_shapes:
+        raise ValueError(
+            f"FD Windmeijer matrix shapes differ: {actual_shapes!r} != {expected_shapes!r}."
+        )
+    if u1.shape[0] != n_rows or u2.shape[0] != n_rows:
+        raise ValueError("Residual vectors must match the stacked X/Z row count.")
+
+    n_groups = len(group_indices)
+    if n_groups <= 0:
+        raise ValueError("group_indices must contain at least one entity block.")
+    normalized_groups = [np.asarray(indices, dtype=int).reshape(-1) for indices in group_indices]
+    if any(indices.size == 0 for indices in normalized_groups):
+        raise ValueError("group_indices cannot contain an empty entity block.")
+    stacked_indices = np.concatenate(normalized_groups)
+    if (
+        stacked_indices.size != n_rows
+        or np.any(stacked_indices < 0)
+        or np.any(stacked_indices >= n_rows)
+        or not np.array_equal(np.sort(stacked_indices), np.arange(n_rows, dtype=int))
+    ):
+        raise ValueError("group_indices must partition every stacked row exactly once.")
+    arrays = (X, Z, W1, W2, V2, u1, u2)
+    if not all(np.isfinite(array).all() for array in arrays):
+        raise ValueError("FD Windmeijer inputs must all be finite.")
+
+    D = X.T @ Z
+    V1_robust = _native_pydynpd_step1_vcov(
+        X=X,
+        Z=Z,
+        W1=W1,
+        residuals1=u1,
+        group_indices=group_indices,
+        n_groups=n_groups,
+    )
+    A2_Ze = W2 @ Z.T @ u2
+    derivative_source = np.zeros((Z.shape[1], X.shape[1]), dtype=float)
+
+    for idx in normalized_groups:
+        Zi = Z[idx, :]
+        Xi = X[idx, :]
+        ui1 = u1[idx, :]
+        Ze1_i = Zi.T @ ui1
+        ZXi = Zi.T @ Xi
+        derivative_source += float((Ze1_i.T @ A2_Ze).squeeze()) * ZXi
+        derivative_source += (Ze1_i @ A2_Ze.T) @ ZXi
+
+    D_wind = V2 @ D @ W2 @ derivative_source
+    cov = V2 + D_wind @ V1_robust @ D_wind.T
+    cov = cov + D_wind @ V2 + V2 @ D_wind.T
+    cov = 0.5 * (cov + cov.T)
+    if not np.isfinite(cov).all():
+        raise ValueError("FD Windmeijer covariance is nonfinite.")
+    return cov
+
+
 def run_native_dynamic_panel_gmm(
     spec: DynamicPanelSpec,
     data: pd.DataFrame,
@@ -2347,7 +2467,18 @@ def run_native_dynamic_panel_gmm(
         xzwzx = X.T @ Z @ W @ Z.T @ X
 
     else:
-        W1 = np.linalg.pinv(Z.T @ Z)
+        # Arellano--Bond one-step Difference GMM uses the covariance induced by
+        # first differencing, not the homoskedastic 2SLS weight (Z'Z)^-1.  The
+        # row metadata records each transformed error as a linear combination
+        # of level errors, so the shared H1 builder also handles unbalanced and
+        # variable-missing panels without assuming a rectangular block layout.
+        W1, _n_groups, _group_rows, _diff_width = _native_pydynpd_first_step_weight_inv(
+            Z=Z,
+            y=y,
+            nobs_effective=nobs_effective,
+            row_meta=row_meta,
+        )
+
         xzwzx1 = X.T @ Z @ W1 @ Z.T @ X
         beta1 = np.linalg.pinv(xzwzx1) @ (X.T @ Z @ W1 @ Z.T @ y)
         residuals1 = y - X @ beta1
@@ -2525,26 +2656,41 @@ def run_native_dynamic_panel_gmm(
         else:
             cov_correction = n / max(n - k, 1)
 
-        is_fod_difference_gmm = (
-            not bool(spec.system)
-            and str(getattr(spec, "transformation", "")).strip().lower() == "fod"
-        )
+        is_difference_gmm = not bool(spec.system)
+        transformation = str(getattr(spec, "transformation", "")).strip().lower()
 
-        if is_fod_difference_gmm:
+        if is_difference_gmm:
             try:
-                windmeijer_base_cov = _native_fod_difference_windmeijer_covariance(
-                    X=X,
-                    Z=Z,
-                    W1=W1,
-                    W2=W,
-                    bread2=bread,
-                    residuals1=residuals1,
-                    residuals2=residuals,
-                    group_indices=group_indices_for_cov,
-                )
+                if transformation == "fod":
+                    windmeijer_base_cov = _native_fod_difference_windmeijer_covariance(
+                        X=X,
+                        Z=Z,
+                        W1=W1,
+                        W2=W,
+                        bread2=bread,
+                        residuals1=residuals1,
+                        residuals2=residuals,
+                        group_indices=group_indices_for_cov,
+                    )
+                elif transformation == "fd":
+                    windmeijer_base_cov = _native_fd_difference_windmeijer_covariance(
+                        X=X,
+                        Z=Z,
+                        W1=W1,
+                        W2=W,
+                        bread2=bread,
+                        residuals1=residuals1,
+                        residuals2=residuals,
+                        group_indices=group_indices_for_cov,
+                    )
+                else:
+                    raise ValueError(
+                        "Difference GMM Windmeijer covariance requires "
+                        f"transformation='fd' or 'fod'; received {transformation!r}."
+                    )
             except Exception as exc:
                 raise RuntimeError(
-                    "FOD Difference GMM Windmeijer covariance failed with shapes: "
+                    "Difference GMM Windmeijer covariance failed with shapes: "
                     f"X={X.shape}, Z={Z.shape}, W1={W1.shape}, W2={W.shape}, "
                     f"bread={bread.shape}, residuals1={np.asarray(residuals1).shape}, "
                     f"residuals2={np.asarray(residuals).shape}, "
@@ -2578,19 +2724,6 @@ def run_native_dynamic_panel_gmm(
                 n_groups=n_groups_for_cov,
             )
             cov = cov_correction * windmeijer_xtabond2_small_correction * windmeijer_base_cov
-
-            # xtabond2-compatible normalization for FD Difference GMM:
-            # the generic Windmeijer helper returns a group-summed covariance.
-            # For non-system first-difference GMM this must be averaged by
-            # the number of entity clusters; otherwise SEs are inflated by
-            # sqrt(n_groups). Do not apply to System GMM, whose parity is
-            # already certified under the existing scaling.
-            is_fd_difference_gmm = (
-                not bool(spec.system)
-                and str(getattr(spec, "transformation", "")).strip().lower() == "fd"
-            )
-            if is_fd_difference_gmm and n_groups_for_cov > 0:
-                cov = cov / float(n_groups_for_cov)
     else:
         s_group = _native_group_moment_sum(
             Z=Z,
@@ -2714,6 +2847,27 @@ def run_native_dynamic_panel_gmm(
             row_meta=row_meta,
             time_values=list(pd.Index(data[time].dropna().sort_values().unique())),
             max_lag=2,
+            system=True,
+        )
+    elif not bool(spec.system) and use_twostep and windmeijer_requested and transformation == "fd":
+        # xtabond2 forms the AR denominator with the non-robust second-step
+        # bread in m2VZXA and the unscaled Windmeijer covariance in the final
+        # Xw term. Difference GMM uses the raw A2 criterion weight, whereas the
+        # native System path stores a group-normalized equivalent.
+        ar1_z, ar1_p, ar2_z, ar2_p = _native_xtabond2_system_ar_diagnostics(
+            residuals=residual_vec,
+            X=X,
+            Z=Z,
+            W=W,
+            cov=ar_cov_final,
+            D=D,
+            cov_m2=bread,
+            cov_vxw=windmeijer_base_cov,
+            group_indices=group_indices_for_cov,
+            row_meta=row_meta,
+            time_values=list(pd.Index(data[time].dropna().sort_values().unique())),
+            max_lag=2,
+            system=False,
         )
     else:
         ar1_z, ar1_p, ar2_z, ar2_p = _native_ab_serial_correlation_diagnostics(
@@ -2772,20 +2926,16 @@ def run_native_dynamic_panel_gmm(
     # For native two-step System GMM, strict matrix-dump verification shows:
     #     Hansen J = (u' Z W_final Z' u) / n_groups
     #
-    # For non-system estimators, preserve the existing robust moment-covariance
-    # construction.
+    # For Difference GMM, W is the second-step criterion weight constructed
+    # from first-step residuals.  Re-estimating a new weight from final
+    # residuals changes the Hansen statistic and is not the two-step GMM
+    # criterion reported by xtabond2.
     if _is_twostep_like and _overid_df > 0:
         try:
             if bool(spec.system):
                 _hansen_j_candidate = float(_j_stat_raw / float(_n_groups_for_diag))
             else:
-                _s_group_diag = _native_group_moment_sum(
-                    Z=Z,
-                    residuals=residual_vec,
-                    group_indices=group_indices_for_cov,
-                )
-                _hansen_weight = np.linalg.pinv(_s_group_diag)
-                _hansen_j_candidate = float((_ztu.T @ _hansen_weight @ _ztu).squeeze())
+                _hansen_j_candidate = float((_ztu.T @ W @ _ztu).squeeze())
 
             if np.isfinite(_hansen_j_candidate) and _hansen_j_candidate >= 0:
                 _hansen_j_stat = float(_hansen_j_candidate)
@@ -2846,18 +2996,20 @@ def run_native_dynamic_panel_gmm(
                 if np.isfinite(_sargan_stat) and _sargan_stat >= 0:
                     _sargan_p_candidate = float(stats.chi2.sf(_sargan_stat, _overid_df))
         else:
-            try:
-                _sargan_weight = W1
-            except NameError:
-                _sargan_weight = W
-
-            _sargan_small_scale = max(float(_n_groups_for_diag - len(names)), 1.0) / float(
-                _n_groups_for_diag
-            )
-            _sargan_stat_raw = float((_ztu.T @ _sargan_weight @ _ztu).squeeze())
-            _sargan_stat = float(_sargan_stat_raw * _sargan_small_scale)
-            if np.isfinite(_sargan_stat) and _sargan_stat >= 0:
-                _sargan_p_candidate = float(stats.chi2.sf(_sargan_stat, _overid_df))
+            # xtabond2 3.7.2 computes the Difference-GMM Sargan statistic from
+            # the first-step residual moments and A1 = W1 / sig2, where for
+            # first differences sig2 = e1'e1 / (2 * N_obs). The later `small`
+            # covariance adjustment does not rescale this diagnostic.
+            _u1_col = np.asarray(residuals1, dtype=float).reshape(-1, 1)
+            _ztu1 = Z.T @ _u1_col
+            _n_diff = int(_u1_col.size)
+            _sse_diff = float((_u1_col.T @ _u1_col).squeeze())
+            if _n_diff > 0 and np.isfinite(_sse_diff) and _sse_diff > 0.0:
+                _sig2_xtabond2 = _sse_diff / (2.0 * float(_n_diff))
+                _sargan_stat_raw = float((_ztu1.T @ W1 @ _ztu1).squeeze())
+                _sargan_stat = float(_sargan_stat_raw / _sig2_xtabond2)
+                if np.isfinite(_sargan_stat) and _sargan_stat >= 0:
+                    _sargan_p_candidate = float(stats.chi2.sf(_sargan_stat, _overid_df))
 
     # Public p-values.
     hansen_p = _hansen_p_candidate if _is_twostep_like else None
