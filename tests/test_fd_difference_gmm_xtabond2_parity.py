@@ -107,6 +107,11 @@ def _sample_key_sha256(frame: pd.DataFrame) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _canonical_text_sha256(path: Path) -> str:
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
+
+
 @pytest.mark.parity
 @pytest.mark.parametrize("fixture_id", tuple(DATA_PATHS))
 def test_fd_difference_gmm_matches_fixed_xtabond2_surfaces(
@@ -117,7 +122,7 @@ def test_fd_difference_gmm_matches_fixed_xtabond2_surfaces(
     assert REFERENCE["absolute_tolerances"] == EXPECTED_TOLERANCES
     expected = REFERENCE["fixtures"][fixture_id]
     data_path = DATA_PATHS[fixture_id]
-    assert hashlib.sha256(data_path.read_bytes()).hexdigest() == expected["data_sha256"]
+    assert _canonical_text_sha256(data_path) == expected["data_canonical_sha256"]
 
     monkeypatch.setenv("SYSTEMGMMKIT_NATIVE_DIAGNOSTIC_DUMP_DIR", str(tmp_path))
     result = run_native_dynamic_panel_gmm(

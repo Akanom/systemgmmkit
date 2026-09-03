@@ -8,6 +8,10 @@
     "command": "xtabond2 y L.y x w, gmm(L.y x, lag(2 3) collapse equation(diff)) iv(w, equation(diff)) noleveleq twostep robust small",
     "note": "Values transcribed from the unchanged DADPLM manual Stata matrix-export bundle. The Stata-reported clock date is retained verbatim but is not treated as the actual export date because the source host used a deliberately non-current Stata clock. Source CSV SHA-256 digests are retained per fixture."
   },
+  "hash_conventions": {
+    "data_canonical_sha256": "SHA-256 after CRLF and CR text newlines are canonicalized to LF",
+    "source_csv_sha256": "SHA-256 of the submitted Stata-export bytes without canonicalization"
+  },
   "stata_moment_order": [
     "D:iv:w",
     "D:L1.y:L2",
@@ -29,7 +33,7 @@
   },
   "fixtures": {
     "paired-fd-balanced-xtabond2": {
-      "data_sha256": "45ec3b22ef914098c3929318fe45258ed1923e3d5d1eab637ff9315684489676",
+      "data_canonical_sha256": "4689b5e2bc59b33bb68930313a89f44b31447e21a7db6f5d5fb42b1eb3c7781f",
       "source_csv_sha256": {
         "b": "530d9c0a552ddfd41a93a09cb5952a86f533f080a43f3b7b090ef5ed25d97c66",
         "V": "39769dfaf03bbff0f40d90ed444f6ebbf23a03e955076e4e59d2a72a1e76557c",
@@ -67,7 +71,7 @@
       "ar2_p": 0.197117745034061
     },
     "paired-fd-unbalanced-xtabond2": {
-      "data_sha256": "0d385c1dbc2110751648a0eb1df1925f34ed58ac6bd249258bd6d0f21697ce64",
+      "data_canonical_sha256": "8a31a5d6f6ab94cf6cb9df843978bb49cd5cb774453cf60c9ba439657a6ee0c6",
       "source_csv_sha256": {
         "b": "356e280b59eda31b503af4a93f8aa6c71074b8a6fe6445d25294ef3d7b0fcedf",
         "V": "2df4de748fd64104f3dddc9871260fa29fc41f2c6f9a5e0246bc94593eccef3d",
@@ -105,7 +109,7 @@
       "ar2_p": 0.4457019654975031
     },
     "paired-fd-variable-missing-xtabond2": {
-      "data_sha256": "67e5ea95e5f9b5159bfa9dafdd81b4c882be8ad531a3eb4779925dc291aaacf9",
+      "data_canonical_sha256": "0f7d15612417881a38620ee74616a88532515b3b39873d4a707b4d3521fdb9a7",
       "source_csv_sha256": {
         "b": "fc5ae2ace230b3dbe4a458ce3581f33f67d984ebfe984064c49a8f231c1a2f01",
         "V": "83cd766d46d32bac7b5549020d90ddeabf979de161130c27e31c2ba397ca8f8d",

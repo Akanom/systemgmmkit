@@ -15,6 +15,9 @@ The fixed reference is Stata 17 IC with `xtabond2` 3.7.2. The reference
 bundle contains balanced, unbalanced, and variable-missing panels. It is
 identified by the source-CSV SHA-256 digests in
 `artifacts/parity/xtabond2/difference_gmm_fd/xtabond2_reference_v1.json`.
+Tracked input-fixture digests are computed after canonicalizing text newlines
+to LF, so the same Git content has one identity on Windows and POSIX checkouts.
+Submitted Stata-export digests remain byte-exact and are not canonicalized.
 The Stata-reported clock date is retained verbatim in that artifact, but is not
 treated as the actual execution date because the source host used a deliberately
 non-current Stata clock.

@@ -74,6 +74,13 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _canonical_text_sha256(path: Path) -> str:
+    """Hash a tracked text fixture independently of checkout newlines."""
+
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def _sample_keys(frame: pd.DataFrame) -> list[list[int]]:
     return [
         [int(entity), int(time)]
@@ -97,17 +104,50 @@ def _numeric_matrix(path: Path) -> np.ndarray:
 
 
 def _load_source_bound_provider() -> tuple[Any, Any]:
+    cached_package = sys.modules.get("systemgmmkit")
+    cached_path = (
+        Path(cached_package.__file__).resolve()
+        if cached_package is not None and getattr(cached_package, "__file__", None)
+        else None
+    )
+    if cached_path is not None:
+        try:
+            cached_path.relative_to(SCRIPT_SOURCE_ROOT)
+        except ValueError:
+            cached_path = None
+        else:
+            native_module = importlib.import_module("systemgmmkit.native_gmm")
+            return cached_package, native_module.run_native_dynamic_panel_gmm
+
+    # Audit environments may import an installed distribution before collecting
+    # this source-bound comparator.  Isolate the source import, then restore the
+    # caller's module cache so this helper neither accepts the installed package
+    # nor changes which distribution the surrounding process uses.
+    previous_modules = {
+        name: module
+        for name, module in tuple(sys.modules.items())
+        if name == "systemgmmkit" or name.startswith("systemgmmkit.")
+    }
+    for name in previous_modules:
+        sys.modules.pop(name, None)
     if str(SCRIPT_SOURCE_ROOT) not in sys.path:
         sys.path.insert(0, str(SCRIPT_SOURCE_ROOT))
-    package = importlib.import_module("systemgmmkit")
-    package_path = Path(package.__file__).resolve()
     try:
-        package_path.relative_to(SCRIPT_SOURCE_ROOT)
-    except ValueError as exc:
-        raise RuntimeError(
-            f"Comparator imported {package_path}, outside source root {SCRIPT_SOURCE_ROOT}."
-        ) from exc
-    native_module = importlib.import_module("systemgmmkit.native_gmm")
+        package = importlib.import_module("systemgmmkit")
+        package_path = Path(package.__file__).resolve()
+        try:
+            package_path.relative_to(SCRIPT_SOURCE_ROOT)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"Comparator imported {package_path}, outside source root {SCRIPT_SOURCE_ROOT}."
+            ) from exc
+        native_module = importlib.import_module("systemgmmkit.native_gmm")
+    finally:
+        if previous_modules:
+            for name in tuple(sys.modules):
+                if name == "systemgmmkit" or name.startswith("systemgmmkit."):
+                    sys.modules.pop(name, None)
+            sys.modules.update(previous_modules)
     return package, native_module.run_native_dynamic_panel_gmm
 
 
@@ -190,7 +230,7 @@ def compare(
             for fixture_id, relative_data_path in FIXTURES:
                 expected = reference["fixtures"][fixture_id]
                 data_path = repository_root / relative_data_path
-                if _sha256(data_path) != expected["data_sha256"]:
+                if _canonical_text_sha256(data_path) != expected["data_canonical_sha256"]:
                     raise ValueError(f"Input fixture hash differs for {fixture_id}.")
 
                 result = run_native_dynamic_panel_gmm(
