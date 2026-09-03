@@ -1,0 +1,16 @@
+{
+  "source": "NASA C-MAPSS FD001 download",
+  "rows": 20631,
+  "units": 100,
+  "time_min": 1.0,
+  "time_max": 362.0,
+  "avg_periods_per_unit": 206.31,
+  "min_periods_per_unit": 128,
+  "max_periods_per_unit": 362,
+  "missing_in_panel": 0,
+  "seed": 20260724,
+  "download_url": "https://phm-datasets.s3.amazonaws.com/NASA/6.+Turbofan+Engine+Degradation+Simulation+Data+Set.zip",
+  "archive_member": "6. Turbofan Engine Degradation Simulation Data Set/CMAPSSData.zip!/train_FD001.txt",
+  "download_sha256": "c9c5dec12a945a82e8bb4446589d7fb3cc057b5e5d81fa1a12e25ee9912ad3b2",
+  "raw_sha256": "963b5e22825b34d8b21c69e1aeb4af3e647050eb672ee8834ba4b5d91d2de0f8"
+}

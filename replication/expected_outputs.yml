@@ -1,0 +1,163 @@
+required_outputs:
+  - path: "artifacts/jss/reproducibility/software_versions.csv"
+    minimum_rows: 8
+    required_columns:
+      - module
+      - version
+  - path: "artifacts/jss/reproducibility/python_environment.txt"
+    minimum_size_bytes: 1000
+  - path: "artifacts/jss/reproducibility/system_info.txt"
+    minimum_size_bytes: 200
+  - path: "artifacts/jss/reproducibility/replication_run.json"
+    minimum_size_bytes: 100
+  - path: "data/external/ncmapss/ncmapss_ds01_dev_unit_cycle_compact.csv"
+    minimum_rows: 553
+    required_columns:
+      - unit
+      - cycle
+      - risk
+      - sensor_mean_z
+  - path: "data/external/ncmapss/ncmapss_ds01_dev_unit_cycle_panel.csv"
+    minimum_rows: 553
+    required_columns:
+      - unit
+      - cycle
+      - risk
+      - sensor_T24
+      - sensor_Wf
+  - path: "data/synthetic/22_dynamic_gmm_controlled_panel.csv"
+    minimum_rows: 1200
+    required_columns:
+      - id
+      - time
+      - y
+      - x_pred
+      - x_exog
+  - path: "results/comparisons/static_validation_summary.csv"
+    minimum_rows: 1
+    required_columns:
+      - model
+      - status
+  - path: "results/comparisons/system_gmm_validation_summary.csv"
+    minimum_rows: 1
+    required_columns:
+      - model
+      - status
+  - path: "results/comparisons/difference_gmm_validation_summary.csv"
+    minimum_rows: 1
+    required_columns:
+      - model
+      - status
+  - path: "results/comparisons/windmeijer_validation.csv"
+    minimum_rows: 1
+    required_columns:
+      - model
+      - covariance_type
+      - status
+  - path: "results/comparisons/postestimation_validation_summary.csv"
+    minimum_rows: 1
+    required_columns:
+    - status
+  - path: "results/comparisons/panel_validation_summary.csv"
+    minimum_rows: 1
+    required_columns:
+      - metric
+      - value
+  - path: "results/comparisons/fd001_application_summary.csv"
+    minimum_rows: 1
+    required_columns:
+      - dataset
+      - n_rows
+      - n_units
+      - n_periods
+      - synthetic
+  - path: "results/comparisons/forecast_backtesting_summary.csv"
+    minimum_rows: 1
+    required_columns:
+      - section
+      - dataset
+      - status
+  - path: "results/comparisons/auto_gmm_search_results.csv"
+    minimum_rows: 4
+    required_columns:
+      - candidate_id
+      - estimator
+      - lag_window
+      - valid
+      - rmse
+      - r2
+      - ar2_p
+      - n_instruments
+  - path: "results/comparisons/ml_external_python_comparison.csv"
+    minimum_rows: 3
+    required_columns:
+      - model
+      - package
+      - package_version
+      - comparison_role
+      - rmse
+      - r2
+      - diagnostics_applicable
+      - claim_boundary
+  - path: "results/comparisons/ml_external_python_comparison_status.json"
+    minimum_size_bytes: 300
+  - path: "artifacts/joss/tables/04_ncmapss_holdout_metrics.csv"
+    minimum_rows: 2
+    required_columns:
+      - model
+      - validation_design
+      - n_eval
+      - rmse
+      - r2
+  - path: "artifacts/joss/tables/06_ncmapss_direct_sensor_model_selection.csv"
+    minimum_rows: 72
+    required_columns:
+      - candidate_id
+      - n_components
+      - feature_design
+      - mean_rmse
+      - selected
+  - path: "artifacts/joss/tables/07_ncmapss_direct_sensor_model_status.json"
+    minimum_size_bytes: 500
+  - path: "paper_jss/main.tex"
+    minimum_size_bytes: 10000
+  - path: "paper_jss/main.pdf"
+    minimum_size_bytes: 100000
+  - path: "paper_jss/jss.cls"
+    minimum_size_bytes: 10000
+  - path: "paper_jss/jss.bst"
+    minimum_size_bytes: 20000
+  - path: "paper_jss/publication_manifest.json"
+    minimum_size_bytes: 1000
+  - path: "paper_jss/tables/table_01_application_design.tex"
+    minimum_size_bytes: 200
+  - path: "paper_jss/tables/table_02_application_estimates.tex"
+    minimum_size_bytes: 200
+  - path: "paper_jss/tables/table_03_holdout_performance.tex"
+    minimum_size_bytes: 150
+  - path: "paper_jss/tables/table_04_controlled_gmm_results.tex"
+    minimum_size_bytes: 300
+  - path: "paper_jss/tables/table_05_xtabond2_parameter_parity.tex"
+    minimum_size_bytes: 300
+  - path: "paper_jss/tables/table_06_xtabond2_diagnostic_parity.tex"
+    minimum_size_bytes: 300
+  - path: "paper_jss/tables/table_07_static_reference_checks.tex"
+    minimum_size_bytes: 250
+  - path: "paper_jss/tables/table_08_auto_gmm_search.tex"
+    minimum_size_bytes: 250
+  - path: "paper_jss/tables/table_09_workflow_layer.tex"
+    minimum_size_bytes: 250
+  - path: "artifacts/jss/figures/01_auto_gmm_search_holdout.pdf"
+    minimum_size_bytes: 5000
+  - path: "artifacts/jss/figures/01_auto_gmm_search_holdout.png"
+    minimum_size_bytes: 10000
+  - path: "paper_jss/figures/01_auto_gmm_search_holdout.pdf"
+    minimum_size_bytes: 5000
+  - path: "paper_jss/figures/01_auto_gmm_search_holdout.png"
+    minimum_size_bytes: 10000
+  - path: "artifacts/jss/logs/99_output_verification.log"
+    minimum_size_bytes: 50
+  - path: "replication/manifest.csv"
+    minimum_size_bytes: 120
+  - path: "replication/checksums.sha256"
+    minimum_size_bytes: 80

@@ -1,0 +1,56 @@
+{
+  "status": "ok",
+  "generated_utc": "2026-08-13T22:52:32+00:00",
+  "systemgmmkit_version": "1.0.0",
+  "systemgmmkit_release_tag": "v1.0.0",
+  "systemgmmkit_release_commit": "dc30748f44872d8c91745646f4b222c2660e42f8",
+  "universal_output_hub_version": "0.2.4",
+  "manuscript": "paper_jss/main.tex",
+  "table_exporter": "Universal Output Hub",
+  "tables": [
+    "table_01_application_design.tex",
+    "table_02_application_estimates.tex",
+    "table_03_holdout_performance.tex",
+    "table_04_controlled_gmm_results.tex",
+    "table_05_xtabond2_parameter_parity.tex",
+    "table_06_xtabond2_diagnostic_parity.tex",
+    "table_07_static_reference_checks.tex",
+    "table_08_auto_gmm_search.tex",
+    "table_09_workflow_layer.tex"
+  ],
+  "figures": [
+    "paper_jss/figures/01_auto_gmm_search_holdout.pdf"
+  ],
+  "equations": [
+    "eq:dynamic-panel",
+    "eq:first-difference",
+    "eq:difference-moments",
+    "eq:system-moments",
+    "eq:gmm-objective",
+    "eq:hansen",
+    "eq:ncmapss-predictor",
+    "eq:controlled-dgp",
+    "eq:auto-search"
+  ],
+  "table_sources": {
+    "table_01_application_design.tex": "Author's computation from the processed N-CMAPSS DS01 development panel; artifacts/joss/tables/01_ncmapss_model_panel_summary.csv and 05_ncmapss_statistical_model_specification.json.",
+    "table_02_application_estimates.tex": "Author's computation using statsmodels with HC1 covariance; artifacts/joss/tables/02_ncmapss_dynamic_ols_results.csv and 03_ncmapss_dynamic_ols_fit_summary.csv.",
+    "table_03_holdout_performance.tex": "Author's computation from the cycle-ordered outer holdout and train-only model search; artifacts/joss/tables/04_ncmapss_holdout_metrics.csv, 06_ncmapss_direct_sensor_model_selection.csv, and 07_ncmapss_direct_sensor_model_status.json.",
+    "table_04_controlled_gmm_results.tex": "Author's computation with systemgmmkit 1.0.0 and Universal Output Hub 0.2.4; artifacts/joss/tables/22_difference_gmm_results.csv, 22_system_gmm_results.csv, and 22_dynamic_gmm_health_metrics.csv.",
+    "table_05_xtabond2_parameter_parity.tex": "Author's computation from the signed systemgmmkit 0.5.14 release certificate; v0.5.14:artifacts/parity/xtabond2/diagnostic_parity_certificate.csv.",
+    "table_06_xtabond2_diagnostic_parity.tex": "Author's computation from the signed systemgmmkit 0.5.14 release certificate; v0.5.14:artifacts/parity/xtabond2/diagnostic_parity_certificate.csv.",
+    "table_07_static_reference_checks.tex": "Author's computation from the systemgmmkit 0.5.14 static cross-software validation artifact (Artifact 27).",
+    "table_08_auto_gmm_search.tex": "Author's computation from the diagnostic-first search executed with systemgmmkit 1.0.0; results/comparisons/auto_gmm_search_results.csv.",
+    "table_09_workflow_layer.tex": "Author's runtime audit of the installed systemgmmkit 1.0.0 public API; tables exported with Universal Output Hub 0.2.4."
+  },
+  "excluded_from_manuscript": [
+    "authors table",
+    "API snapshot",
+    "row-level N-CMAPSS panel dump",
+    "stale lagged-risk perfect-prediction tables",
+    "manual duplicate of OutputHub tables",
+    "raw Stata coefficient dumps",
+    "debug and smoke-status tables",
+    "instrument-matrix probe tables"
+  ]
+}

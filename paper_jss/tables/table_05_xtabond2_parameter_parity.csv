@@ -1,0 +1,7 @@
+Specification,N,Groups,Instr.,Max coef. diff,Max rel. SE diff,Keys,Status
+Baseline controls,1248,96,8,2.31e-14,5.78e-07,Not required,PASS
+No controls,1248,96,7,8.88e-16,5.46e-07,Not required,PASS
+Three-way controls,1248,96,16,3.66e-15,2.63e-06,Not required,PASS
+Decomposition controls,1248,96,12,1.89e-14,1.57e-07,Not required,PASS
+Unbalanced panel,1174,96,8,1.04e-14,1.54e-06,Exact,PASS
+Variable missingness,1216,96,8,2.29e-14,2.16e-06,Exact,PASS

@@ -1,0 +1,4 @@
+model,package,package_version,comparison_role,rmse,mae,r2,elapsed_seconds,diagnostics_applicable,claim_boundary
+statsmodels OLS,statsmodels,0.14.6,predictive_baseline,0.5974487875961448,0.48253440761245986,0.9240930272490449,0.039978899993002415,False,Predictive baseline; not a Dynamic GMM parity test.
+scikit-learn random forest,scikit-learn,1.9.0,predictive_baseline,0.6552238373729629,0.5303819213229979,0.9087023327218777,1.0117758999986108,False,Predictive baseline; not a Dynamic GMM parity test.
+systemgmmkit System GMM 2:2,systemgmmkit,1.0.0,diagnostic_gated_econometric_search,0.601892702354985,,0.9229596124442152,4.196768900001189,True,Selected only after GMM diagnostics; predictive metrics do not prove causal identification.

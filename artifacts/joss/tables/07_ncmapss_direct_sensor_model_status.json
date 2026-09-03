@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "selection_boundary": "cycles 1--70 only",
+  "outer_test_boundary": "cycles 71--100",
+  "inner_folds": [
+    [
+      40,
+      41,
+      50
+    ],
+    [
+      50,
+      51,
+      60
+    ],
+    [
+      60,
+      61,
+      70
+    ]
+  ],
+  "random_seed": 20260724,
+  "raw_sensor_columns": [
+    "sensor_T24",
+    "sensor_T30",
+    "sensor_T48",
+    "sensor_T50",
+    "sensor_P15",
+    "sensor_P2",
+    "sensor_P21",
+    "sensor_P24",
+    "sensor_Ps30",
+    "sensor_P40",
+    "sensor_P50",
+    "sensor_Nf",
+    "sensor_Nc",
+    "sensor_Wf"
+  ],
+  "selected_candidate": {
+    "candidate_id": 68,
+    "n_components": 8,
+    "feature_design": "dynamic",
+    "min_samples_leaf": 2,
+    "max_features": 1.0,
+    "mean_inner_rmse": 0.08163600009877219,
+    "max_inner_rmse": 0.1020956982213915,
+    "outer_train_pca_variance": 0.9999953662854509
+  },
+  "outer_metrics": {
+    "model": "direct_sensor_random_forest",
+    "validation_design": "expanding_window_selection_within_cycles_1_70_then_test_71_100",
+    "n_eval": 133,
+    "rmse": 0.07104218305513023,
+    "mae": 0.05255787618104347,
+    "smape": 0.062458020484540584,
+    "r2": 0.2323111446855577,
+    "train_rows": 414,
+    "test_rows": 133,
+    "train_max_cycle": 70,
+    "test_min_cycle": 71,
+    "test_max_cycle": 100
+  }
+}

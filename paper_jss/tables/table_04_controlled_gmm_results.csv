@@ -1,0 +1,19 @@
+term,Difference GMM,System GMM
+Lagged dependent variable,0.711***,0.929***
+,(0.265),(0.042)
+Predetermined regressor,0.266,0.056
+,(0.223),(0.138)
+Exogenous regressor,0.251***,0.242***
+,(0.045),(0.020)
+Constant,,0.129***
+,,(0.035)
+,,
+N,840,960
+Groups,120,120
+Instruments,5,8
+I/N,0.042,0.067
+Instrument health,acceptable,acceptable
+AR(1) p,0.000,0.000
+AR(2) p,0.133,0.199
+Hansen p,0.503,0.794
+Sargan p,0.864,0.812

@@ -1,0 +1,17 @@
+{
+  "dataset": "Controlled synthetic dynamic panel",
+  "purpose": "Formal Difference/System GMM smoke and parity reference artifact",
+  "rows": 1200,
+  "n_units": 120,
+  "n_periods": 10,
+  "balanced": true,
+  "entity": "id",
+  "time": "time",
+  "dependent": "y",
+  "dgp": "y_it = 0.55*y_i,t-1 + 0.35*x_pred_it + 0.25*x_exog_it + alpha_i + tau_t + eps_it",
+  "roles": {
+    "lagged_dependent": "endogenous, GMM-style lags 2:3",
+    "x_pred": "predetermined, GMM-style lags 2:3",
+    "x_exog": "exogenous, IV-style"
+  }
+}

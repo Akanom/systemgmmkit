@@ -1,0 +1,11 @@
+\begin{tabular}{lccc}
+\toprule
+Estimator & Comparators & Max coef. diff & Max SE diff \\
+\midrule
+OLS & R lm, Stata, statsmodels & 2.16e-08 & 4.01e-10 \\
+Pooled OLS & R plm, Stata, linearmodels & 2.16e-08 & 4.01e-10 \\
+Fixed Effects & R plm, Stata, linearmodels & 1.60e-08 & 1.14e-09 \\
+Random Effects & R plm, Stata, linearmodels & 2.16e-08 & 6.58e-04 \\
+2SLS & R AER::ivreg, Stata, linearmodels & 6.35e-08 & 3.80e-04 \\
+\bottomrule
+\end{tabular}
